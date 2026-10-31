@@ -57,6 +57,22 @@ leaving in the first 6 to 20 seconds.
 - Sound on every visible action: hit on frame 0, whoosh on cuts, riser into each reveal, music drops out on the reveal,
   heartbeat and ticking during the choice. Loudness about -14 LUFS.
 - A real voice (or a paid voice service) still sounds better than any free TTS; offer a no-voice export.
+- Best free French voice found: Chatterbox multilingual (`language_id="fr"`) cloned from a 10 s public-domain
+  audiobook clip (for example LibriVox readers in Multilingual LibriSpeech), picked by pitch: about 90 Hz for a
+  deep narrator, about 120 Hz for an older man. Generate two or three seeds per line, transcribe each take with
+  Whisper, and keep the one that matches the script. Rephrase lines the model garbles (bare surnames in a row).
+- For a younger character, raise a male take by about 2 semitones with a plain resample instead of a pitch shifter,
+  which wobbles.
+
+### 5b. Animated characters
+
+- Lip sync: Rhubarb (`-r phonetic` works for French) drives nine drawn mouth shapes switched by an attribute,
+  not a single ellipse scaled up and down.
+- Keep faces alive: slow head sway, breathing, eye darts every second or so, blinks every 2 to 3 s,
+  and a small nod and brow lift on the stressed syllables.
+- No hard-edged shadow band across the eyes; shade with a soft gradient clipped to the face.
+- Vary transitions by story beat (zoom in, blurred whip pan, light cut-out flicker, glitch on the reveal)
+  instead of one identical flash on every cut.
 
 ### 6. The choice and the next episode
 
