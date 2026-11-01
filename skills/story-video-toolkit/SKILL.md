@@ -63,6 +63,26 @@ from a script, and keeps every step reproducible.
 - Glitch text: stack the coloured copies inside the same box as the solid text, with no padding between them,
   or they drift apart.
 
+### Rendering fast on a CPU
+
+Measured on a 4-core CPU at 720×1280 for a set with about 300 objects:
+
+| Setting | Time per frame |
+|---------|----------------|
+| Cycles, 3D fog volume, 12 samples | about 50 s |
+| Cycles, no fog volume, 8 samples, adaptive sampling, persistent data | about 18 s |
+| EEVEE on software OpenGL (llvmpipe) | about 200 s, slower than Cycles without a GPU |
+
+- Drop the 3D fog volume and add haze and light rays in 2D when grading (a radial blur of the highlights):
+  it looks close and costs about 1 s per frame.
+- Render every other frame (`frame_step = 2`) and rebuild 30 fps with
+  `ffmpeg -vf minterpolate=fps=30:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1`. Slow camera moves
+  interpolate cleanly; this halves render time again.
+- Turn on `render.use_persistent_data` so Blender does not rebuild the scene for every frame.
+- Check one still before every full render; the full render is the expensive step.
+- Never stop a background render with `pkill -f <pattern>` when the same command line contains the
+  pattern; it kills the calling shell too. Bracket the first letter (`pkill -f "[b]lender_env"`).
+
 ## Examples
 
 Word timings for karaoke captions:
