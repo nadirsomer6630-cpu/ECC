@@ -75,9 +75,19 @@ Measured on a 4-core CPU at 720×1280 for a set with about 300 objects:
 
 - Drop the 3D fog volume and add haze and light rays in 2D when grading (a radial blur of the highlights):
   it looks close and costs about 1 s per frame.
-- Render every other frame (`frame_step = 2`) and rebuild 30 fps with
-  `ffmpeg -vf minterpolate=fps=30:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1`. Slow camera moves
-  interpolate cleanly; this halves render time again.
+- Render every other frame (`frame_step = 2`) and rebuild the in-betweens. Measured against a truly
+  rendered in-between frame (PSNR, higher is closer; above 40 dB the difference is invisible):
+
+  | In-between from | PSNR | Cost |
+  |-----------------|------|------|
+  | RIFE 4.9 ONNX (`yuvraj108c/rife-onnx`, onnxruntime CPU) | 47.7 dB | about 4 s per frame |
+  | `ffmpeg minterpolate` (mci, aobmc, bidir) | 46.5 dB | almost free |
+  | Repeating the previous frame | 42.8 dB | free, visibly steppy |
+
+  Use RIFE for fast action (a figure lunging, a door slamming) and minterpolate for slow camera moves.
+  Pad frames to a multiple of 64 before RIFE and crop back.
+- Samples: 8 samples with OpenImageDenoise reach 43 dB against a 128-sample reference, at a sixth of the
+  time. Path guiding (`use_guiding`) and 4 samples did not beat 8 plain samples on these dark sets.
 - Turn on `render.use_persistent_data` so Blender does not rebuild the scene for every frame.
 - Check one still before every full render; the full render is the expensive step.
 - Never stop a background render with `pkill -f <pattern>` when the same command line contains the
