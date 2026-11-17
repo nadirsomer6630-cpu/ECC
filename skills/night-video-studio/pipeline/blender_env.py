@@ -816,6 +816,56 @@ if SCENE == "valmont":
         g0 = world_to_camera_view(sc, cam, mathutils.Vector((2.3, 11.6, 0.0))); g1 = world_to_camera_view(sc, cam, mathutils.Vector((2.3, 11.6, 1.15)))
         c0 = world_to_camera_view(sc, cam, mathutils.Vector((3.75, 8.93, 2.5))); c1 = world_to_camera_view(sc, cam, mathutils.Vector((3.75, 8.93, 2.71)))
         _j.dump({"x": v.x, "y": 1 - v.y, "girl": [g0.x, 1 - g0.y, g1.x, 1 - g1.y], "clock": [c0.x, 1 - c0.y, c1.x, 1 - c1.y]}, open(OUT + "led.json", "w"))
+    elif view in ("home_entry", "home_kitchen"):   # LIVREUR DE NUIT, nuit 2: his mother's flat. --home=dark (moonlight only) or lit (even fill, revealed by the phone torch in 2D)
+        import json as _j
+        from bpy_extras.object_utils import world_to_camera_view
+        lit = ARG("--home") == "lit"
+        PARQ = tex_mat("parq", "herringbone_parquet", 1.6, (0.9, 0.78, 0.66), 0.4); WALLP = tex_mat("wallp", "decrepit_wallpaper", 1.1, (0.8, 0.82, 0.78), 0.3)
+        TILEK = tex_mat("tilek", "long_white_tiles", 1.4, (0.86, 0.86, 0.84), 0.4); PAINT = mat("paint", (0.72, 0.7, 0.64), 0, 0.85)
+        # corridor: y 0..5, x -0.65..0.65
+        box("cfl", (0, 2.5, -0.01), (1.3, 5, 0.02), PARQ); box("cce", (0, 2.5, 2.5), (1.3, 5, 0.02), PAINT)
+        for sx in (-1, 1): box("cwl", (sx * 0.66, 2.5, 1.25), (0.02, 5, 2.5), WALLP); box("csk", (sx * 0.645, 2.5, 0.05), (0.02, 5, 0.1), mat("skirt%d" % sx, (0.85, 0.84, 0.8), 0, 0.5))
+        box("cend_l", (-0.55, 5.0, 1.25), (0.22, 0.04, 2.5), WALLP); box("cend_r", (0.55, 5.0, 1.25), (0.22, 0.04, 2.5), WALLP); box("cend_t", (0, 5.0, 2.3), (0.9, 0.04, 0.4), WALLP)
+        for y in (1.0, 2.5, 4.0):                                     # bare ceiling sockets: the bulbs have been unscrewed
+            cyl("sock", (0, y, 2.44), 0.035, 0.08, BLK); cyl("wire", (0, y, 2.47), 0.006, 0.05, BLK)
+        door(-0.66, 3.0, 1, w=0.85, m=OAK); box("hook", (0.63, 1.4, 1.75), (0.04, 0.7, 0.04), BRASS)
+        box("coat", (0.58, 1.25, 1.35), (0.1, 0.32, 0.75), mat("coat", (0.25, 0.08, 0.1), 0, 0.9)); box("coat2", (0.58, 1.6, 1.4), (0.1, 0.3, 0.65), mat("coat2", (0.32, 0.3, 0.26), 0, 0.9))
+        box("shoes", (0.5, 2.2, 0.06), (0.22, 0.3, 0.1), mat("shoe", (0.15, 0.12, 0.1), 0, 0.6)); box("rug", (0, 1.2, 0.006), (0.8, 1.6, 0.01), mat("rug", (0.35, 0.12, 0.1), 0, 0.95))
+        prop("hanging_picture_frame_02", (0.64, 3.6, 1.45), 0.45, math.radians(-90))
+        # kitchen: y 5..9.2, x -1.8..1.8
+        box("kfl", (0, 7.1, -0.01), (3.6, 4.2, 0.02), TILEK); box("kce", (0, 7.1, 2.5), (3.6, 4.2, 0.02), PAINT)
+        for sx in (-1, 1): box("kwl", (sx * 1.81, 7.1, 1.25), (0.02, 4.2, 2.5), PAINT)
+        box("kback_l", (-1.15, 9.2, 1.25), (1.3, 0.04, 2.5), PAINT); box("kback_r", (1.15, 9.2, 1.25), (1.3, 0.04, 2.5), PAINT); box("kback_b", (0, 9.2, 0.45), (1.0, 0.04, 0.9), PAINT); box("kback_t", (0, 9.2, 2.3), (1.0, 0.04, 0.4), PAINT)
+        box("wsill", (0, 9.15, 0.92), (1.1, 0.12, 0.04), mat("sill", (0.85, 0.85, 0.82), 0, 0.4))
+        for x in (-0.5, 0.0, 0.5): box("wfr", (x, 9.18, 1.5), (0.04, 0.05, 1.2), mat("wfr", (0.8, 0.8, 0.78), 0, 0.5))
+        box("city", (0, 13, 2), (14, 0.1, 8), mat("night", (0.01, 0.015, 0.03), 0, 1, (0.04, 0.06, 0.12), 1.0))
+        for k in range(90): box("cw", (rnd.uniform(-4, 4), 12.9, rnd.uniform(0.2, 3.8)), (0.25, 0.02, 0.3), mat("cw%d" % k, (1, 1, 1), 0, 0.5, rnd.choice([(1.0, 0.7, 0.35), (0.5, 0.65, 1.0)]), rnd.uniform(0.6, 2.0)))
+        prop("dining_table", (0, 7.45, 0), 0.76, 0)
+        prop("dining_chair_02", (-1.0, 7.45, 0), 0.95, math.radians(-90)); prop("dining_chair_02", (1.0, 7.45, 0), 0.95, math.radians(90))
+        prop("carved_wooden_plate", (-0.62, 7.45, 0.8), 0.26, 0, fit="max"); prop("carved_wooden_plate", (0.62, 7.45, 0.8), 0.26, 0, fit="max")
+        prop("wooden_bowl_01", (0.0, 7.6, 0.8), 0.26, 0, fit="max"); prop("jug_01", (0.2, 7.35, 0.8), 0.22)
+        prop("electric_stove", (1.45, 8.75, 0), 0.9, math.radians(180)); prop("vintage_electric_kettle", (1.45, 8.85, 0.92), 0.22, math.radians(200))
+        prop("modern_wooden_cabinet", (-1.5, 8.2, 0), 0.9, math.radians(-90)); prop("potted_plant_02", (-1.5, 8.6, 0.9), 0.35)
+        prop("modern_ceiling_lamp_01", (0, 7.3, 2.0), 0.45); prop("brass_pan_01", (1.35, 8.6, 0.92), 0.3, 0, fit="max"); prop("wall_clock", (-1.79, 7.2, 1.75), 0.32, math.radians(-90), fit="max")
+        for k in range(3): box("ucab", (-1.62, 7.6 + k * 0.55, 1.95), (0.34, 0.52, 0.62), mat("ucab%d" % k, (0.55, 0.42, 0.3), 0, 0.6))
+        box("ctop", (-1.5, 7.9, 0.9), (0.6, 1.8, 0.04), mat("ctop", (0.2, 0.2, 0.22), 0.1, 0.35)); box("splash", (-1.79, 7.9, 1.2), (0.01, 1.8, 0.55), TILEK)
+        box("drawing", (1.195, 6.1, 1.35), (0.005, 0.24, 0.32), mat("drawing", (0.95, 0.94, 0.9), 0, 0.8)); box("magnet", (1.19, 6.1, 1.5), (0.01, 0.03, 0.03), mat("magnet", (0.8, 0.1, 0.1), 0, 0.5))
+        for k in range(3): box("dline", (1.19, 6.05 + k * 0.03, 1.3 - k * 0.04), (0.004, 0.08, 0.012), mat("dl%d" % k, ((0.8, 0.1, 0.1), (0.1, 0.3, 0.8), (0.1, 0.6, 0.2))[k], 0, 0.8))
+        box("towel", (1.17, 8.2, 0.75), (0.02, 0.2, 0.3), mat("towel", (0.75, 0.2, 0.18), 0, 0.9))
+        if lit: light("POINT", (0, 6.4, 2.2), 160, (1.0, 0.95, 0.88), 0.6); light("POINT", (0, 8.4, 2.0), 70, (1.0, 0.95, 0.88), 0.6)
+        box("fridge", (1.5, 6.0, 0.9), (0.6, 0.62, 1.8), mat("fridge", (0.82, 0.83, 0.84), 0.2, 0.3)); box("fh", (1.19, 5.8, 1.2), (0.02, 0.03, 0.4), STEELB)
+        box("stoveclock", (1.17, 8.4, 0.86), (0.01, 0.12, 0.04), mat("sclock", (0, 0, 0), 0, 0.3, (0.2, 0.6, 1.0), 18))
+        light("AREA", (0, 9.6, 1.6), 55, (0.55, 0.68, 1.0), 1.1, (math.radians(-90), 0, 0))        # moonlight through the window
+        light("POINT", (1.1, 8.4, 0.9), 2.5, (0.3, 0.6, 1.0), 0.05)                                  # the stove clock
+        light("POINT", (0, 5.6, 2.0), 3 if not lit else 0, (0.55, 0.68, 1.0), 0.5)
+        if lit:                                                       # what the phone torch reveals: soft, cool-white, from the viewer
+            light("AREA", (0, 4.6, 1.6), 180, (0.95, 0.97, 1.0), 1.2, (math.radians(-90), 0, 0)); light("AREA", (0, 0.4, 1.6), 120, (0.95, 0.97, 1.0), 1.0, (math.radians(-90), 0, 0))
+        if view == "home_entry": cam = camera((0.05, 0.25, 1.55), (0.0, 6.5, 1.2), 24)
+        else: cam = camera((0.0, 5.45, 1.5), (0.0, 7.6, 0.8), 20)
+        bpy.context.view_layer.update(); pos = {}
+        for k_, pt in (("chairL", (-1.0, 7.45, 0.0)), ("chairR", (1.0, 7.45, 0.0)), ("table", (0.0, 7.3, 0.77)), ("door", (0.0, 5.0, 0.0)), ("side", (-0.64, 3.0, 1.0))):
+            v = world_to_camera_view(sc, cam, mathutils.Vector(pt)); pos[k_] = [v.x, 1 - v.y]
+        _j.dump(pos, open(OUT + "pos.json", "w"))
     elif view in ("entry", "landing"):   # LIVREUR DE NUIT: a building entrance at 2 a.m. and the landing upstairs
         import json as _j
         from bpy_extras.object_utils import world_to_camera_view

@@ -407,7 +407,7 @@ def buttons(im, labels, t, t0, t1, pick=None, ab=False, title=None):
         x0 = 124 + n_ * 408; on = pick == txt; lab = (("A · ", "B · ")[n_] if ab else "") + txt; size = 40
         while d.textlength(lab, font=ImageFont.truetype(E.MONT, size)) > 350: size -= 2
         d.rounded_rectangle((x0, y, x0 + 388, y + 96), 48, fill=RED if on else (250, 250, 250), outline=RED, width=5); d.text((x0 + 194, y + 48), lab, font=ImageFont.truetype(E.MONT, size), fill=(255, 255, 255) if on else (30, 30, 34), anchor="mm")
-    if pick is None and not ab: d.text((540, y + 190), "ÉCRIS TON CHOIX EN COMMENTAIRE", font=ImageFont.truetype(E.MONT, 34), fill=(255, 255, 255), anchor="mm", stroke_width=5, stroke_fill=(0, 0, 0))
+    if pick is None and not ab and labels != C3: d.text((540, y + 190), "ÉCRIS TON CHOIX EN COMMENTAIRE", font=ImageFont.truetype(E.MONT, 34), fill=(255, 255, 255), anchor="mm", stroke_width=5, stroke_fill=(0, 0, 0))
     if pick is None and not ab:
         left = cl((t1 - t) / max(0.1, t1 - t0)); d.rounded_rectangle((124, y + 120, 920, y + 138), 9, fill=(30, 30, 34)); d.rounded_rectangle((124, y + 120, 124 + int(796 * left), y + 138), 9, fill=RED)
 

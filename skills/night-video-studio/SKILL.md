@@ -41,6 +41,23 @@ niche (230 k to 2.8 M views) all do the following, so every episode does it too:
 7. **Simple 2D characters** (round head, one bright colour) in dark sets. Detailed 3D characters did not pay.
 8. **Description**: hook sentence, "Nuit N", 2 or 3 hashtags (#horreur #creepypasta #survie).
 
+### What the top videos do that we now apply everywhere
+
+- Frame 0 shows the anomaly with a red tag on the phone screen ("TU N'ES PAS ENCORE RENTRÉ.").
+- One sentence, one framing: in a dialogue scene, wide shot, then the face of whoever speaks.
+- The previous vote is paid off inside the next episode: both outcomes are shown.
+- The final A/B can be solved only by returning viewers (a detail from the previous night): it feeds comments.
+- "À SUIVRE · NUIT N" on the last seconds; description "Abonne-toi pour la nuit N".
+- The camera moves to what the voice names (each rule as it is written, each hand as it is named).
+
+### Episode 2 assets
+
+`nuit2.py` adds: `handheld` (noise-driven camera, tremor grows with tension), `rain`, `motes` (dust in a beam),
+`steam`, `reveal` (phone torch: a lit render shows through a cone over a dark render of the same set),
+`seated` (characters behind a table), `key_shot`, `call_screen`, `black_hands`, `bedroom_door`. Blender views
+`--cam=home_entry|home_kitchen --home=dark|lit` (the mother's flat, Poly Haven CC0 furniture). `toon2d.char(mum=True)`
+draws the mother (no bracelet: the red bracelet identifies the double). `opensimplex` is required (`pip install opensimplex`).
+
 ### Steps and commands
 
 `pipeline/make.sh` wraps every step (paths `A` scripts, `B` assets; `EP` = episode module, default `nuit1`):
