@@ -59,6 +59,16 @@ niche (230 k to 2.8 M views) all do the following, so every episode does it too:
 - The last card names the next episode precisely ("NUIT 3 : LA NUIT DE TA MÈRE"), not a generic "à suivre".
 - Shares and saves come from family emotion; fear alone brings views but fewer shares.
 
+### Labels kit (`pipeline/tags.py`), from a 1.6 M-view recap format (22 k saves)
+
+A word stuck on a person or object states a fact in half a second; scenes change every 2 to 3 s. Our own drawings,
+no third-party art: `stamp_tag` (red rubber stamp), `label` (red strip), `name_plate` (gold), `live_bug`, `note`
+(handwritten note typed in with the voice), `poster` ("DISPARU" with a photo), `tape` (crime-scene tape),
+`rec_frame` (camcorder), `grin` (the double's grin painted on a wall: the series motif), `subscribe` (end card: the
+button turns to ABONNÉ, then "NUIT N" and two open questions). Call `tags.setup(E.MONT, E.HAND)` first.
+The hook sentence tells the whole premise as cause and consequence in one breath ("... et le soir même, il a trouvé
+un mot collé sur sa porte").
+
 ### Episode 2 assets
 
 `nuit2.py` adds: `handheld` (noise-driven camera, tremor grows with tension), `rain`, `motes` (dust in a beam),
