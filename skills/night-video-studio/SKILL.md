@@ -50,6 +50,15 @@ niche (230 k to 2.8 M views) all do the following, so every episode does it too:
 - "À SUIVRE · NUIT N" on the last seconds; description "Abonne-toi pour la nuit N".
 - The camera moves to what the voice names (each rule as it is written, each hand as it is named).
 
+### Emotion, from a 2.4 M-view non-horror reference
+
+- Arc: funny, then embarrassing, then sad, then a flip of point of view (the other person was suffering too).
+- After each scene, a short cut-away to whoever watches or waits (the mother): her reaction carries the emotion.
+- Warm, bright memories against the dark present: a change of palette tells the viewer "this is the past".
+- Story objects as cards (a ticket, a bubble with an icon) say a fact faster than a sentence.
+- The last card names the next episode precisely ("NUIT 3 : LA NUIT DE TA MÈRE"), not a generic "à suivre".
+- Shares and saves come from family emotion; fear alone brings views but fewer shares.
+
 ### Episode 2 assets
 
 `nuit2.py` adds: `handheld` (noise-driven camera, tremor grows with tension), `rain`, `motes` (dust in a beam),
