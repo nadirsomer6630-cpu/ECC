@@ -816,6 +816,51 @@ if SCENE == "valmont":
         g0 = world_to_camera_view(sc, cam, mathutils.Vector((2.3, 11.6, 0.0))); g1 = world_to_camera_view(sc, cam, mathutils.Vector((2.3, 11.6, 1.15)))
         c0 = world_to_camera_view(sc, cam, mathutils.Vector((3.75, 8.93, 2.5))); c1 = world_to_camera_view(sc, cam, mathutils.Vector((3.75, 8.93, 2.71)))
         _j.dump({"x": v.x, "y": 1 - v.y, "girl": [g0.x, 1 - g0.y, g1.x, 1 - g1.y], "clock": [c0.x, 1 - c0.y, c1.x, 1 - c1.y]}, open(OUT + "led.json", "w"))
+    elif view in ("bed_door", "bed_window"):   # LIVREUR DE NUIT, nuit 3: his childhood bedroom; --home=dark|lit as for the flat
+        import json as _j
+        from bpy_extras.object_utils import world_to_camera_view
+        lit = ARG("--home") == "lit"
+        PARQ = tex_mat("parq", "herringbone_parquet", 1.6, (0.9, 0.78, 0.66), 0.4); WALLB = mat("wallb", (0.42, 0.55, 0.68), 0, 0.85); PAINT = mat("paint", (0.78, 0.76, 0.7), 0, 0.85)
+        box("bfl", (0, 1.7, -0.01), (3.2, 3.4, 0.02), PARQ); box("bce", (0, 1.7, 2.5), (3.2, 3.4, 0.02), PAINT)
+        for sx in (-1, 1): box("bwl", (sx * 1.61, 1.7, 1.25), (0.02, 3.4, 2.5), WALLB)
+        box("bfront", (0, -0.01, 1.25), (3.2, 0.02, 2.5), WALLB)
+        box("bback_l", (-0.5, 3.41, 1.25), (2.2, 0.02, 2.5), WALLB); box("bback_r", (1.45, 3.41, 1.25), (0.3, 0.02, 2.5), WALLB)
+        box("bback_b", (0.95, 3.41, 0.45), (0.7, 0.02, 0.9), WALLB); box("bback_t", (0.95, 3.41, 2.2), (0.7, 0.02, 0.6), WALLB)
+        win_open = "--winopen" in sys.argv
+        for x in (0.62, 1.28): box("bwf", (x, 3.42, 1.4), (0.05, 0.06, 1.0), PAINT)
+        box("bwft", (0.95, 3.42, 1.9), (0.7, 0.06, 0.05), PAINT); box("bwfb", (0.95, 3.42, 0.9), (0.7, 0.08, 0.05), PAINT)
+        if win_open: box("bwleaf", (1.05, 3.1, 1.4), (0.04, 0.6, 0.95), GL, (0, 0, math.radians(-50)))
+        else: box("bwglass", (0.95, 3.42, 1.4), (0.62, 0.01, 0.95), mat("bglass", (0.04, 0.06, 0.1), 0, 0.04))
+        box("city", (0, 9, 2), (14, 0.1, 8), mat("night", (0.01, 0.015, 0.03), 0, 1, (0.04, 0.06, 0.12), 1.0))
+        for k in range(60): box("cw", (rnd.uniform(-4, 5), 8.9, rnd.uniform(-1.5, 3.5)), (0.25, 0.02, 0.3), mat("bcw%d" % k, (1, 1, 1), 0, 0.5, rnd.choice([(1.0, 0.7, 0.35), (0.5, 0.65, 1.0)]), rnd.uniform(0.6, 2.0)))
+        CURT = mat("curt", (0.7, 0.25, 0.22), 0, 0.95)
+        for k, x in enumerate((0.5, 1.4)): box("curt", (x + (0.08 if win_open and k else 0), 3.3, 1.35), (0.18, 0.08 + (0.12 if win_open else 0), 1.4), CURT, (0, 0, math.radians(15 if win_open and k else 0)))
+        # the bed of a child who grew up: low frame, blue duvet, a pillow, a worn plush rabbit
+        WOOD = mat("bwood", (0.55, 0.38, 0.24), 0, 0.6)
+        box("bedf", (-1.15, 1.9, 0.18), (0.95, 2.0, 0.36), WOOD); box("bedm", (-1.15, 1.9, 0.42), (0.9, 1.95, 0.14), mat("matt", (0.9, 0.9, 0.88), 0, 0.8))
+        box("duvet", (-1.15, 1.7, 0.52), (0.94, 1.5, 0.1), mat("duvet", (0.2, 0.3, 0.6), 0, 0.9)); box("pillow", (-1.15, 2.7, 0.55), (0.7, 0.35, 0.14), mat("pillow", (0.92, 0.92, 0.9), 0, 0.8))
+        box("headb", (-1.15, 2.92, 0.6), (0.95, 0.06, 0.8), WOOD)
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=0.1, location=(-0.95, 2.6, 0.7)); o = bpy.context.object; o.data.materials.append(mat("rabbit", (0.85, 0.82, 0.78), 0, 0.95))
+        for sx in (-1, 1): box("ear", (-0.95 + sx * 0.04, 2.6, 0.86), (0.03, 0.02, 0.14), mat("rabbit2", (0.85, 0.82, 0.78), 0, 0.95))
+        prop("SchoolDesk_01", (1.25, 1.2, 0), 0.75, math.radians(90)); prop("SchoolChair_01", (0.85, 1.2, 0), 0.85, math.radians(-90))
+        prop("alarm_clock_01", (1.25, 1.45, 0.76), 0.12); prop("Shelf_01", (1.5, 2.5, 0), 1.6, math.radians(90))
+        for k, (x, z, c) in enumerate(((-1.0, 1.55, (0.85, 0.3, 0.2)), (-1.35, 1.65, (0.2, 0.5, 0.85)), (1.55, 1.85, (0.95, 0.75, 0.2)))):
+            if x < 0: box("poster", (x, 3.39, z), (0.4, 0.01, 0.55), mat("pst%d" % k, c, 0, 0.7))
+            else: box("poster", (1.59, 1.1, z), (0.01, 0.45, 0.6), mat("pst%d" % k, c, 0, 0.7))
+        for k in range(26):                                           # glow-in-the-dark stars on the ceiling, from when he was small
+            box("star", (rnd.uniform(-1.4, 1.4), rnd.uniform(0.6, 3.2), 2.485), (0.05, 0.05, 0.005), mat("star%d" % k, (0.8, 1, 0.8), 0, 0.5, (0.55, 1.0, 0.6), 2.5 if not lit else 0.3), (0, 0, rnd.uniform(0, 1)))
+        box("rug", (0, 1.6, 0.006), (1.4, 1.0, 0.01), mat("brug", (0.6, 0.45, 0.2), 0, 0.95))
+        cyl("sock", (0, 1.7, 2.44), 0.035, 0.08, BLK)                  # the empty socket
+        box("switch", (-0.75, 0.0, 1.1), (0.08, 0.02, 0.12), mat("switch", (0.9, 0.9, 0.88), 0, 0.4))
+        mo = light("AREA", (0.95, 4.0, 1.5), 150 if not win_open else 190, (0.55, 0.68, 1.0), 0.9, (math.radians(90), 0, math.radians(180))); mo.visible_camera = False
+        light("POINT", (-0.2, 1.4, 2.2), 6 if not lit else 0, (0.5, 0.62, 1.0), 1.2)
+        if lit: light("AREA", (0, 0.3, 1.7), 220, (0.95, 0.97, 1.0), 1.2, (math.radians(-90), 0, 0)); light("POINT", (0, 1.7, 2.2), 60, (1.0, 0.96, 0.9), 0.5)
+        if view == "bed_door": cam = camera((-0.1, 0.2, 1.55), (0.15, 3.4, 1.15), 19)
+        else: cam = camera((-0.3, 1.2, 1.4), (0.95, 3.4, 1.35), 26)
+        bpy.context.view_layer.update(); pos = {}
+        for k_, pt in (("grin", (-0.5, 3.39, 1.55)), ("window", (0.95, 3.41, 1.4)), ("switch", (-0.75, 0.0, 1.1)), ("bed", (-1.15, 1.9, 0.55)), ("floor", (-0.3, 2.2, 0.0))):
+            v = world_to_camera_view(sc, cam, mathutils.Vector(pt)); pos[k_] = [v.x, 1 - v.y]
+        _j.dump(pos, open(OUT + "pos.json", "w"))
     elif view in ("home_entry", "home_kitchen"):   # LIVREUR DE NUIT, nuit 2: his mother's flat. --home=dark (moonlight only) or lit (even fill, revealed by the phone torch in 2D)
         import json as _j
         from bpy_extras.object_utils import world_to_camera_view
