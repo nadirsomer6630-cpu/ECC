@@ -53,11 +53,13 @@ words = []
 for k, t0 in line_t.items(): words += [dict(w, s=w["s"] + t0 + 0.1, e=w["e"] + t0 + 0.1, line=k) for w in REL[k]]
 
 HD = NEW + "n2hd/"
-ST = dict(N1.ST); ST.update({k: E.still(HD + f"{k}_0001.png") for k in ("kitlit", "kitdark", "entlit", "entdark")})
+ST = dict(N1.ST); ST.update({k: E.still(HD + f"{k}_0001.png") for k in ("kitlit", "kitdark", "kitlitbag", "kitdarkbag", "entlit", "entdark")})
 SW, SH = ST["kitdark"].size
-KP = json.load(open(HD + "kitlit_pos.json"))
+KP = json.load(open(HD + "kitlitbag_pos.json"))
 NOISE = OpenSimplex(7)
+import n2motion as MO; MO.bind(sys.modules[__name__])
 PSW, PSH = N1.PSW, N1.PSH
+FAR = 0.505 * 2304
 
 
 def amp(key, t, gain=6):
@@ -125,7 +127,7 @@ def breathe(t, k=1.0): return dict(lean=round(0.012 * k * float(np.sin(t * 2.4))
 # ---------------------------------------------------------------- shots
 def street_open(t, t0, t1):
     """Still in the street, phone in hand, rain. He stands, then starts to look up the road."""
-    kw = mixp(dict(look=(0.0, 0.8), brow=0.6, armR=(0.3, 2.0)), dict(look=(0.7, 0.0), brow=1.0, wide=1.2, armR=(0.3, 1.8)), ease((t - t0 - 0.6) / 0.5)); kw.update(breathe(t))
+    kw = mixp(dict(look=(0.0, 0.8), brow=0.6, armR=(0.3, 2.0)), dict(look=(0.7, 0.0), brow=1.0, wide=1.2, armR=(0.3, 1.8)), ease((t - t0 - 0.6) / 0.5)); kw.update(MO.alive(t, 1))
     sp = hero(1380, phone="R", mouth="line", blink=blink(t), **kw)
     im = put(ST["street2"], sp, SW * 0.42, SH * 1.0, mul=(0.78, 0.8, 0.95), rim=((255, 200, 140), -10, 0.6))
     im = E.spill(im, SW * 0.47, SH * 0.6, 220, 220, (120, 160, 255), 0.18)
@@ -217,9 +219,8 @@ def key_shot(t, t0, t1):
     lay = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(lay); o = (22, 18, 34, 255)
     d.polygon([(kx - 40, ky - 10), (kx + 40, ky - 26), (kx + 40, ky + 26), (kx - 40, ky + 10)], fill=(200, 200, 210, 255), outline=o)
     d.ellipse((kx + 20, ky - 60, kx + 130, ky + 60), fill=(205, 205, 215, 255), outline=o, width=6); d.ellipse((kx + 60, ky - 14, kx + 88, ky + 14), fill=(0, 0, 0, 0))
-    hx, hy = kx + 150, ky + 20; d.line((hx + 420, hy + 420, hx + 60, hy + 40), fill=o, width=186); d.line((hx + 420, hy + 420, hx + 60, hy + 40), fill=T2.HOOD, width=166)
-    d.line((hx + 92, hy + 74, hx + 72, hy + 52), fill=T2.REDB, width=168); d.ellipse((hx - 70, hy - 76, hx + 90, hy + 84), fill=T2.SKIN, outline=o, width=10)
-    d.rounded_rectangle((hx - 120, hy - 40, hx + 10, hy + 6), 22, fill=T2.SKIN, outline=o, width=8)
+    hx, hy = kx + 170, ky + 30; MO.sleeve(d, hx + 460, hy + 520, hx + 70, hy + 90, T2.HOOD, 150, cuff=T2.REDB)
+    MO.hand(d, hx, hy, np.radians(-62), 1.25, T2.SKIN, grip=0.85)
     im.paste(lay, (0, 0), lay)
     im = E.torch(im, 540 + 30 * NOISE.noise2(t, 5), 900, 760, 0.18, 1.1)                       # lit only by the phone in the other hand
     return E.view(im.resize((int(W * 1.2), int(H * 1.2)), Image.BICUBIC), t, t0, t1, 1.0, 1.08, 0.5, 0.48, drift=0.3)
@@ -260,13 +261,22 @@ def socket_xy(t, t0, t1): return E.view_xy((SW, SH), t, t0, t1, 1.0, 1.16, 0.5, 
 
 
 def seated(base, who, side, t, lit=1.0):
-    """A character sitting at an end of the table: drawn whole, then cut at the table top so the table hides the legs."""
-    cx = SW * (0.5 + side * 0.17); top = KP["table"][1] * SH + 20          # behind the table, facing us: the table hides them from the waist down
-    if who == "mum": sp = hero(760, mum=True, look=(0.6, 0.1), mouth=talk("m1", t) if L_("m1") < t < we("m1") else "line", brow=0.2, blink=blink(t, 0.7), armL=(0.5, 1.4), armR=(0.5, 1.4), **breathe(t))
-    elif who == "mum_l": sp = hero(760, mum=True, look=(0.0, 0.0), mouth=talk("l2", t) if L_("l2") < t < we("l2") else "o", wide=1.2, brow=0.6, blink=blink(t, 0.7), armL=(0.5, 1.4), armR=(0.5, 1.4), **breathe(t))
-    else: sp = T2.char(760, dark=True, look=(-0.6, 0.0))
-    sp = sp.copy(); cut = Image.new("L", sp.size, 0); ImageDraw.Draw(cut).rectangle((0, 0, sp.width, int(sp.height * 0.6)), fill=255); sp.putalpha(Image.fromarray(np.minimum(np.asarray(sp.getchannel("A")), np.asarray(cut))))
-    return put(base, sp, cx, top + sp.height * 0.4, shadow=False, mul=tuple(np.array((0.55, 0.58, 0.72)) * lit) if who != "dbl" else None, rim=((150, 180, 255), -side * 9, 0.7))
+    """A character on a real chair behind the table: drawn whole, cut at the table's far edge, breathing and moving."""
+    cx = KP["chairL" if side < 0 else "chairR"][0] * SW
+    if who in ("mum", "mum_l"):
+        key = "m1" if who == "mum" else "l2"; a = amp(key, t, 9) if L_(key) < t < we(key) else 0.0
+        kw = dict(mum=True, look=(0.6, 0.1), brow=0.2 + 0.3 * min(1, a), blink=blink(t, 0.7), mouth=talk(key, t) if a > 0 else "line"); kw.update(MO.gesture(t, 3, a)); kw.update(MO.alive(t, 3, 1.0, a))
+        sp = hero(760, **kw)
+    else:
+        kw = MO.alive(t, 9, 0.6); sp = T2.char(760, dark=True, look=(-0.6 + 0.2 * NOISE.noise2(t * 0.4, 2), 0.0), head=kw["head"])
+    # Seated: the hips are on the seat, so only the chest, the arms and the head rise above the table's far edge,
+    # and the chair's backrest shows around the shoulders.
+    sp = sp.copy(); vis = 0.56; cut = Image.new("L", sp.size, 0); ImageDraw.Draw(cut).rectangle((0, 0, sp.width, int(sp.height * vis)), fill=255); sp.putalpha(Image.fromarray(np.minimum(np.asarray(sp.getchannel("A")), np.asarray(cut))))
+    base = base.copy(); d = ImageDraw.Draw(base); bw = 150                      # the chair's tufted backrest, behind the shoulders
+    bw = 185; d.rounded_rectangle((cx - bw, FAR - 175, cx + bw, FAR + 10), 28, fill=(26, 20, 18), outline=(12, 10, 10), width=8)
+    for k in range(3):
+        for j in (0, 1, 4, 5): d.ellipse((cx - 150 + j * 60 - 5, FAR - 140 + k * 50 - 5, cx - 150 + j * 60 + 5, FAR - 140 + k * 50 + 5), fill=(14, 11, 10))
+    return put(base, sp, cx, FAR + sp.height * (1 - vis), shadow=False, mul=tuple(np.array((0.55, 0.58, 0.72)) * lit) if who != "dbl" else None, rim=((150, 180, 255), -side * 9, 0.7))
 
 
 def kitchen_dark(t, t0, t1, dbl=True):
@@ -275,37 +285,36 @@ def kitchen_dark(t, t0, t1, dbl=True):
     if dbl: im = seated(im, "dbl", 1, t)
     sp_ = 1 if L_("m1") < t < we("m1") + 0.4 else 0
     ty = KP["table"][1] - 0.12                                       # one sentence, one framing: wide, then her face, then his grin
-    if L_("m1") <= t < L_("d1"): v = E.view(im, t, L_("m1"), L_("d1"), 1.7, 1.8, 0.33, ty, drift=0.3)
-    elif L_("d1") <= t < L_("c1"): v = E.view(im, t, L_("d1"), L_("c1"), 1.75, 1.95, 0.67, ty, drift=0.3)
+    if L_("m1") <= t < L_("d1"): v = E.view(im, t, L_("m1"), L_("d1"), 1.7, 1.8, KP["chairL"][0], ty, drift=0.3)
+    elif L_("d1") <= t < L_("c1"): v = E.view(im, t, L_("d1"), L_("c1"), 1.75, 1.95, KP["chairR"][0], ty, drift=0.3)
     else: v = E.view(im, t, t0, t1, 1.0, 1.14, 0.5, 0.5, drift=0.3)
     return handheld(v, t, 0.8 + 0.6 * (t > L_("d1")))
 
 
 def black_hands(t, mode):
-    """In the dark. 'cold': a cold hand closes on his. 'two': two hands hold his two hands, a warm one on the left and on
-    the right one with a red thread bracelet, like his."""
-    im = Image.new("RGB", (W, H), (3, 3, 6)); lay = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(lay); o = (22, 18, 34, 255)
-    def my_hand(x, y, side):                                          # his hands, from the bottom of the frame
-        d.line((x + side * 120, H + 60, x, y + 40), fill=o, width=176); d.line((x + side * 120, H + 60, x, y + 40), fill=T2.HOOD, width=156)
-        if side > 0: d.line((x + 20, y + 120, x + 12, y + 92), fill=T2.REDB, width=158)
-        d.ellipse((x - 76, y - 76, x + 76, y + 76), fill=T2.SKIN, outline=o, width=10)
-    def other(x, y, side, cold):
-        sl, sk = ((12, 12, 18, 255), (40, 44, 60, 255)) if cold else ((196, 128, 138, 255), T2.SKIN)
-        ex = x + side * 700; d.line((ex, y - 160, x + side * 40, y - 20), fill=o, width=166); d.line((ex, y - 160, x + side * 40, y - 20), fill=sl, width=146)
-        if cold: d.line((x + side * 92, y - 44, x + side * 70, y - 37), fill=T2.REDB, width=150)
-        d.ellipse((x + side * 40 - 70, y - 90, x + side * 40 + 70, y + 50), fill=sk, outline=o, width=10)
-        for k in range(4): d.rounded_rectangle((x - side * 10 - 60 + k * 32, y - 20, x - side * 10 - 36 + k * 32, y + 90), 12, fill=sk, outline=o, width=5)
+    """In the dark. 'cold': a cold hand closes on his. 'two': two hands take his two hands, a warm one on the left and,
+    on the right, one with a red thread bracelet like his. Fingers close, the grip tightens, everything trembles."""
+    im = Image.new("RGB", (W, H), (3, 3, 6)); lay = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(lay)
+    tr = lambda k: 6 * NOISE.noise2(t * 9, k)
+    COLD_SK, COLD_SL, WARM_SL = (70, 74, 96, 255), (14, 14, 20, 255), (196, 128, 138, 255)
+    def mine(x, y, side):                                             # his hands, palms up, from the bottom
+        MO.sleeve(d, x + side * 160, H + 80, x + tr(1), y + 90, T2.HOOD, 150, cuff=T2.REDB if side > 0 else None)
+        MO.hand(d, x + tr(1), y, np.radians(side * 10), 1.25, T2.SKIN, grip=0.2)
+    def theirs(x, y, side, cold, q):                                  # theirs come in from above and close over his
+        ox = x + side * 520 * (1 - q); oy = y - 130 - 260 * (1 - q)
+        MO.sleeve(d, ox + side * 560, oy - 600, ox + tr(3), oy - 40, COLD_SL if cold else WARM_SL, 150, cuff=T2.REDB if cold else None)
+        g = min(1.0, max(0.0, (q - 0.6) / 0.4)); MO.hand(d, ox + tr(3), oy + 40, np.radians(180 - side * 15), 1.25, COLD_SK if cold else T2.SKIN, grip=0.2 + 0.7 * g)
     if mode == "cold":
-        q = ease((t - T_MAIN) / 0.35); my_hand(560, 1250, 1)
-        if q > 0: other(560 + (1 - q) * 300, 1250, 1, True)
-        lit = 0.55
+        q = ease((t - T_MAIN) / 0.45); mine(560, 1300, 1)
+        if q > 0: theirs(560, 1300, 1, True, q)
+        lit = 0.75
     else:
-        ql, qr = ease((t - T_GAUCHE) / 0.35), ease((t - T_DROITE) / 0.35); my_hand(330, 1250, -1); my_hand(750, 1250, 1)
-        if ql > 0 or t >= wt("l5", "mains"): other(330 - (1 - max(ql, 0.7 if t >= wt("l5", "mains") else 0)) * 300, 1250, -1, False)
-        if qr > 0 or t >= wt("l5", "mains"): other(750 + (1 - max(qr, 0.7 if t >= wt("l5", "mains") else 0)) * 300, 1250, 1, True)
-        lit = 0.5
-    im = Image.alpha_composite(im.convert("RGBA"), lay).convert("RGB"); im = E.torch(im, 540, 1200, 760, 0.12, lit + 0.35)
-    if mode == "two" and t >= T_BRAC: im = E.spill(im, 840, 1210, 120, 90, (255, 40, 30), 0.35 * cl((t - T_BRAC) / 0.3))
+        q0 = ease((t - wt("l5", "mains")) / 0.5); ql, qr = max(q0 * 0.85, ease((t - T_GAUCHE) / 0.4)), max(q0 * 0.85, ease((t - T_DROITE) / 0.4))
+        mine(330, 1300, -1); mine(750, 1300, 1)
+        if q0 > 0: theirs(330, 1300, -1, False, ql); theirs(750, 1300, 1, True, qr)
+        lit = 0.75
+    im = Image.alpha_composite(im.convert("RGBA"), lay).convert("RGB"); im = E.torch(im, 540, 1200, 820, 0.1, lit + 0.3)
+    if mode == "two" and t >= T_BRAC: im = E.spill(im, 760, 1060, 140, 100, (255, 40, 30), 0.4 * cl((t - T_BRAC) / 0.3))
     if mode == "two":                                                 # the camera goes to the hand that is named, then back to both
         z, cx = 1.0, 540
         for tt, zz, xx in ((T_GAUCHE, 1.45, 330), (T_DROITE, 1.45, 750), (wt("c2", "gauche"), 1.6, 330), (wt("c2", "droite"), 1.6, 750), (wt("c2", "toi"), 1.0, 540)):
@@ -316,32 +325,48 @@ def black_hands(t, mode):
 
 
 def bedroom_door(t):
-    """Seen from inside his room: the door closes, the strip of moonlight narrows, then the lock turns. From outside."""
-    im = Image.new("RGB", (W, H), (4, 4, 8)); d = ImageDraw.Draw(im); q = ease((t - T_PORTE) / 0.8); x0, x1, y0, y1 = 330, 750, 420, 1500
-    gap = int((x1 - x0) * (1 - q)); d.rectangle((x0 - 18, y0 - 18, x1 + 18, y1), fill=(10, 10, 14))
-    if gap > 0: d.rectangle((x1 - gap, y0, x1, y1), fill=(60, 76, 110)); d.polygon([(x1 - gap, y1), (x1, y1), (x1 + 160, H), (x1 - gap - 220, H)], fill=(26, 32, 48))
-    d.rectangle((x0, y0, x1 - gap, y1), fill=(18, 14, 12))
-    if gap > 4 and q > 0.05:                                          # his outline in the gap
-        sp = T2.char(900, dark=True, look=(-0.5, 0.0)); sx = x1 - gap * 0.5
-        sp_c = sp.crop((int(sp.width / 2 - gap / 2), 0, int(sp.width / 2 + gap / 2), sp.height)); im.paste(sp_c, (int(sx - sp_c.width / 2), y1 - sp.height + 40), sp_c)
-    if t >= T_EXT: d = ImageDraw.Draw(im); d.rounded_rectangle((x0 + 24, 940, x0 + 60, 1010), 10, fill=(60, 56, 50))
-    im = im.filter(ImageFilter.GaussianBlur(1.2))
-    return handheld(im, t, 1.0)
+    """Seen from inside his room: the door swings shut, the wedge of moonlight on the floor narrows with it, he is in the
+    gap until the last moment; then the key turns, from outside."""
+    room = Image.new("RGB", (W, H), (6, 6, 10)); d = ImageDraw.Draw(room)
+    d.rectangle((0, 1500, W, H), fill=(12, 11, 16)); d.rectangle((0, 1490, W, 1504), fill=(20, 18, 24))
+    ins = Image.eval(ST["entdark"].resize((420, 1080)), lambda v: int(min(255, v * 2.2)))
+    sp = T2.char(900, dark=True, look=(-0.5, 0.0)); ins.paste(sp, (int(210 - sp.width / 2), 1080 - sp.height + 60), sp)
+    a = 0.7 * (1 - ease((t - T_PORTE) / 0.9))
+    im = MO.door_open(room, ins, (330, 420, 750, 1500), a, hinge="right", leaf=_LEAF2, light=((120, 150, 220), 0.9))
+    if a <= 0.01 and t >= T_EXT - 0.2:                                # the lock: the thumb-turn rotates by itself
+        d = ImageDraw.Draw(im); r = ease((t - T_EXT) / 0.3); cx, cy = 380, 960
+        d.ellipse((cx - 22, cy - 22, cx + 22, cy + 22), fill=(150, 130, 90)); d.line((cx - 16 * np.cos(r * 1.57), cy - 16 * np.sin(r * 1.57), cx + 16 * np.cos(r * 1.57), cy + 16 * np.sin(r * 1.57)), fill=(40, 30, 20), width=8)
+    return handheld(im.filter(ImageFilter.GaussianBlur(0.8)), t, 1.0)
+_LEAF2 = MO.leaf_tex(seed=5)
+
+
+_LEAF4B = MO.leaf_tex(seed=7, num="4B")
+def front_door(t, t0, t1):
+    """His own front door, on the landing: not locked. He pushes it; it swings into the dark."""
+    global _WALL
+    if _WALL is None: _WALL = E.paper_tex(W, H, (120, 112, 100), fiber=0.05, seed=31).convert("RGB")
+    ins = Image.eval(ST["entdark"].resize((420, 1080)), lambda v: int(min(255, v * 1.6)))
+    a = 0.55 * ease((t - (t0 + 0.4)) / 1.6)
+    im = MO.door_open(_WALL, ins, (330, 420, 750, 1500), a, hinge="right", leaf=_LEAF4B)
+    lay = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(lay); ex = 750 - 420 * np.cos(np.radians(80 * a))
+    MO.sleeve(d, ex + 520, 1500, ex + 70, 1010, T2.HOOD, 150, cuff=T2.REDB); MO.hand(d, ex + 10, 960, np.radians(-80), 1.1, T2.SKIN, grip=0.1)
+    im = Image.alpha_composite(im.convert("RGBA"), lay).convert("RGB")
+    im = E.torch(im, 560, 900, 820, 0.25, 1.1)
+    return handheld(E.view(im.resize((int(W * 1.2), int(H * 1.2)), Image.BICUBIC), t, t0, t1, 1.0, 1.1, 0.5, 0.5, drift=0.3), t, 1.0)
+_WALL = None
 
 
 def torch_kitchen(t, t0, t1):
-    """The phone torch sweeps the kitchen: nobody at the table. A chair pulled out, a half-eaten plate. Then the bag."""
-    lx, ly = KP["chairL"]; rx, ry = KP["chairR"]; tx, ty = KP["table"]
-    if t < L_("l3"): p = ease((t - T_TORCH) / 1.6); x = SW * (0.3 + 0.4 * p); y = SH * (ty - 0.02)
-    else: p = ease((t - L_("l3")) / 0.6); x = SW * (0.5 + 0.17 * p); y = SH * (ty - 0.02)
+    """The phone torch sweeps the kitchen: nobody at the table, his plate half eaten. Then it finds the pulled-out chair and his bag on it."""
+    tx, ty = KP["table"]; bx, by = KP["bag"]
+    if t < L_("l3"): p = ease((t - T_TORCH) / 1.8); x = SW * (0.22 + 0.4 * p); y = SH * (ty - 0.03)
+    else: p = ease((t - L_("l3")) / 0.7); x = SW * (0.62 + (bx - 0.62) * p); y = SH * ((ty - 0.03) + (by - ty + 0.03) * p)
+    x += 18 * NOISE.noise2(t * 1.5, 7); y += 14 * NOISE.noise2(7, t * 1.5)                   # a torch held in a shaking hand
     on = 1.0 if t >= T_TORCH else 0.0
     if T_OFF - 0.6 < t < T_OFF: on = 0.4 + 0.6 * (NOISE.noise2(t * 30, 4) > -0.1)
     if t >= T_OFF: on = 0.0
-    im = reveal(ST["kitdark"], ST["kitlit"], x, y, 520 * on + 1)
-    if t >= L_("l3") - 0.2:                                           # his delivery bag on the chair, still steaming
-        bag = N1._bag(300).copy(); top_ = KP["table"][1] * SH + 20; ch_ = int(300 - 110); bag.putalpha(Image.fromarray(np.where(np.arange(300)[:, None] < ch_, np.asarray(bag.getchannel("A")), 0).astype(np.uint8)))
-        im = put(im, bag, SW * 0.67, top_ + 110, shadow=False, mul=(0.95, 0.92, 0.9) if on else (0.2, 0.2, 0.25))
-        if on: im = steam(im, t, SW * 0.67, KP["table"][1] * SH - 250, 1.0)
+    im = reveal(ST["kitdarkbag"], ST["kitlitbag"], x, y, 520 * on + 1)
+    if on and t >= L_("l3") - 0.2: im = steam(im, t, bx * SW, by * SH - 40, 1.0)
     if on > 0: im = motes(im, t, x, y, 420, 70, 0.9)
     if on <= 0: im = Image.eval(im, lambda v: int(v * 0.1))
     return handheld(E.view(im, t, t0, t1, 1.0, 1.12, 0.5, 0.5, drift=0.3), t, 1.0)
@@ -350,7 +375,8 @@ def torch_kitchen(t, t0, t1):
 def mum_behind(t, t0, t1):
     """He turns: his mother is standing in the corridor behind him, caught in the torch, worried."""
     base = reveal(ST["entdark"], ST["entlit"], SW * 0.5, SH * 0.5, 650)
-    kw = dict(mum=True, look=(0.0, 0.0), wide=1.15, brow=0.7, mouth=talk("l2", t) if L_("l2") < t < we("l2") else "line", blink=blink(t, 0.4), armL=(0.3, 1.5), armR=(0.1, 0.3)); kw.update(breathe(t))
+    a_ = amp("l2", t, 9) if L_("l2") < t < we("l2") else 0.0
+    kw = dict(mum=True, look=(0.0, 0.0), wide=1.15, brow=0.7 + 0.3 * min(1, a_), mouth=talk("l2", t) if a_ > 0 else "line", blink=blink(t, 0.4)); kw.update(MO.gesture(t, 5, a_)); kw.update(MO.alive(t, 5, 1.0, a_))
     sp = hero(1500, **kw); im = put(base, sp, SW * 0.5, SH * 0.98, mul=(0.95, 0.95, 1.0), rim=((200, 220, 255), 9, 0.4))
     return handheld(E.view(im, t, t0, t1, 1.04, 1.12, 0.5, 0.5, drift=0.3), t, 0.8)
 
@@ -407,7 +433,7 @@ def receipt(t, t0, stage):
 
 
 C0 = ("L'APPELER", "COURIR"); C1 = ("ALLUMER", "RESTER DANS LE NOIR"); C2 = ("LA GAUCHE", "LA DROITE")
-CUTS = [T_RUE, L_("m1"), L_("d1"), L_("c1")] + [L_(k) for k in ("h1", "c0", "a1", "a3", "r4", "b1", "b2", "b3", "b4", "r5", "l1", "l3", "c2")] + [L_("l2") - 0.05, we("l2") + 0.1, L_("k2")]
+CUTS = [T_RUE, L_("m1"), L_("d1"), L_("c1"), wt("b3", "entrée") - 0.1] + [L_(k) for k in ("h1", "c0", "a1", "a3", "r4", "b1", "b2", "b3", "b4", "r5", "l1", "l3", "c2")] + [L_("l2") - 0.05, we("l2") + 0.1, L_("k2")]
 
 
 def raw(i, t):
@@ -428,7 +454,8 @@ def raw(i, t):
         im = run_shot(t, L_("b1"), L_("b2")); g = ("night", 0.5)
         if t < L_("b1") + 1.1: btn = (C0, 0, 1, "COURIR")
     elif t < L_("b3"): im = arrive_shot(t, L_("b2"), L_("b3")); g = ("night", 0.5)
-    elif t < L_("b4"): im = corridor_shot(t, L_("b3"), L_("b4")); g = ("night", 0.5)
+    elif t < wt("b3", "entrée") - 0.1: im = front_door(t, L_("b3"), wt("b3", "entrée")); g = ("night", 0.45)
+    elif t < L_("b4"): im = corridor_shot(t, wt("b3", "entrée") - 0.1, L_("b4")); g = ("night", 0.5)
     elif t < L_("k1"):
         im = kitchen_dark(t, L_("b4"), L_("k1")); g = ("night", 0.55)
         if t >= L_("c1") - 0.05: btn = (C1, L_("c1"), L_("k1"), None)

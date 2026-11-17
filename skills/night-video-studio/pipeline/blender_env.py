@@ -841,7 +841,12 @@ if SCENE == "valmont":
         box("city", (0, 13, 2), (14, 0.1, 8), mat("night", (0.01, 0.015, 0.03), 0, 1, (0.04, 0.06, 0.12), 1.0))
         for k in range(90): box("cw", (rnd.uniform(-4, 4), 12.9, rnd.uniform(0.2, 3.8)), (0.25, 0.02, 0.3), mat("cw%d" % k, (1, 1, 1), 0, 0.5, rnd.choice([(1.0, 0.7, 0.35), (0.5, 0.65, 1.0)]), rnd.uniform(0.6, 2.0)))
         prop("dining_table", (0, 7.45, 0), 0.76, 0)
-        prop("dining_chair_02", (-1.0, 7.45, 0), 0.95, math.radians(-90)); prop("dining_chair_02", (1.0, 7.45, 0), 0.95, math.radians(90))
+        CH_ROT = float(ARG("--chairrot") or 0)
+        prop("dining_chair_02", (-0.45, 8.15, 0), 0.95, math.radians(CH_ROT)); prop("dining_chair_02", (0.85, 8.3, 0) if "--bag" in sys.argv else (0.45, 8.15, 0), 0.95, math.radians(CH_ROT + (35 if "--bag" in sys.argv else 0)))
+        if "--bag" in sys.argv:                                       # his delivery bag on the pulled-out chair
+            BAGM = mat("kbag", (0.75, 0.42, 0.12), 0, 0.8); bx, by, bz = 0.86, 8.25, 0.47
+            box("kbag", (bx, by, bz + 0.17), (0.32, 0.22, 0.34), BAGM, (0, 0, math.radians(-20))); box("kbagt", (bx, by, bz + 0.35), (0.2, 0.02, 0.07), mat("kbagh", (0.6, 0.32, 0.08), 0, 0.8), (0, 0, math.radians(-20)))
+            box("kbagl", (bx - 0.03, by - 0.11, bz + 0.2), (0.16, 0.005, 0.12), WH, (0, 0, math.radians(-20)))
         prop("carved_wooden_plate", (-0.62, 7.45, 0.8), 0.26, 0, fit="max"); prop("carved_wooden_plate", (0.62, 7.45, 0.8), 0.26, 0, fit="max")
         prop("wooden_bowl_01", (0.0, 7.6, 0.8), 0.26, 0, fit="max"); prop("jug_01", (0.2, 7.35, 0.8), 0.22)
         prop("electric_stove", (1.45, 8.75, 0), 0.9, math.radians(180)); prop("vintage_electric_kettle", (1.45, 8.85, 0.92), 0.22, math.radians(200))
@@ -863,7 +868,7 @@ if SCENE == "valmont":
         if view == "home_entry": cam = camera((0.05, 0.25, 1.55), (0.0, 6.5, 1.2), 24)
         else: cam = camera((0.0, 5.45, 1.5), (0.0, 7.6, 0.8), 20)
         bpy.context.view_layer.update(); pos = {}
-        for k_, pt in (("chairL", (-1.0, 7.45, 0.0)), ("chairR", (1.0, 7.45, 0.0)), ("table", (0.0, 7.3, 0.77)), ("door", (0.0, 5.0, 0.0)), ("side", (-0.64, 3.0, 1.0))):
+        for k_, pt in (("chairL", (-0.45, 8.15, 0.47)), ("chairR", (0.45, 8.15, 0.47)), ("bag", (0.86, 8.25, 0.82)), ("table", (0.0, 7.3, 0.77)), ("door", (0.0, 5.0, 0.0)), ("side", (-0.64, 3.0, 1.0))):
             v = world_to_camera_view(sc, cam, mathutils.Vector(pt)); pos[k_] = [v.x, 1 - v.y]
         _j.dump(pos, open(OUT + "pos.json", "w"))
     elif view in ("entry", "landing"):   # LIVREUR DE NUIT: a building entrance at 2 a.m. and the landing upstairs
