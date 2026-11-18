@@ -59,6 +59,15 @@ niche (230 k to 2.8 M views) all do the following, so every episode does it too:
 - The last card names the next episode precisely ("NUIT 3 : LA NUIT DE TA MÈRE"), not a generic "à suivre".
 - Shares and saves come from family emotion; fear alone brings views but fewer shares.
 
+### Series rhythm, from a 2.1 M-view account (median 243 k over 21 videos)
+
+- Parts of about 65 s, posted a few days apart; the post title is the choice: "Partie 1 | Tu ... ou tu ... ?".
+- First person: your hands and your phone at the bottom of a wide-lens frame; a companion talks with you.
+- Frame 0 is a title card: time, day, who you are, the situation, the dilemma.
+- Clue cards on objects; a small "Abonné · la partie 2 arrive" chip half-way.
+- End card: "TU FERAIS QUOI ?", two buttons with one line each on what it costs, "Écris-le en commentaire",
+  "Abonne-toi pour la partie 2".
+
 ### Labels kit (`pipeline/tags.py`), from a 1.6 M-view recap format (22 k saves)
 
 A word stuck on a person or object states a fact in half a second; scenes change every 2 to 3 s. Our own drawings,
