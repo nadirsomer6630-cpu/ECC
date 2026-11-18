@@ -68,6 +68,12 @@ niche (230 k to 2.8 M views) all do the following, so every episode does it too:
 - End card: "TU FERAIS QUOI ?", two buttons with one line each on what it costs, "Écris-le en commentaire",
   "Abonne-toi pour la partie 2".
 
+### Dialogue and humour, from an 893 k-view family sketch (15 % likes)
+
+- Dialogue scenes as shot / reverse shot: a close-up on whoever speaks, a new shot for every line.
+- One or two funny lines per part from the companion relieve the fear and raise likes and shares.
+- A caring habit of the mother (food, texts) works as a running gag, then as a clue.
+
 ### Labels kit (`pipeline/tags.py`), from a 1.6 M-view recap format (22 k saves)
 
 A word stuck on a person or object states a fact in half a second; scenes change every 2 to 3 s. Our own drawings,
