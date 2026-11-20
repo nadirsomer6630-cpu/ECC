@@ -121,14 +121,12 @@ def grin(im, t, t0, xy, r=180, drip=True):
     """The series motif: two round eyes and a toothed grin, drawn on a wall in white paint that runs."""
     if t < t0: return
     u = _cl((t - t0) / 0.6); lay = Image.new("RGBA", (int(r * 2.6), int(r * 3.2)), (0, 0, 0, 0)); d = ImageDraw.Draw(lay); c = (r * 1.3, r * 1.2); col = (236, 236, 244, 235)
-    for s in (-1, 1): d.ellipse((c[0] + s * r * 0.42 - r * 0.24, c[1] - r * 0.55, c[0] + s * r * 0.42 + r * 0.24, c[1] - r * 0.05), fill=col)
-    if u > 0.3:                                                       # the grin: a white crescent with the teeth cut in
-        d.chord((c[0] - r * 0.78, c[1] - r * 0.25, c[0] + r * 0.78, c[1] + r * 0.62), 8, 172, fill=col)
-        for k in range(-4, 5): d.line((c[0] + k * r * 0.16, c[1] + r * 0.2, c[0] + k * r * 0.16, c[1] + r * 0.6), fill=(0, 0, 0, 0), width=max(2, int(r * 0.035)))
+    import toon2d as _T
+    _T.monster_face(d, c[0], c[1] - r * 0.3, r * 1.25, style="paint")
     if drip:
         rg = np.random.default_rng(3)
         for k in range(6):
-            x = c[0] + rg.uniform(-0.7, 0.7) * r; y = c[1] + r * rg.uniform(0.2, 0.6); ln = r * rg.uniform(0.3, 1.2) * _cl((t - t0 - 0.4) / 1.5)
+            x = c[0] + rg.uniform(-0.55, 0.55) * r; y = c[1] + r * (0.62 - 0.35 * (abs(x - c[0]) / r) ** 2); ln = r * rg.uniform(0.3, 1.2) * _cl((t - t0 - 0.4) / 1.5)
             d.line((x, y, x, y + ln), fill=col, width=int(r * 0.04)); d.ellipse((x - r * 0.03, y + ln - r * 0.03, x + r * 0.03, y + ln + r * 0.03), fill=col)
     im.paste(lay, (int(xy[0] - lay.width / 2), int(xy[1] - r * 1.2)), lay)
 

@@ -128,8 +128,7 @@ def char(h=900, back=False, dark=False, head=(0.0, 0.0), look=(0.0, 0.0), wide=1
         ey = hy0 + 30; ex = 62; er = 44 * wide
         for s_ in (-1, 1):
             c = P(hx0 + s_ * ex + look[0] * 8, ey + look[1] * 5)
-            if dark:
-                d.ellipse((c[0] - er * S, c[1] - er * S * 0.92, c[0] + er * S, c[1] + er * S * 0.92), fill=(250, 250, 255, 255)); continue
+            if dark: continue
             if blink:
                 d.arc((c[0] - er * S, c[1] - er * S * 0.5, c[0] + er * S, c[1] + er * S * 0.5), 20, 160, fill=C["ol"], width=int(9 * S)); continue
             d.ellipse((c[0] - er * S - ow * 0.45, c[1] - er * S - ow * 0.45, c[0] + er * S + ow * 0.45, c[1] + er * S + ow * 0.45), fill=C["ol"])
@@ -142,9 +141,7 @@ def char(h=900, back=False, dark=False, head=(0.0, 0.0), look=(0.0, 0.0), wide=1
         if samir and not dark:                                        # the beard, under the mouth and along the jaw
             d.chord((*P(hx0 - R * 0.86, hy0 - R * 0.2), *P(hx0 + R * 0.86, hy0 + R * 1.02)), 18, 162, fill=(52, 38, 32, 255))
             d.ellipse((*P(mx - 46, my - 26), *P(mx + 46, my + 22)), fill=C["skin"])
-        if dark:
-            d.chord((*P(mx - 92, my - 70), *P(mx + 92, my + 26)), 10, 170, fill=(250, 250, 255, 255))
-            for q in range(-3, 4): d.line([P(mx + q * 22, my - 30), P(mx + q * 22, my + 30)], fill=(8, 8, 14, 255), width=int(4 * S))
+        if dark: c0 = P(hx0, hy0); monster_face(d, c0[0], c0[1], R * S, look=look)
         elif mouth == "o": d.ellipse((*P(mx - 20, my - 22), *P(mx + 20, my + 22)), fill=(60, 24, 30, 255), outline=C["ol"], width=int(6 * S))
         elif mouth == "open": d.chord((*P(mx - 40, my - 44), *P(mx + 40, my + 30)), 0, 180, fill=(60, 24, 30, 255), outline=C["ol"], width=int(6 * S))
         elif mouth == "frown": d.arc((*P(mx - 36, my - 4), *P(mx + 36, my + 44)), 200, 340, fill=C["ol"], width=int(10 * S))
@@ -159,6 +156,56 @@ def char(h=900, back=False, dark=False, head=(0.0, 0.0), look=(0.0, 0.0), wide=1
         im.alpha_composite(Image.merge("RGBA", (Image.new("L", im.size, 90), Image.new("L", im.size, 110), Image.new("L", im.size, 170), edge)))
     if crop_top: im = im.crop((0, 0, im.width, int(im.height * crop_top)))
     return im
+
+
+def monster_face(d, cx, cy, R, style="face", seed=7, look=(0.0, 0.0), skin=None):
+    """The double's face, drawn on a head of radius R centred at (cx, cy), in pixels.
+    Almond eyes slanted down towards the nose, one a little bigger, with a pin-point pupil; a wide crescent grin whose
+    corners climb into the cheeks, a dark-red mouth, two rows of uneven pointed teeth, and creases at the corners.
+    style="paint": the same face painted on a wall (no pupils, white paint, teeth cut out of it)."""
+    import random as _r
+    rg = _r.Random(seed); WHITE = (244, 242, 236, 255); INK = (8, 8, 14, 255)
+    def almond(ex, ey, w, h, tilt, scale):
+        pts = []
+        for k in range(40):
+            a = 2 * math.pi * k / 40; x = math.cos(a) * w * scale; y = math.sin(a) * h * scale * (1.0 if math.sin(a) > 0 else 0.8)
+            y += (abs(x) / (w * scale)) ** 2 * h * 0.25 * scale                                     # pointed corners
+            ca, sa = math.cos(tilt), math.sin(tilt); pts.append((ex + x * ca - y * sa, ey + x * sa + y * ca))
+        return pts
+    for side, scale in ((-1, 1.08), (1, 0.94)):
+        ex, ey = cx + side * R * 0.40, cy + R * 0.16; tilt = side * -0.32
+        pts = almond(ex, ey, R * 0.22, R * 0.15, tilt, scale)
+        d.polygon(pts, fill=WHITE)
+        bg_ = (skin or INK) if style == "face" else None                         # a heavy brow cuts the top of the eye, lower at the nose: menace
+        if bg_: d.polygon([(ex - side * R * 0.32, ey - R * 0.26), (ex + side * R * 0.30, ey - R * 0.26), (ex + side * R * 0.30, ey - R * 0.02), (ex - side * R * 0.32, ey - R * 0.16)], fill=bg_)
+        if style == "face":
+            px, py = ex + look[0] * R * 0.06, ey + look[1] * R * 0.04 + R * 0.01
+            d.ellipse((px - R * 0.035, py - R * 0.035, px + R * 0.035, py + R * 0.035), fill=INK)
+    hw, top, bot, corner = R * 0.74, cy + R * 0.50, cy + R * 0.92, cy + R * 0.30
+    def curve(depth, lift_k):
+        out = []
+        for k in range(41):
+            u = -1 + 2 * k / 40; x = cx + u * hw
+            y = corner + (depth - corner) * (1 - u * u) ** 0.85 - lift_k * R * 0.06 * u ** 4
+            out.append((x, y))
+        return out
+    lower, upper = curve(bot, 1.0), curve(top, 0.0)
+    mouth = lower + upper[::-1]
+    d.polygon(mouth, fill=(76, 10, 16, 255) if style == "face" else WHITE)
+    def tooth_row(line, down, n):
+        xs = [line[0][0] + (line[-1][0] - line[0][0]) * (0.1 + 0.8 * (k + 0.5) / n) for k in range(n)]
+        for x in xs:
+            j = min(range(len(line)), key=lambda q: abs(line[q][0] - x)); y = line[j][1]
+            c_ = 1 - abs(x - cx) / hw; wdt = R * (0.06 + rg.uniform(-0.008, 0.008)) * (0.6 + 0.4 * c_); ln = R * rg.uniform(0.15, 0.21) * (0.45 + 0.55 * c_)
+            tip = (x + rg.uniform(-0.01, 0.01) * R, y + ln if down else y - ln)
+            d.polygon([(x - wdt, y), (x + wdt, y), tip], fill=WHITE if style == "face" else (44, 40, 44, 255))
+    tooth_row(upper, True, 9); tooth_row(lower, False, 8)
+    if style == "face":
+        d.line(upper + [], fill=(20, 6, 10, 255), width=max(2, int(R * 0.025)))
+        for side in (-1, 1):                                             # the creases where the grin folds into the cheeks
+            x0, y0 = cx + side * hw, corner
+            d.arc((x0 - R * 0.14 + side * R * 0.02, y0 - R * 0.16, x0 + R * 0.14 + side * R * 0.02, y0 + R * 0.12), 200 if side < 0 else -20, 290 if side < 0 else 70, fill=(90, 92, 120, 255), width=max(2, int(R * 0.03)))
+    return mouth
 
 
 def hand_out(w=700, dark=True, bill=True, reach=1.0):

@@ -188,10 +188,10 @@ def facade_downstairs(t, t0, t1):
 @functools.lru_cache(maxsize=2)
 def fake_samir(h):
     """Samir's face on the landing, but the eyes are the double's: white, no pupils, and the grin."""
-    sp = T2.char(h, samir=True, mouth="line", brow=-0.4).copy(); d = ImageDraw.Draw(sp); s = h / 1000; cx = sp.width / 2
-    for side in (-1, 1): ex, ey = cx + side * 62 * s, (268 + 30) * s; d.ellipse((ex - 46 * s, ey - 44 * s, ex + 46 * s, ey + 44 * s), fill=(250, 250, 255))
-    my = (268 + 104) * s; d.chord((cx - 96 * s, my - 70 * s, cx + 96 * s, my + 30 * s), 8, 172, fill=(250, 250, 255), outline=(22, 18, 34), width=int(6 * s))
-    for q in range(-3, 4): d.line((cx + q * 23 * s, my - 26 * s, cx + q * 23 * s, my + 28 * s), fill=(22, 18, 34), width=max(2, int(4 * s)))
+    sp = T2.char(h, samir=True, mouth="line", blink=True, brow=0.0).copy(); d = ImageDraw.Draw(sp); s = h / 1000; cx, cy, R = sp.width / 2, 268 * s, 156 * s
+    sk = (196, 146, 108, 255)
+    for side in (-1, 1): d.ellipse((cx + side * 0.40 * R - 0.34 * R, cy + 0.19 * R - 0.36 * R, cx + side * 0.40 * R + 0.34 * R, cy + 0.19 * R + 0.2 * R), fill=sk)   # his own eyes, wiped
+    T2.monster_face(d, cx, cy, R, skin=sk)
     return sp
 
 
