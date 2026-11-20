@@ -67,8 +67,14 @@ def samir_cam(t, mood="happy"):
     bg = Image.eval(bg, lambda v: int(v * 0.8)); im = put(bg, sp, SW * 0.5 + 20 * NOISE.noise2(t * 3, 4), SH * 1.33 + 18 * abs(NOISE.noise2(t * 6, 5)), shadow=False, mul=(0.85, 0.88, 1.0), rim=((255, 190, 120), -14, 0.6))
     im = E.spill(im, SW * 0.5, SH * 0.6, 520, 360, (150, 190, 255), 0.12)
     im = rain(E.view(im, t, 0, 1, 1.0, 1.0, 0.5, 0.5, drift=0.2), t, 140, 0.45)
-    d = ImageDraw.Draw(im); d.rounded_rectangle((60, 200, 330, 250), 25, fill=(0, 0, 0, 160)); d.ellipse((80, 214, 102, 236), fill=(60, 220, 110))
-    d.text((116, 225), "Samir · appel vidéo", font=ImageFont.truetype(E.MONT, 26), fill=(255, 255, 255), anchor="lm")
+    # Always the same frame for his camera, so a viewer never mistakes him for you: the call UI, your face in the
+    # corner, and his name on a green pill.
+    sv = _self_view(200); m = Image.new("L", sv.size, 0); ImageDraw.Draw(m).rounded_rectangle((0, 0, sv.width - 1, sv.height - 1), 26, fill=255)
+    im.paste(sv, (W - sv.width - 70, 380), m); d = ImageDraw.Draw(im); d.rounded_rectangle((W - sv.width - 70, 380, W - 70, 380 + sv.height), 26, outline=(255, 255, 255), width=4)
+    d.rounded_rectangle((70, 1360, 360, 1430), 35, fill=(30, 140, 80)); d.ellipse((92, 1384, 114, 1406), fill=(160, 255, 190))
+    d.text((128, 1395), "SAMIR", font=ImageFont.truetype(E.MONT, 38), fill=(255, 255, 255), anchor="lm")
+    d.rounded_rectangle((60, 200, 330, 250), 25, fill=(0, 0, 0, 160)); d.ellipse((80, 214, 102, 236), fill=(60, 220, 110))
+    d.text((116, 225), "appel vidéo", font=ImageFont.truetype(E.MONT, 26), fill=(255, 255, 255), anchor="lm")
     return handheld(im, t, 2.0 if mood in ("scared", "angry") else 1.3, seed=3)
 
 
@@ -118,7 +124,9 @@ def hero_face(t, t0, t1):
     kw = dict(look=(0.0, 0.6), brow=0.9, wide=1.1, mouth="frown", blink=blink(t)); kw.update(MO.alive(t, 1, 1.0))
     sp = hero(2500, **kw); im = put(N2.soft("street2") if hasattr(N2, "soft") else ST["street2"].filter(ImageFilter.GaussianBlur(5)), sp, SW * 0.47, SH * 1.275, shadow=False, mul=(0.68, 0.7, 0.82), rim=((255, 190, 120), -14, 0.5))
     im = E.spill(im, SW * 0.47, SH * 0.78, 520, 330, (120, 160, 255), 0.12)
-    return rain(E.view(im, t, t0, t1, 1.0, 1.07, 0.5, 0.47, drift=0.6), t, 140, 0.4)
+    im = rain(E.view(im, t, t0, t1, 1.0, 1.07, 0.5, 0.47, drift=0.6), t, 140, 0.4); d = ImageDraw.Draw(im)
+    d.rounded_rectangle((70, 1360, 290, 1430), 35, fill=(91, 51, 201)); d.text((180, 1395), "TOI", font=ImageFont.truetype(E.MONT, 38), fill=(255, 255, 255), anchor="mm")
+    return im
 
 
 def notif(im, t, t0, title, body, y=150, hot=False):
