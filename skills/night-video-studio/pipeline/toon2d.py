@@ -16,7 +16,7 @@ BAG, BAG_D = (196, 138, 70, 255), (150, 100, 48, 255)
 
 def char(h=900, back=False, dark=False, head=(0.0, 0.0), look=(0.0, 0.0), wide=1.0, brow=0.0, mouth="line", blink=False,
          armL=(0.08, 0.1), armR=(0.08, 0.1), legs=(0.0, 0.0), lean=0.0, sweat=False, phone=None, bag=None, bill=False,
-         cap=True, pack=True, glow=None, crop_top=None, mum=False):
+         cap=True, pack=True, glow=None, crop_top=None, mum=False, samir=False):
     """Angles in radians. arm=(shoulder, elbow): 0 hangs down, positive swings outwards and up. legs=(left, right)
     swing forward (+) or back (-), drawn as a sideways stride. head=(tilt, nod). phone/bag: "L" or "R" hand."""
     S = h / 1000 * 2; Wc, Hc = int(700 * S), int(1000 * S)
@@ -27,6 +27,8 @@ def char(h=900, back=False, dark=False, head=(0.0, 0.0), look=(0.0, 0.0), wide=1
         C = dict(skin=(8, 8, 14, 255), skin_d=(8, 8, 14, 255), hood=(10, 10, 16, 255), hood_d=(6, 6, 10, 255), cap=(12, 10, 20, 255), cap_d=(6, 5, 12, 255), pants=(6, 6, 10, 255), shoe=(14, 14, 20, 255), ol=(60, 62, 90, 255))
     else:
         C = dict(skin=SKIN, skin_d=SKIN_D, hood=HOOD, hood_d=HOOD_D, cap=CAP, cap_d=CAP_D, pants=PANTS, shoe=SHOE, ol=OL)
+    if samir:                                                         # Samir, his best friend: same company, green cap and bag, a short beard
+        C.update(skin=(196, 146, 108, 255), skin_d=(166, 118, 84, 255), hood=(58, 64, 82, 255), hood_d=(44, 48, 62, 255), cap=(46, 150, 96, 255), cap_d=(30, 108, 68, 255), pants=(34, 34, 40, 255))
     if mum:                                                           # his mother: a soft rose cardigan, a grey bun, no cap, no bag
         C.update(hood=(196, 128, 138, 255), hood_d=(160, 96, 108, 255), pants=(64, 58, 76, 255), shoe=(90, 70, 60, 255)); cap = False; pack = False
     def capsule(a, b, w, fill, outline=True):
@@ -59,7 +61,7 @@ def char(h=900, back=False, dark=False, head=(0.0, 0.0), look=(0.0, 0.0), wide=1
         cx_, cy_ = ex + side * math.sin(a1 + a2) * 92, ey + math.cos(a1 + a2) * 92
         capsule(P(cx_, cy_), P(cx_ + side * math.sin(a1 + a2) * 8, cy_ + math.cos(a1 + a2) * 8), 58, C["hood_d"], outline=False)       # cuff
         hand = P(hx_ + side * math.sin(a1 + a2) * 22, hy_ + math.cos(a1 + a2) * 22)
-        if side == 1 and not dark and not mum:                                    # the red thread bracelet on his right wrist
+        if side == 1 and not dark and not mum and not samir:                                    # the red thread bracelet on his right wrist
             bx, by = hx_ + side * math.sin(a1 + a2) * 2, hy_ + math.cos(a1 + a2) * 2
             capsule(P(bx, by), P(bx + side * math.sin(a1 + a2) * 5, by + math.cos(a1 + a2) * 5), 60, REDB, outline=False)
         return hand
@@ -137,6 +139,9 @@ def char(h=900, back=False, dark=False, head=(0.0, 0.0), look=(0.0, 0.0), wide=1
             by = ey - er - 22 - (10 if wide > 1.15 else 0)             # eyebrows: brow > 0 lifts the inner end (worry)
             d.line([P(hx0 + s_ * (ex - 34), by - brow * 30), P(hx0 + s_ * (ex + 38), by + brow * 14)], fill=C["ol"], width=int(12 * S))
         my = hy0 + 108; mx = hx0 + look[0] * 6
+        if samir and not dark:                                        # the beard, under the mouth and along the jaw
+            d.chord((*P(hx0 - R * 0.86, hy0 - R * 0.2), *P(hx0 + R * 0.86, hy0 + R * 1.02)), 18, 162, fill=(52, 38, 32, 255))
+            d.ellipse((*P(mx - 46, my - 26), *P(mx + 46, my + 22)), fill=C["skin"])
         if dark:
             d.chord((*P(mx - 92, my - 70), *P(mx + 92, my + 26)), 10, 170, fill=(250, 250, 255, 255))
             for q in range(-3, 4): d.line([P(mx + q * 22, my - 30), P(mx + q * 22, my + 30)], fill=(8, 8, 14, 255), width=int(4 * S))
