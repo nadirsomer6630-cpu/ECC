@@ -60,20 +60,27 @@ def door_open(bg, inside, frame, a, hinge="right", leaf=None, light=None):
 
 # ---------------------------------------------------------------- hands
 def hand(d, x, y, ang, scale=1.0, skin=(236, 190, 150, 255), grip=0.0, back=False, ol=(22, 18, 34, 255)):
-    """A drawn hand: palm, four fingers that curl with `grip`, a thumb. `ang` points the fingers (radians, 0 = up)."""
-    s = scale; ca, sa = np.cos(ang), np.sin(ang)
+    """A drawn hand in one piece: a rounded palm, four fingers and a thumb that grow out of it, all outlined once
+    (every outline first, then every fill) so no seam shows. Fingers curl with `grip`; `ang` points them (0 = up)."""
+    s = scale; ca, sa = np.cos(ang), np.sin(ang); o = 8 * s
     def P(u, v): return (x + (u * ca + v * sa) * s, y + (u * sa - v * ca) * s)     # u across the palm, v along the fingers
-    palm = [P(-60, -50), P(60, -50), P(66, 50), P(-62, 52)]
-    d.polygon(palm, fill=ol); d.polygon([P(-52, -42), P(52, -42), P(58, 44), P(-54, 46)], fill=skin)
-    for k, u in enumerate((-45, -15, 15, 45)):
-        L = (62 + (8 if k in (1, 2) else 0)) * (1 - 0.55 * grip)
-        a0, a1 = P(u, 46), P(u * (1 - 0.1 * grip), 46 + L)
-        d.line([a0, a1], fill=ol, width=int(34 * s)); d.line([a0, a1], fill=skin, width=int(24 * s))
-        r = 12 * s; d.ellipse((a1[0] - r - 5 * s, a1[1] - r - 5 * s, a1[0] + r + 5 * s, a1[1] + r + 5 * s), fill=ol); d.ellipse((a1[0] - r, a1[1] - r, a1[0] + r, a1[1] + r), fill=skin)
-        if grip > 0.3:                                                # knuckle crease when the fingers close
-            m = P(u, 46 + L * 0.45); d.line([(m[0] - 8 * s, m[1]), (m[0] + 8 * s, m[1])], fill=ol, width=int(3 * s))
-    tb, te = P(-58 if not back else 58, 0), P((-100 if not back else 100) * (1 - 0.4 * grip), 40 + 20 * grip)
-    d.line([tb, te], fill=ol, width=int(36 * s)); d.line([tb, te], fill=skin, width=int(26 * s))
+    fingers = []
+    for k, u in enumerate((-40, -14, 12, 38)):
+        L = (58 + (10 if k in (1, 2) else 0) - (8 if k == 3 else 0)) * (1 - 0.6 * grip)
+        fingers.append((P(u, 30), P(u * (1 - 0.15 * grip), 30 + L)))
+    tb, te = P(-52 if not back else 52, -10), P((-92 if not back else 92) * (1 - 0.35 * grip), 26 + 22 * grip)
+    def shapes(pad, fill):
+        r = 52 * s + pad; d.rounded_rectangle((x - 1, y - 1, x + 1, y + 1), 1, fill=fill)
+        palm = [P(-58, -46), P(58, -46), P(60, 40), P(-60, 40)]
+        d.polygon(palm, fill=fill)
+        if pad: d.line(palm + [palm[0]], fill=fill, width=int(2 * pad), joint="curve")
+        for a_, b_ in fingers + [(tb, te)]:
+            w = (24 if (a_, b_) != (tb, te) else 26) * s + 2 * pad; d.line([a_, b_], fill=fill, width=int(w))
+            for p_ in (a_, b_): d.ellipse((p_[0] - w / 2, p_[1] - w / 2, p_[0] + w / 2, p_[1] + w / 2), fill=fill)
+    shapes(o, ol); shapes(0, skin)
+    for (a_, _), (b_, _) in zip(fingers, fingers[1:]):                     # the gaps between fingers
+        mx, my = (a_[0] + b_[0]) / 2, (a_[1] + b_[1]) / 2; tx, ty = mx + (fingers[1][1][0] - fingers[1][0][0]) * 0.35, my + (fingers[1][1][1] - fingers[1][0][1]) * 0.35
+        d.line([(mx, my), (tx, ty)], fill=ol, width=max(2, int(4 * s)))
 
 
 def sleeve(d, x0, y0, x1, y1, col, w=150, ol=(22, 18, 34, 255), cuff=None, folds=True):

@@ -104,20 +104,40 @@ def MOOD(t):
 
 
 # ---------------------------------------------------------------- first person: your hand, your phone
+def iphone(screen, t, sw=430):
+    """A phone with the proportions of an iPhone 13 (about 1 : 2.05): narrow, tall, rounded corners, a notch.
+    The app screens are drawn at 580 x 880; they are scaled to the phone's width and sit under the status bar."""
+    sc = screen.convert("RGB"); k = sw / sc.width; app = sc.resize((sw, int(sc.height * k)), Image.LANCZOS)
+    sh = int(sw * 2.16); scr = Image.new("RGB", (sw, sh), sc.getpixel((sc.width // 2, sc.height - 4)))
+    top = sc.getpixel((sc.width // 2, 6)); ImageDraw.Draw(scr).rectangle((0, 0, sw, 90), fill=top)
+    scr.paste(app, (0, 90)); d = ImageDraw.Draw(scr)
+    lum = sum(top) / 3; fg = (255, 255, 255) if lum < 140 else (20, 20, 24)
+    d.text((44, 44), "21:4" + str(7 + int(t // 60) % 3), font=E.fI("SemiBold", 26), fill=fg, anchor="lm")
+    for q in range(4): d.rectangle((sw - 92 + q * 9, 52 - q * 4, sw - 86 + q * 9, 56), fill=fg)
+    d.rounded_rectangle((sw - 52, 38, sw - 20, 56), 5, outline=fg, width=2); d.rectangle((sw - 49, 41, sw - 32, 53), fill=fg)
+    d.rounded_rectangle((sw / 2 - 70, 12, sw / 2 + 70, 52), 20, fill=(0, 0, 0))                      # the notch
+    d.rounded_rectangle((sw / 2 - 70, sh - 26, sw / 2 + 70, sh - 18), 4, fill=fg)                    # the home bar
+    bz = 16; body = Image.new("RGBA", (sw + 2 * bz, sh + 2 * bz), (0, 0, 0, 0)); bd = ImageDraw.Draw(body)
+    bd.rounded_rectangle((0, 0, body.width - 1, body.height - 1), 66, fill=(28, 30, 36), outline=(150, 154, 166), width=4)
+    m = Image.new("L", scr.size, 0); ImageDraw.Draw(m).rounded_rectangle((0, 0, sw - 1, sh - 1), 52, fill=255); body.paste(scr, (bz, bz), m)
+    for yy, hh in ((170, 60), (250, 60)): bd.rounded_rectangle((-2, yy, 4, yy + hh), 3, fill=(120, 124, 134))
+    bd.rounded_rectangle((body.width - 4, 210, body.width + 2, 300), 3, fill=(120, 124, 134))
+    gl = Image.new("RGBA", body.size, (0, 0, 0, 0)); ImageDraw.Draw(gl).polygon([(0, 0), (body.width * 0.6, 0), (0, body.height * 0.4)], fill=(255, 255, 255, 16)); body.alpha_composite(gl)
+    return body
+
+
 def pov(t, screen, bg="street2", dark=0.75, tilt=0.0):
     """First person: the street (or your room) in front of you, out of focus; your hand holds the phone at the bottom."""
     base = Image.eval(ST[bg].filter(ImageFilter.GaussianBlur(12)), lambda v: int(v * dark))
     base = rain(E.view(base, t, 0, 1, 1.0, 1.0, 0.5, 0.45, drift=0.4), t, 160, 0.4) if bg.startswith("street") else E.view(base, t, 0, 1, 1.0, 1.0, 0.5, 0.45, drift=0.4)
-    ph = E.phone(screen.convert("RGB")).crop((E.PX0 - 40, E.PY0 - 40, E.PX1 + 40, E.PY1 + 40)); ph = ph.resize((int(ph.width * 1.12), int(ph.height * 1.12)), Image.LANCZOS)
-    m = Image.new("L", ph.size, 0); ImageDraw.Draw(m).rounded_rectangle((20, 20, ph.width - 21, ph.height - 21), 90, fill=255)
-    phr = ph.convert("RGBA"); phr.putalpha(m); ang = 4 * NOISE.noise2(t * 0.7, 2) + tilt; phr = phr.rotate(ang, expand=True, resample=Image.BICUBIC)
-    x, y = int(W / 2 - phr.width / 2 + 14 * NOISE.noise2(t * 0.9, 6)), int(H * 0.2 + 14 * NOISE.noise2(6, t * 0.9))
+    phr = iphone(screen, t, 400); phr = phr.rotate(4 * NOISE.noise2(t * 0.7, 2) + tilt, expand=True, resample=Image.BICUBIC)
+    x, y = int(W / 2 - phr.width / 2 + 14 * NOISE.noise2(t * 0.9, 6)), int(H * 0.27 + 14 * NOISE.noise2(6, t * 0.9))
     im = base.convert("RGBA"); im.alpha_composite(phr, (x, y))
     lay = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(lay)                      # your fingers around the phone
     hx, hy = x + phr.width - 20, y + phr.height - 70                    # your hand holds the bottom-right corner, off the screen
-    MO.sleeve(d, W + 60, H + 160, hx + 90, hy + 150, T2.HOOD, 190, cuff=T2.REDB)
-    MO.hand(d, hx + 30, hy + 40, np.radians(-40), 1.2, T2.SKIN, grip=0.9)
-    for k in range(3): d.rounded_rectangle((x + phr.width - 46, y + 520 + k * 120, x + phr.width + 30, y + 600 + k * 120), 34, fill=T2.SKIN, outline=(22, 18, 34, 255), width=8)
+    MO.sleeve(d, W + 60, H + 160, hx + 80, hy + 130, T2.HOOD, 160, cuff=T2.REDB)
+    MO.hand(d, hx + 26, hy + 34, np.radians(-40), 1.0, T2.SKIN, grip=0.9)
+    for k in range(3): fy = y + phr.height * (0.42 + 0.1 * k); d.rounded_rectangle((x + phr.width - 38, fy, x + phr.width + 24, fy + 64), 28, fill=T2.SKIN, outline=(22, 18, 34, 255), width=7)
     im.alpha_composite(lay); im = E.spill(im.convert("RGB"), W / 2, H * 0.55, 560, 700, (150, 190, 255), 0.1)
     return handheld(im, t, 1.0, seed=8)
 
@@ -173,6 +193,31 @@ def map_screen(t):
     d.text((50, PSH - 100), "arrivée dans 10 min · 2,4 km", font=E.fI("SemiBold", 30), fill=(60, 60, 70), anchor="lm")
     d.rectangle((0, 0, PSW, 130), fill=(91, 51, 201)); d.text((PSW / 2, 80), "SUIVI DE LIVRAISON", font=E.fI("Bold", 34), fill=(255, 255, 255), anchor="mm")
     return sc
+
+
+def clue_card(t, t0):
+    """The two Samirs on one sheet, as the bus story does with its clipboard: a fair comparison the viewer reads in 2 s.
+    The lines are handwritten in as the camera arrives, the ticks and crosses land last."""
+    bg = Image.eval(ST["entdark"].resize((W, H)).filter(ImageFilter.GaussianBlur(10)), lambda v: int(v * 0.55)).convert("RGBA")
+    w, h = 800, 900; p = E.paper_tex(w, h, (248, 246, 236), fiber=0.04, seed=61); d = ImageDraw.Draw(p)
+    d.rounded_rectangle((w / 2 - 130, -20, w / 2 + 130, 60), 18, fill=(150, 150, 158)); d.rounded_rectangle((w / 2 - 70, -10, w / 2 + 70, 30), 10, fill=(90, 92, 100))
+    fh, fb = ImageFont.truetype(E.HAND, 60), ImageFont.truetype(E.HAND, 54); n = int((t - t0) * 90)
+    rows = [("SAMIR AU TÉLÉPHONE", None), ("trempé par la pluie", True), ("à 10 min, sur le pont", True), ("", None),
+            ("SAMIR À TA PORTE", None), ("pas une goutte", False), ("déjà là, tête baissée", False)]
+    y = 110
+    for txt, ok in rows:
+        if not txt: y += 40; continue
+        part = txt[:max(0, n)]; n -= len(txt)
+        col = (205, 24, 24) if ok is None else (30, 30, 40)
+        d.text((70, y), part, font=fh if ok is None else fb, fill=col)
+        if ok is not None and len(part) == len(txt):
+            mx, my = w - 110, y + 32
+            if ok: d.line([(mx - 26, my), (mx - 6, my + 22), (mx + 30, my - 26)], fill=(30, 140, 70), width=10, joint="curve")
+            else: d.line([(mx - 24, my - 24), (mx + 24, my + 24)], fill=(205, 24, 24), width=10); d.line([(mx + 24, my - 24), (mx - 24, my + 24)], fill=(205, 24, 24), width=10)
+        y += 92
+    p = p.rotate(-2 + 0.3 * np.sin(t * 2), expand=True, resample=Image.BICUBIC)
+    E.drop_shadow(bg, p, (int(W / 2 - p.width / 2), int(1110 - p.height / 2)), blur=24, off=(12, 24), alpha=170)
+    return handheld(bg.convert("RGB"), t, 0.6, seed=14)
 
 
 def hero_face(t, t0, t1):
@@ -330,14 +375,15 @@ def hud(im, t):
 
 
 C1 = ("OUVRE", "NE BOUGE PAS")
-CUTS = [T_10] + [L_(k) for k in ("n2", "s1", "n3", "s2", "n4", "pm1", "fs1", "s3", "x1", "s4", "y1", "y2", "s5")]
+CUTS = [T_10, wt("s1", "fais") - 0.15] + [L_(k) for k in ("n2", "s1", "n3", "s2", "n4", "pm1", "fs1", "s3", "x1", "s4", "y1", "y2", "s5")]
 
 
 def raw(i, t):
     g = ("night", 0.4); hd = True; btn = None; labels = []; nt = []
     if t < L_("n2"): im = pov(t, app_accepted(t)); g = None
     elif t < L_("s1"): im = pov(t, call_screen(t)); g = None; labels = [("plate", L_("n2") + 0.2, "TON MEILLEUR POTE")]
-    elif t < L_("n3"): im = samir_cam(t, "happy"); g = None; labels = [("stamp", wt("s1", "dix") - 0.1, "+18 €")]
+    elif t < wt("s1", "fais") - 0.15: im = samir_cam(t, "happy"); g = None; labels = [("stamp", wt("s1", "dix") - 0.1, "+18 €")]
+    elif t < L_("n3"): im = hero_face(t, wt("s1", "fais") - 0.15, L_("s2")); g = ("night", 0.2)
     elif t < L_("s2"): im = hero_face(t, L_("n3"), L_("s2")); g = ("night", 0.2)
     elif t < L_("n4"): im = samir_cam(t, "happy"); g = None
     elif t < L_("pm1"):
@@ -347,10 +393,10 @@ def raw(i, t):
     elif t < L_("s3"):
         im = peephole(t, L_("fs1"), L_("s3")); g = ("night", 0.35); labels = [("label", L_("fs1") + 0.3, "PAR LE JUDAS")]
         if t >= T_SEC: labels = [("stampL", T_SEC + 0.05, "PAS UNE GOUTTE")]
-    elif t < T_10: im = samir_cam(t, "worried"); g = None
+    elif t < T_10: im = samir_cam(t, "worried"); g = None; labels = [("label", L_("s3") + 0.2, "LE VRAI · TREMPÉ")]
     elif t < L_("c1"): im = pov(t, map_screen(t)); g = None
     elif t < L_("x1"):
-        im = pov(t, chat_screen(L_("y1") - 0.5)); g = None; btn = (C1, L_("c1"), L_("x1"), None)
+        im = clue_card(t, L_("c1") - 0.1); g = None; btn = (C1, L_("c1"), L_("x1"), None)
     elif t < L_("s4"):
         im = landing_open(t, L_("x1"), L_("s4")) if t < wt("x1", "ouvre") + 0.6 or t >= T_PALIER - 0.3 else Image.new("RGB", (W, H), (3, 3, 6)); g = None
         if t < L_("x1") + 1.1: btn = (C1, 0, 1, "OUVRE")

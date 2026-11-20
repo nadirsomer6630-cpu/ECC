@@ -37,6 +37,12 @@ def char(h=900, back=False, dark=False, head=(0.0, 0.0), look=(0.0, 0.0), wide=1
             for p in (a, b): d.ellipse((p[0] - r, p[1] - r, p[0] + r, p[1] + r), fill=C["ol"])
         d.line([a, b], fill=fill, width=int(w * S)); r = w * S / 2
         for p in (a, b): d.ellipse((p[0] - r, p[1] - r, p[0] + r, p[1] + r), fill=fill)
+    def limb(pts, w, fill):
+        r1 = (w * S + ow * 2) / 2; r2 = w * S / 2
+        for a, b in zip(pts, pts[1:]): d.line([a, b], fill=C["ol"], width=int(w * S + ow * 2))
+        for p in pts: d.ellipse((p[0] - r1, p[1] - r1, p[0] + r1, p[1] + r1), fill=C["ol"])
+        for a, b in zip(pts, pts[1:]): d.line([a, b], fill=fill, width=int(w * S))
+        for p in pts: d.ellipse((p[0] - r2, p[1] - r2, p[0] + r2, p[1] + r2), fill=fill)
     def disc(c, r, fill, outline=True):
         if outline: d.ellipse((c[0] - r * S - ow, c[1] - r * S - ow, c[0] + r * S + ow, c[1] + r * S + ow), fill=C["ol"])
         d.ellipse((c[0] - r * S, c[1] - r * S, c[0] + r * S, c[1] + r * S), fill=fill)
@@ -51,13 +57,13 @@ def char(h=900, back=False, dark=False, head=(0.0, 0.0), look=(0.0, 0.0), wide=1
         # seen from the front or the back, a step is a knee that lifts (a > 0) or a leg that trails (a < 0), not a sideways swing
         lift, trail = max(0.0, a), max(0.0, -a); hx = side * 42 + lx * 0.3
         fx = hx + side * 4; fy = hipy + 286 - lift * 105 - trail * 22; kx = (hx + fx) / 2 + side * lift * 26; ky = (hipy + fy) / 2 - lift * 12
-        capsule(P(hx, hipy), P(kx, ky), 62, C["pants"]); capsule(P(kx, ky), P(fx, fy), 58, C["pants"])
+        limb([P(hx, hipy), P(kx, ky), P(fx, fy)], 60, C["pants"])
         sx = fx + (12 if not back else 0) * side; g_ = 1 + (0.28 * lift - 0.1 * trail) * (-1 if back else 1)
         capsule(P(sx - 20 * g_, fy + 30), P(sx + 26 * g_, fy + 30), 40 * g_, C["shoe"])
     def arm(side, ang, front=True):
-        a1, a2 = ang; sx = side * 112 + lx; ex = sx + side * math.sin(a1) * 118; ey = sh_y + 18 + math.cos(a1) * 118
+        a1, a2 = ang; sx = side * 100 + lx; ex = sx + side * math.sin(a1) * 118; ey = sh_y + 18 + math.cos(a1) * 118
         hx_ = ex + side * math.sin(a1 + a2) * 112; hy_ = ey + math.cos(a1 + a2) * 112
-        capsule(P(sx, sh_y + 18), P(ex, ey), 60, C["hood"]); capsule(P(ex, ey), P(hx_, hy_), 56, C["hood"])
+        limb([P(sx, sh_y + 18), P(ex, ey), P(hx_, hy_)], 58, C["hood"])
         cx_, cy_ = ex + side * math.sin(a1 + a2) * 92, ey + math.cos(a1 + a2) * 92
         capsule(P(cx_, cy_), P(cx_ + side * math.sin(a1 + a2) * 8, cy_ + math.cos(a1 + a2) * 8), 58, C["hood_d"], outline=False)       # cuff
         hand = P(hx_ + side * math.sin(a1 + a2) * 22, hy_ + math.cos(a1 + a2) * 22)
@@ -102,6 +108,10 @@ def char(h=900, back=False, dark=False, head=(0.0, 0.0), look=(0.0, 0.0), wide=1
     capsule(P(lx, 420), P(hx0 * 0.7 + lx * 0.3, 400), 70, C["skin_d"] if not back else C["hood"], outline=False)
     if not back: d.pieslice((*P(lx - 96, 380), *P(lx + 96, 470)), 180, 360, fill=C["hood_d"])                           # the hood collar
     disc(P(hx0, hy0), R, C["skin"])
+    if back and not dark and not mum:                                   # seen from behind: short hair down to the nape
+        HC = (30, 24, 22, 255) if samir else (62, 44, 34, 255); c = P(hx0, hy0)
+        d.chord((c[0] - R * S, c[1] - R * S, c[0] + R * S, c[1] + R * S), -200, 20, fill=HC)
+        d.ellipse((c[0] - R * S * 0.94, c[1] - R * S * 0.6, c[0] + R * S * 0.94, c[1] + R * S * 0.86), fill=HC)
     if not back and not dark:                                         # soft shading on the lower cheek
         sh = Image.new("RGBA", im.size, (0, 0, 0, 0)); sd = ImageDraw.Draw(sh); c = P(hx0, hy0)
         sd.ellipse((c[0] - R * S, c[1] - R * S, c[0] + R * S, c[1] + R * S), fill=(190, 120, 90, 70)); sd.ellipse((c[0] - R * S * 1.15, c[1] - R * S * 1.35, c[0] + R * S * 0.9, c[1] + R * S * 0.72), fill=(0, 0, 0, 0))
@@ -110,10 +120,25 @@ def char(h=900, back=False, dark=False, head=(0.0, 0.0), look=(0.0, 0.0), wide=1
     if mum:
         c = P(hx0, hy0); HAIR, HAIR_D = (140, 128, 124, 255), (110, 100, 98, 255)
         bc = P(hx0 + 40, hy0 - R - 18); d.ellipse((bc[0] - 62 * S - ow, bc[1] - 52 * S - ow, bc[0] + 62 * S + ow, bc[1] + 52 * S + ow), fill=C["ol"]); d.ellipse((bc[0] - 62 * S, bc[1] - 52 * S, bc[0] + 62 * S, bc[1] + 52 * S), fill=HAIR_D)
-        d.chord((c[0] - (R + 6) * S - ow, c[1] - (R + 8) * S - ow, c[0] + (R + 6) * S + ow, c[1] + R * 0.5 * S), 180, 360, fill=C["ol"]); d.chord((c[0] - (R + 6) * S, c[1] - (R + 8) * S, c[0] + (R + 6) * S, c[1] + R * 0.5 * S - ow), 180, 360, fill=HAIR)
+        outer = [(c[0] + (R + 8) * S * math.cos(math.radians(a_)), c[1] + (R + 8) * S * math.sin(math.radians(a_))) for a_ in range(158, 383, 5)]
+        if back: inner = [(c[0] + R * S * 0.7 * math.cos(math.radians(a_)), c[1] + R * S * 0.2) for a_ in range(20, -200, -20)]
+        else:
+            inner = [(c[0] + R * S * 0.86, c[1] + R * S * 0.3), (c[0] + R * S * 0.78, c[1] - R * S * 0.1)]
+            inner += [(c[0] + R * S * (0.62 - 1.24 * k / 8), c[1] - R * S * (0.42 + 0.06 * math.sin(k * 1.4))) for k in range(9)]       # the fringe
+            inner += [(c[0] - R * S * 0.78, c[1] - R * S * 0.1), (c[0] - R * S * 0.86, c[1] + R * S * 0.3)]
+        d.polygon(outer + inner, fill=HAIR, outline=C["ol"], width=int(ow))
         d.arc((c[0] - R * 0.6 * S, c[1] - (R + 4) * S, c[0] + R * 0.9 * S, c[1] - R * 0.1 * S), 200, 300, fill=HAIR_D, width=int(8 * S))
-        for s_ in (-1, 1): d.ellipse((*P(hx0 + s_ * (R + 2) - 22, hy0 - 10), *P(hx0 + s_ * (R + 2) + 22, hy0 + 70)), fill=HAIR)
-    if cap:
+    if cap and samir:                                                 # Samir wears a knitted beanie, not the courier's cap
+        c = P(hx0, hy0); top = P(0, hy0 - R - 46)[1]; cuff = P(0, hy0 - R * 0.32)[1]
+        dome = (c[0] - (R + 6) * S, top, c[0] + (R + 6) * S, cuff + (R * 0.9) * S)
+        d.pieslice((dome[0] - ow, dome[1] - ow, dome[2] + ow, dome[3]), 180, 360, fill=C["ol"]); d.pieslice(dome, 180, 360, fill=C["cap"])
+        for k in range(-5, 6): x_ = c[0] + k * R * 0.17 * S; d.line([(x_, top + (R * 0.5 + abs(k) * 6) * S * 0.6), (x_, cuff - 8 * S)], fill=C["cap_d"], width=int(5 * S))   # knit ribs
+        cb = (c[0] - (R + 12) * S, cuff - 42 * S, c[0] + (R + 12) * S, cuff + 10 * S)
+        d.rounded_rectangle((cb[0] - ow, cb[1] - ow, cb[2] + ow, cb[3] + ow), 20 * S, fill=C["ol"]); d.rounded_rectangle(cb, 20 * S, fill=C["cap_d"])
+        for k in range(-9, 10): x_ = c[0] + k * R * 0.105 * S; d.line([(x_, cb[1] + 6 * S), (x_, cb[3] - 6 * S)], fill=tuple(int(v * 0.8) for v in C["cap_d"][:3]) + (255,), width=int(4 * S))
+        pp = (c[0] + 10 * S, top + 4 * S); r_ = 34 * S
+        d.ellipse((pp[0] - r_ - ow, pp[1] - r_ - ow, pp[0] + r_ + ow, pp[1] + r_ + ow), fill=C["ol"]); d.ellipse((pp[0] - r_, pp[1] - r_, pp[0] + r_, pp[1] + r_), fill=(236, 236, 228, 255) if not dark else C["cap"])
+    elif cap:
         c = P(hx0, hy0); top = hy0 - R - 4
         d.pieslice((c[0] - (R + 10) * S - ow, P(0, top)[1] - ow, c[0] + (R + 10) * S + ow, P(0, hy0 + R * 0.6)[1]), 180, 360, fill=C["ol"])
         d.pieslice((c[0] - (R + 10) * S, P(0, top)[1], c[0] + (R + 10) * S, P(0, hy0 + R * 0.6)[1] - ow), 180, 360, fill=C["cap"])

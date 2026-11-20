@@ -33,7 +33,9 @@ for k, who, t in json.load(open(S + "lines.json")):
     for model, seed in (("eleven_v3", 13), ("eleven_v3", 26), ("eleven_v3", 39), ("eleven_multilingual_v2", 13), ("eleven_multilingual_v2", 26)):
         p = gen(k, who, t, model, seed)
         if not p: continue
-        h = heard(p); sc = difflib.SequenceMatcher(None, norm(h), norm(t)).ratio(); d = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", p], capture_output=True, text=True).stdout)
+        import soundfile as _sf; _a, _sr = _sf.read(p); h = heard(p); sc = difflib.SequenceMatcher(None, norm(h), norm(t)).ratio()
+        if np.abs(_a[-int(0.15 * _sr):]).mean() > 0.02: sc -= 0.5                                   # the take was cut at the end: reject it
+        sc = sc; d = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", p], capture_output=True, text=True).stdout)
         if sc > best[0]: best = (sc, p, h, model, d)
         if sc >= 0.93: break
     if best[1]: shutil.copy(best[1], S + f"fin/{k}.wav")
