@@ -1,16 +1,1 @@
-[["n1","narr","[bas, tendu] Imagine. Hier, tu as refusé la commande pour chez toi. Ce soir… quelqu'un d'autre l'a acceptée."],
-["n2","narr","[posé] Samir. Ton meilleur pote. Il t'appelle en vidéo."],
-["s1","samir","[rigolard, énergique] Frérot ! Dix-huit euros de pourboire pour livrer chez toi ! Tu me fais un prix ou quoi ?"],
-["n3","narr","[inquiet] Tu lui dis de ne pas y aller. Il rigole."],
-["s2","samir","[moqueur, chaleureux] T'inquiète ! Et dis à ta mère de me garder une assiette, hein."],
-["n4","narr","[tendu] Ta mère t'écrit : Samir est en bas. Il sonne."],
-["s3","samir","[perdu, la voix qui baisse] Attends… je suis encore à dix minutes, moi. Qui a sonné chez toi ?"],
-["c1","narr","[posé] Tu lui dis d'ouvrir… ou de ne pas bouger ?"],
-["x1","narr","[lent, glacé] Elle ouvre. Sur le palier, Samir. Il sourit. Beaucoup trop."],
-["s4","samir","[terrifié, chuchoté] Frérot… pourquoi je suis chez toi ?"],
-["x2","narr","[grave] Fin de service."],
-["r8","narr","[posé, net] Il était en bas, pas à dix minutes. Règle numéro huit : il peut prendre le visage de ceux que tu aimes."],
-["y1","narr","[tendu, rapide] Tu lui écris : ne bouge pas. N'ouvre à personne."],
-["y2","narr","[chuchoté, glacé] Elle répond : il frappe. Il dit mon prénom… avec ta voix."],
-["s5","samir","[déterminé, en colère] J'arrive. Je vais le voir de mes yeux."],
-["c2","narr","[posé, pressant] Tu laisses Samir monter… ou tu l'arrêtes ? Toi, tu ferais quoi ?"]]
+[["n1", "narr", "[bas, tendu] Imagine. Hier, tu as refusé la commande pour chez toi. Ce soir… quelqu'un d'autre l'a acceptée."], ["n2", "narr", "[posé] Samir. Ton meilleur pote. Il t'appelle en vidéo."], ["s1", "samir", "[rigolard, énergique] Frérot ! Dix-huit euros de pourboire pour livrer chez toi ! Tu me fais un prix ou quoi ?"], ["n3", "narr", "[inquiet] Tu lui dis de ne pas y aller. Il rigole."], ["s2", "samir", "[moqueur, chaleureux] T'inquiète ! Et dis à ta mère de me garder une assiette, hein."], ["n4", "narr", "[tendu] Ta mère t'écrit : Samir est en bas. Il sonne."], ["pm1", "narr", "[bas, tendu] Chez toi, ta mère colle son œil au judas."], ["mm1", "mere", "[chuchoté, inquiète mais douce] Samir ? C'est toi, mon grand ?"], ["fs1", "samir", "[calme, poli, trop lent] Oui, madame. J'ai votre commande. Ouvrez."], ["pm2", "narr", "[tendu] Dehors, il pleut des cordes. Lui… il est parfaitement sec."], ["s3", "samir", "[perdu, la voix qui baisse] Attends… je suis encore à dix minutes, moi. Qui a sonné chez toi ?"], ["c1", "narr", "[posé] Tu lui dis d'ouvrir… ou de ne pas bouger ?"], ["x1", "narr", "[lent, glacé] Elle ouvre. Sur le palier, Samir. Il sourit. Beaucoup trop."], ["s4", "samir", "[terrifié, chuchoté] Frérot… pourquoi je suis chez toi ?"], ["x2", "narr", "[grave] Fin de service."], ["r8", "narr", "[posé, net] Il était en bas, pas à dix minutes. Règle numéro huit : il peut prendre le visage de ceux que tu aimes."], ["y1", "narr", "[tendu, rapide] Tu lui écris : ne bouge pas. N'ouvre à personne."], ["y2", "narr", "[chuchoté, glacé] Elle répond : il frappe. Il dit mon prénom… avec ta voix."], ["s5", "samir", "[déterminé, en colère] J'arrive. Je vais le voir de mes yeux."], ["c2", "narr", "[posé, pressant] Tu laisses Samir monter… ou tu l'arrêtes ? Toi, tu ferais quoi ?"]]

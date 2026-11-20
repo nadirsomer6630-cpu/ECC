@@ -16,7 +16,7 @@ hero, put, cl, ease, xf, blink = N1.hero, N1.put, N1.cl, N1.ease, N1.xf, N1.blin
 handheld, rain, motes, NOISE = N2.handheld, N2.rain, N2.motes, N2.NOISE
 TG.setup(E.MONT, E.HAND)
 VO, TMP = NEW + "elv11/fin/", NEW + "n4tmp/"; os.makedirs(TMP, exist_ok=True)
-ORDER = ["n1", "n2", "s1", "n3", "s2", "n4", "s3", "c1", "x1", "s4", "x2", "r8", "y1", "y2", "s5", "c2"]
+ORDER = ["n1", "n2", "s1", "n3", "s2", "n4", "pm1", "mm1", "fs1", "pm2", "s3", "c1", "x1", "s4", "x2", "r8", "y1", "y2", "s5", "c2"]
 SCRIPT = {n: re.sub(r"\[[^\]]*\]\s*", "", t) for n, w, t in json.load(open(NEW + "elv11/lines.json")) if n in ORDER}
 VO_A = {k: G.voice(VO + f"{k}.wav", lp=None) for k in ORDER}
 _cache = TMP + "rel.json"; _sig = {k: [SCRIPT[k], len(VO_A[k])] for k in ORDER}
@@ -34,7 +34,7 @@ T = 0.05; line_t = {}
 def at(k, gap):
     global T
     line_t[k] = T; T += dur[k] + gap
-at("n1", 0.3); at("n2", 0.25); at("s1", 0.3); at("n3", 0.25); at("s2", 0.35); at("n4", 0.3); at("s3", 0.35); at("c1", 1.0)
+at("n1", 0.3); at("n2", 0.25); at("s1", 0.3); at("n3", 0.25); at("s2", 0.35); at("n4", 0.3); at("pm1", 0.2); at("mm1", 0.3); at("fs1", 0.35); at("pm2", 0.35); at("s3", 0.35); at("c1", 1.0)
 at("x1", 0.3); at("s4", 0.4); at("x2", 0.5); at("r8", 0.4)
 t_rew = T; T += 0.9
 at("y1", 0.3); at("y2", 0.35); at("s5", 0.4); at("c2", 3.2)
@@ -42,7 +42,7 @@ D = round(T, 2); N = int(D * FPS); print("duration", D)
 def L_(k): return line_t[k] - 0.12
 def wt(k, frag, n=0): return line_t[k] + [w["s"] for w in REL[k] if frag in E.norm(w["w"])][n]
 def we(k): return line_t[k] + dur[k]
-T_ACC = wt("n1", "quelqu") - 0.1; T_SONNE = wt("n4", "sonne") - 0.1; T_BAS = wt("n4", "bas") - 0.1; T_10 = wt("s3", "dix") - 0.1
+T_ACC = wt("n1", "quelqu") - 0.1; T_SONNE = wt("n4", "sonne") - 0.1; T_BAS = wt("n4", "bas") - 0.1; T_10 = wt("s3", "dix") - 0.1; T_SEC = wt("pm2", "sec") - 0.1; T_PLUIE = wt("pm2", "pleut") - 0.1
 T_PALIER = wt("x1", "palier") - 0.05; T_TROP = wt("x1", "trop") - 0.1; T_FRAPPE = wt("y2", "frappe") - 0.1; T_VOIX = wt("y2", "voix") - 0.1
 words = []
 for k, t0 in line_t.items(): words += [dict(w, s=w["s"] + t0 + 0.1, e=w["e"] + t0 + 0.1, line=k) for w in REL[k]]
@@ -66,7 +66,10 @@ def samir_cam(t, mood="happy"):
     sp = hero(2400, **kw); bg = ST["street2"].transform(ST["street2"].size, Image.AFFINE, (-1, 0, SW, 0, 1, 0)).filter(ImageFilter.GaussianBlur(10))   # his street, mirrored
     bg = Image.eval(bg, lambda v: int(v * 0.8)); im = put(bg, sp, SW * 0.5 + 20 * NOISE.noise2(t * 3, 4), SH * 1.33 + 18 * abs(NOISE.noise2(t * 6, 5)), shadow=False, mul=(0.85, 0.88, 1.0), rim=((255, 190, 120), -14, 0.6))
     im = E.spill(im, SW * 0.5, SH * 0.6, 520, 360, (150, 190, 255), 0.12)
-    im = rain(E.view(im, t, 0, 1, 1.0, 1.0, 0.5, 0.5, drift=0.2), t, 140, 0.45)
+    im = rain(E.view(im, t, 0, 1, 1.0, 1.0, 0.5, 0.5, drift=0.2), t, 140, 0.45); d = ImageDraw.Draw(im, "RGBA"); rg = np.random.default_rng(31)
+    for k in range(16):                                               # he is soaked: drops run down his cap and his face
+        x = rg.uniform(260, 820); y0 = rg.uniform(420, 1100); y = y0 + ((t * rg.uniform(60, 160) + rg.uniform(0, 300)) % 260)
+        d.ellipse((x - 9, y - 14, x + 9, y + 14), fill=(190, 220, 255, 170)); d.ellipse((x - 3, y - 8, x + 2, y - 2), fill=(255, 255, 255, 200))
     # Always the same frame for his camera, so a viewer never mistakes him for you: the call UI, your face in the
     # corner, and his name on a green pill.
     sv = _self_view(200); m = Image.new("L", sv.size, 0); ImageDraw.Draw(m).rounded_rectangle((0, 0, sv.width - 1, sv.height - 1), 26, fill=255)
@@ -117,6 +120,59 @@ def pov(t, screen, bg="street2", dark=0.75, tilt=0.0):
     for k in range(3): d.rounded_rectangle((x + phr.width - 46, y + 520 + k * 120, x + phr.width + 30, y + 600 + k * 120), 34, fill=T2.SKIN, outline=(22, 18, 34, 255), width=8)
     im.alpha_composite(lay); im = E.spill(im.convert("RGB"), W / 2, H * 0.55, 560, 700, (150, 190, 255), 0.1)
     return handheld(im, t, 1.0, seed=8)
+
+
+import cv2
+@functools.lru_cache(maxsize=1)
+def _fisheye_maps(w, h, k=0.55):
+    """Barrel distortion of a door peephole: the centre is magnified, the edges are squeezed into a circle."""
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32); cx, cy = w / 2, h / 2; R = min(w, h) * 0.47
+    dx, dy = (xx - cx) / R, (yy - cy) / R; r = np.sqrt(dx * dx + dy * dy) + 1e-6; rs = np.tan(r * k * 1.9) / np.tan(k * 1.9)
+    return (cx + dx / r * rs * R * 1.25).astype(np.float32), (cy + dy / r * rs * R * 1.25).astype(np.float32), (r <= 1.0)
+
+
+def peephole(t, t0, t1, who=True):
+    """What your mother sees through the peephole: the landing bent into a circle, and 'Samir', head down, dry."""
+    base = ST["land"].resize((W, H)).copy()
+    if who:
+        sp = T2.char(1250, samir=True, head=(0.0, 0.9 + 0.1 * np.sin(t * 0.6)), look=(0.0, 0.9), mouth="line", blink=True); base = put(base, sp, W * 0.5, H * 0.98, shadow=True, mul=(0.85, 0.85, 0.9))
+    base = Image.eval(base, lambda v: int(min(255, v * 1.15)))
+    mx, my, m = _fisheye_maps(W, H); a = cv2.remap(np.asarray(base), mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+    ring = cv2.GaussianBlur(m.astype(np.float32), (0, 0), 14)[..., None]; a = (a * ring).astype(np.uint8)
+    im = Image.fromarray(a); d = ImageDraw.Draw(im)
+    for k in range(3): d.ellipse((W / 2 - W * 0.47 - k * 8, H / 2 - W * 0.47 - k * 8, W / 2 + W * 0.47 + k * 8, H / 2 + W * 0.47 + k * 8), outline=(20 + 10 * k, 18, 16), width=6)
+    z = 1.0 + 0.25 * ease((t - T_SEC) / 0.6)                        # on "sec", the eye leans in
+    return handheld(E.view(im.resize((int(W * 1.2), int(H * 1.2))), t, t0, t1, z, z + 0.04, 0.5, 0.5, drift=0.2), t, 0.6, seed=12)
+
+
+def mum_door(t, t0, t1):
+    """Your mother, close, her face against the door in the dark hall: the reaction shot."""
+    a = speaking("mm1", t); kw = dict(mum=True, look=(0.7, -0.1), blink=blink(t, 0.4), mouth="o" if a > 0.3 else "line", brow=0.8, wide=1.1)
+    kw.update(MO.alive(t, 5, 1.0, a)); sp = hero(2300, **kw)
+    bg = Image.eval(ST["entdark"].filter(ImageFilter.GaussianBlur(9)), lambda v: int(v * 0.9))
+    im = put(bg, sp, SW * 0.44, SH * 1.18, shadow=False, mul=(0.7, 0.72, 0.86), rim=((255, 220, 160), 14, 0.7))
+    im = E.spill(im, SW * 0.8, SH * 0.45, 200, 600, (255, 210, 150), 0.18)                         # the light from the landing, under the door
+    return handheld(E.view(im, t, t0, t1, 1.0, 1.06, 0.48, 0.44, drift=0.3), t, 0.8, seed=5)
+
+
+def map_screen(t):
+    """The delivery app's map: home is the red pin; Samir's green dot is still crossing the bridge, 2.4 km away."""
+    sc = Image.new("RGBA", (PSW, PSH), (228, 232, 238, 255)); d = ImageDraw.Draw(sc); rg = np.random.default_rng(4)
+    for k in range(16): x, y = rg.integers(-60, PSW), rg.integers(160, PSH); d.rounded_rectangle((x, y, x + rg.integers(90, 220), y + rg.integers(70, 180)), 10, fill=(214, 218, 226))
+    d.rectangle((0, 560, PSW, 640), fill=(160, 196, 232))                                          # the river
+    for x in (110, 290, 470): d.line((x, 150, x + 60, PSH), fill=(255, 255, 255), width=26)
+    for y in (300, 760): d.line((0, y, PSW, y - 40), fill=(255, 255, 255), width=26)
+    route = [(320, 820), (330, 700), (318, 600), (300, 460), (300, 300), (420, 250)]; d.line(route, fill=(91, 51, 201), width=12, joint="curve")
+    d.ellipse((396, 196, 444, 244), fill=(205, 24, 24)); d.polygon([(400, 232), (440, 232), (420, 268)], fill=(205, 24, 24)); d.ellipse((410, 210, 430, 230), fill=(255, 255, 255))
+    d.rounded_rectangle((300, 150, 560, 196), 14, fill=(255, 255, 255)); d.text((430, 173), "4B · CHEZ TOI", font=E.fI("Bold", 26), fill=(205, 24, 24), anchor="mm")
+    p = cl((t - T_10 + 2) / 8); sx, sy = 320 + 4 * p, 820 - 40 * p
+    pul = 1 + 0.25 * np.sin(t * 6); d.ellipse((sx - 40 * pul, sy - 40 * pul, sx + 40 * pul, sy + 40 * pul), fill=(40, 170, 90, 70))
+    av = T2.char(500, samir=True).crop((35, 15, 315, 295)).resize((64, 64)); m = Image.new("L", (64, 64), 0); ImageDraw.Draw(m).ellipse((0, 0, 63, 63), fill=255)
+    d.ellipse((sx - 38, sy - 38, sx + 38, sy + 38), fill=(40, 170, 90)); sc.paste(av, (int(sx - 32), int(sy - 32)), m)
+    d.rounded_rectangle((20, PSH - 210, PSW - 20, PSH - 40), 26, fill=(255, 255, 255)); d.text((50, PSH - 165), "SAMIR B. · en route", font=E.fI("Bold", 32), fill=(30, 120, 70), anchor="lm")
+    d.text((50, PSH - 100), "arrivée dans 10 min · 2,4 km", font=E.fI("SemiBold", 30), fill=(60, 60, 70), anchor="lm")
+    d.rectangle((0, 0, PSW, 130), fill=(91, 51, 201)); d.text((PSW / 2, 80), "SUIVI DE LIVRAISON", font=E.fI("Bold", 34), fill=(255, 255, 255), anchor="mm")
+    return sc
 
 
 def hero_face(t, t0, t1):
@@ -274,7 +330,7 @@ def hud(im, t):
 
 
 C1 = ("OUVRE", "NE BOUGE PAS")
-CUTS = [L_(k) for k in ("n2", "s1", "n3", "s2", "n4", "s3", "x1", "s4", "y1", "y2", "s5")]
+CUTS = [T_10] + [L_(k) for k in ("n2", "s1", "n3", "s2", "n4", "pm1", "fs1", "s3", "x1", "s4", "y1", "y2", "s5")]
 
 
 def raw(i, t):
@@ -284,9 +340,15 @@ def raw(i, t):
     elif t < L_("n3"): im = samir_cam(t, "happy"); g = None; labels = [("stamp", wt("s1", "dix") - 0.1, "+18 €")]
     elif t < L_("s2"): im = hero_face(t, L_("n3"), L_("s2")); g = ("night", 0.2)
     elif t < L_("n4"): im = samir_cam(t, "happy"); g = None
+    elif t < L_("pm1"):
+        im = facade_downstairs(t, L_("n4"), L_("pm1")); g = ("night", 0.5); nt = [(L_("n4") + 0.1, "Maman", "Samir est en bas. Il sonne.", False)]
+    elif t < L_("mm1"): im = mum_door(t, L_("pm1"), L_("fs1")); g = ("night", 0.4); labels = [("plate", L_("pm1") + 0.2, "TA MÈRE")]
+    elif t < L_("fs1"): im = mum_door(t, L_("pm1"), L_("fs1")); g = ("night", 0.4)
     elif t < L_("s3"):
-        im = facade_downstairs(t, L_("n4"), L_("s3")); g = ("night", 0.5); nt = [(L_("n4") + 0.1, "Maman", "Samir est en bas. Il sonne.", False)]
-    elif t < L_("c1"): im = samir_cam(t, "worried"); g = None; labels = [("label", T_10, "SAMIR · À 10 MIN DE CHEZ TOI")]
+        im = peephole(t, L_("fs1"), L_("s3")); g = ("night", 0.35); labels = [("label", L_("fs1") + 0.3, "PAR LE JUDAS")]
+        if t >= T_SEC: labels = [("stampL", T_SEC + 0.05, "PAS UNE GOUTTE")]
+    elif t < T_10: im = samir_cam(t, "worried"); g = None
+    elif t < L_("c1"): im = pov(t, map_screen(t)); g = None
     elif t < L_("x1"):
         im = pov(t, chat_screen(L_("y1") - 0.5)); g = None; btn = (C1, L_("c1"), L_("x1"), None)
     elif t < L_("s4"):
@@ -317,6 +379,7 @@ def finish(i, t, r, captions=True):
     for kind, t0, txt in labels:
         if kind == "plate": TG.name_plate(im, t, t0, txt, (540, 470))
         elif kind == "stamp": TG.stamp_tag(im, t, t0, txt, (620, 720), 96)
+        elif kind == "stampL": TG.stamp_tag(im, t, t0, txt, (540, 1300), 72)
         else: TG.label(im, t, t0, txt, (540, 1330), 38)
     if hd: hud(im, t)
     for t0, who, body, hot in nt: notif(im, t, t0, who, body, y=390, hot=hot)
@@ -375,11 +438,12 @@ if __name__ == "__main__":
         for q in np.arange(a_, b_, per): add(thump(), q, g); add(thump(), q + 0.19, g * 0.65)
     def ping(at_): add(tone(1318, 0.3, 9) + tone(1760, 0.3, 10) * 0.6, at_, 0.3)
     def buzz(at_): x = np.arange(int(0.4 * VSR)) / VSR; add(np.sin(2 * np.pi * 150 * x) * (np.sin(2 * np.pi * 6 * x) > 0) * 0.5, at_, 0.45)
-    outside = ts < L_("y2"); mix += band(1500, 7000, NS) * 0.3 * outside
-    on_call = ((ts >= L_("n2")) & (ts < L_("x1"))) | ((ts >= L_("s4")) & (ts < L_("x2"))) | (ts >= L_("s5"))
+    outside = (ts < L_("y2")) & ~((ts >= L_("pm1")) & (ts < L_("s3"))); mix += band(1500, 7000, NS) * 0.3 * outside
+    on_call = ((ts >= L_("n2")) & (ts < L_("pm1"))) | ((ts >= L_("s3")) & (ts < L_("x1"))) | ((ts >= L_("s4")) & (ts < L_("x2"))) | (ts >= L_("s5"))
     mix += band(80, 300, NS) * 0.25 * on_call * (1 + 0.3 * np.sin(ts * 9))                                 # Samir's scooter engine through the call
     add(boom(), 0.0, 0.5); buzz(0.02); ping(T_ACC); ping(L_("n2") + 0.2); add(tone(523, 0.25, 6) + tone(659, 0.25, 6) * 0.7, L_("n2") + 0.4, 0.3)
     buzz(L_("n4")); ping(L_("n4") + 0.05); x = np.arange(int(0.45 * VSR)) / VSR; add(np.sign(np.sin(2 * np.pi * 420 * x)) * 0.5 * np.exp(-x * 2), T_SONNE, 0.35)
+    add(click() * 2, L_("pm1") + 0.9, 0.7); add(tone(2200, 0.05, 80), L_("pm1") + 0.92, 0.3); add(boom(), T_SEC, 0.7)          # the peephole cover
     add(boom(), T_10 + 0.3, 0.6); heart(L_("s3"), L_("x1"), 0.5)
     for k in range(3): add(tone(1200, 0.05, 60), we("c1") + 0.1 + k * 0.26, 0.45)
     xx = np.arange(int(0.8 * VSR)) / VSR; add(np.sin(2 * np.pi * np.cumsum(140 + 160 * xx) / VSR) * np.exp(-xx * 3) * 0.3, wt("x1", "ouvre"), 0.6)
@@ -397,6 +461,7 @@ if __name__ == "__main__":
     vox = np.zeros(NS)
     for k, t0 in line_t.items():
         v = VO_A[k]
+        if k == "fs1": v = sosfiltfilt(butter(3, 1800, btype="low", fs=VSR, output="sos"), v) * 1.2                         # through the front door
         if k.startswith("s"): v = sosfiltfilt(butter(3, [250, 4200], btype="band", fs=VSR, output="sos"), v) * 1.4          # through the phone
         i0 = int(t0 * VSR); j0 = min(NS, i0 + len(v)); vox[i0:j0] += v[: j0 - i0]
     act = np.convolve((np.convolve(np.abs(vox), np.ones(2205) / 2205, "same") > 0.01).astype(float), np.ones(13230) / 13230, "same")
