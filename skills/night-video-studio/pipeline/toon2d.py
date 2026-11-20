@@ -199,10 +199,11 @@ def monster_face(d, cx, cy, R, style="face", seed=7, look=(0.0, 0.0), skin=None)
         return pts
     for side, scale in ((-1, 1.08), (1, 0.94)):
         ex, ey = cx + side * R * 0.40, cy + R * 0.16; tilt = side * -0.32
-        pts = almond(ex, ey, R * 0.22, R * 0.15, tilt, scale)
+        pts = almond(ex, ey, R * 0.22, R * 0.2, tilt, scale)                  # wide open, staring
         d.polygon(pts, fill=WHITE)
-        bg_ = (skin or INK) if style == "face" else None                         # a heavy brow cuts the top of the eye, lower at the nose: menace
-        if bg_: d.polygon([(ex - side * R * 0.32, ey - R * 0.26), (ex + side * R * 0.30, ey - R * 0.26), (ex + side * R * 0.30, ey - R * 0.02), (ex - side * R * 0.32, ey - R * 0.16)], fill=bg_)
+        bg_ = (skin or INK) if style == "face" else None                         # the brow only grazes the top of the eye, lower at the nose
+        if bg_: d.polygon([(ex - side * R * 0.32, ey - R * 0.34), (ex + side * R * 0.30, ey - R * 0.34), (ex + side * R * 0.30, ey - R * 0.12), (ex - side * R * 0.32, ey - R * 0.24)], fill=bg_)
+        if style == "face": d.ellipse((ex - R * 0.075, ey - R * 0.06, ex + R * 0.075, ey + R * 0.09), fill=(170, 20, 24, 255))      # a red iris around the pin pupil
         if style == "face":
             px, py = ex + look[0] * R * 0.06, ey + look[1] * R * 0.04 + R * 0.01
             d.ellipse((px - R * 0.035, py - R * 0.035, px + R * 0.035, py + R * 0.035), fill=INK)

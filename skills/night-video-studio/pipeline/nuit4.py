@@ -112,10 +112,10 @@ def iphone(screen, t, sw=430):
     top = sc.getpixel((sc.width // 2, 6)); ImageDraw.Draw(scr).rectangle((0, 0, sw, 90), fill=top)
     scr.paste(app, (0, 90)); d = ImageDraw.Draw(scr)
     lum = sum(top) / 3; fg = (255, 255, 255) if lum < 140 else (20, 20, 24)
-    d.text((44, 44), "21:4" + str(7 + int(t // 60) % 3), font=E.fI("SemiBold", 26), fill=fg, anchor="lm")
+    d.text((sw * 0.1, 44), "21:4" + str(7 + int(t // 60) % 3), font=E.fI("SemiBold", int(sw * 0.06)), fill=fg, anchor="lm")
     for q in range(4): d.rectangle((sw - 92 + q * 9, 52 - q * 4, sw - 86 + q * 9, 56), fill=fg)
     d.rounded_rectangle((sw - 52, 38, sw - 20, 56), 5, outline=fg, width=2); d.rectangle((sw - 49, 41, sw - 32, 53), fill=fg)
-    d.rounded_rectangle((sw / 2 - 70, 12, sw / 2 + 70, 52), 20, fill=(0, 0, 0))                      # the notch
+    d.rounded_rectangle((sw * 0.36, 14, sw * 0.64, 50), 18, fill=(0, 0, 0))                          # the notch
     d.rounded_rectangle((sw / 2 - 70, sh - 26, sw / 2 + 70, sh - 18), 4, fill=fg)                    # the home bar
     bz = 16; body = Image.new("RGBA", (sw + 2 * bz, sh + 2 * bz), (0, 0, 0, 0)); bd = ImageDraw.Draw(body)
     bd.rounded_rectangle((0, 0, body.width - 1, body.height - 1), 66, fill=(28, 30, 36), outline=(150, 154, 166), width=4)
@@ -126,19 +126,28 @@ def iphone(screen, t, sw=430):
     return body
 
 
-def pov(t, screen, bg="street2", dark=0.75, tilt=0.0):
-    """First person: the street (or your room) in front of you, out of focus; your hand holds the phone at the bottom."""
+def pov(t, screen, bg="street2", dark=0.75, tilt=0.0, read=None):
+    """First person: the street (or your room) out of focus, your right hand holding a real-size phone at chest height.
+    read=(t0, t1): the camera pushes in on the screen while there is something to read, then eases back."""
     base = Image.eval(ST[bg].filter(ImageFilter.GaussianBlur(12)), lambda v: int(v * dark))
     base = rain(E.view(base, t, 0, 1, 1.0, 1.0, 0.5, 0.45, drift=0.4), t, 160, 0.4) if bg.startswith("street") else E.view(base, t, 0, 1, 1.0, 1.0, 0.5, 0.45, drift=0.4)
-    phr = iphone(screen, t, 400); phr = phr.rotate(4 * NOISE.noise2(t * 0.7, 2) + tilt, expand=True, resample=Image.BICUBIC)
-    x, y = int(W / 2 - phr.width / 2 + 14 * NOISE.noise2(t * 0.9, 6)), int(H * 0.27 + 14 * NOISE.noise2(6, t * 0.9))
-    im = base.convert("RGBA"); im.alpha_composite(phr, (x, y))
-    lay = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(lay)                      # your fingers around the phone
-    hx, hy = x + phr.width - 20, y + phr.height - 70                    # your hand holds the bottom-right corner, off the screen
-    MO.sleeve(d, W + 60, H + 160, hx + 80, hy + 130, T2.HOOD, 160, cuff=T2.REDB)
-    MO.hand(d, hx + 26, hy + 34, np.radians(-40), 1.0, T2.SKIN, grip=0.9)
-    for k in range(3): fy = y + phr.height * (0.42 + 0.1 * k); d.rounded_rectangle((x + phr.width - 38, fy, x + phr.width + 24, fy + 64), 28, fill=T2.SKIN, outline=(22, 18, 34, 255), width=7)
-    im.alpha_composite(lay); im = E.spill(im.convert("RGB"), W / 2, H * 0.55, 560, 700, (150, 190, 255), 0.1)
+    ang = 3 * NOISE.noise2(t * 0.7, 2) + tilt
+    phr = iphone(screen, t, 330).rotate(ang, expand=True, resample=Image.BICUBIC)
+    x, y = int(W / 2 - phr.width / 2 + 10 * NOISE.noise2(t * 0.9, 6)), int(H * 0.36 + 10 * NOISE.noise2(6, t * 0.9))
+    im = base.convert("RGBA"); lay = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(lay); o = (22, 18, 34, 255)
+    px0, px1, py1 = x + 14, x + phr.width - 14, y + phr.height - 10
+    MO.sleeve(d, W * 0.72, H + 140, (px0 + px1) / 2 + 20, py1 + 30, T2.HOOD, 150, cuff=T2.REDB)            # forearm from the bottom right
+    d.ellipse((px0 + 10, py1 - 60, px1 - 10, py1 + 60), fill=o); d.ellipse((px0 + 18, py1 - 52, px1 - 18, py1 + 52), fill=T2.SKIN)   # the heel of the hand, just under the phone
+    im.alpha_composite(lay); im.alpha_composite(phr, (x, y))
+    lay = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(lay)
+    for k in range(3):                                                       # three fingertips curling over the right edge
+        fy = y + phr.height * (0.5 + 0.12 * k); d.rounded_rectangle((px1 - 18, fy, px1 + 30, fy + 58), 24, fill=T2.SKIN, outline=o, width=6)
+    d.rounded_rectangle((px0 - 34, y + phr.height * 0.62, px0 + 14, y + phr.height * 0.62 + 120), 24, fill=T2.SKIN, outline=o, width=6)   # the thumb on the left edge
+    im.alpha_composite(lay); im = E.spill(im.convert("RGB"), W / 2, y + phr.height / 2, 420, 600, (150, 190, 255), 0.12)
+    if read:
+        q = ease((t - read[0]) / 0.5) * (1 - ease((t - read[1] + 0.4) / 0.4)); z = 1 + 0.75 * q; cy = y + phr.height * 0.45
+        cw, ch = W / z, H / z; x0 = min(max(W / 2 - cw / 2, 0), W - cw); y0 = min(max(cy - ch / 2, 0), H - ch)
+        im = im.transform((W, H), Image.EXTENT, (x0, y0, x0 + cw, y0 + ch), Image.BICUBIC)
     return handheld(im, t, 1.0, seed=8)
 
 
@@ -176,22 +185,38 @@ def mum_door(t, t0, t1):
 
 
 def map_screen(t):
-    """The delivery app's map: home is the red pin; Samir's green dot is still crossing the bridge, 2.4 km away."""
-    sc = Image.new("RGBA", (PSW, PSH), (228, 232, 238, 255)); d = ImageDraw.Draw(sc); rg = np.random.default_rng(4)
-    for k in range(16): x, y = rg.integers(-60, PSW), rg.integers(160, PSH); d.rounded_rectangle((x, y, x + rg.integers(90, 220), y + rg.integers(70, 180)), 10, fill=(214, 218, 226))
-    d.rectangle((0, 560, PSW, 640), fill=(160, 196, 232))                                          # the river
-    for x in (110, 290, 470): d.line((x, 150, x + 60, PSH), fill=(255, 255, 255), width=26)
-    for y in (300, 760): d.line((0, y, PSW, y - 40), fill=(255, 255, 255), width=26)
-    route = [(320, 820), (330, 700), (318, 600), (300, 460), (300, 300), (420, 250)]; d.line(route, fill=(91, 51, 201), width=12, joint="curve")
-    d.ellipse((396, 196, 444, 244), fill=(205, 24, 24)); d.polygon([(400, 232), (440, 232), (420, 268)], fill=(205, 24, 24)); d.ellipse((410, 210, 430, 230), fill=(255, 255, 255))
-    d.rounded_rectangle((300, 150, 560, 196), 14, fill=(255, 255, 255)); d.text((430, 173), "4B · CHEZ TOI", font=E.fI("Bold", 26), fill=(205, 24, 24), anchor="mm")
-    p = cl((t - T_10 + 2) / 8); sx, sy = 320 + 4 * p, 820 - 40 * p
-    pul = 1 + 0.25 * np.sin(t * 6); d.ellipse((sx - 40 * pul, sy - 40 * pul, sx + 40 * pul, sy + 40 * pul), fill=(40, 170, 90, 70))
-    av = T2.char(500, samir=True).crop((35, 15, 315, 295)).resize((64, 64)); m = Image.new("L", (64, 64), 0); ImageDraw.Draw(m).ellipse((0, 0, 63, 63), fill=255)
-    d.ellipse((sx - 38, sy - 38, sx + 38, sy + 38), fill=(40, 170, 90)); sc.paste(av, (int(sx - 32), int(sy - 32)), m)
-    d.rounded_rectangle((20, PSH - 210, PSW - 20, PSH - 40), 26, fill=(255, 255, 255)); d.text((50, PSH - 165), "SAMIR B. · en route", font=E.fI("Bold", 32), fill=(30, 120, 70), anchor="lm")
-    d.text((50, PSH - 100), "arrivée dans 10 min · 2,4 km", font=E.fI("SemiBold", 30), fill=(60, 60, 70), anchor="lm")
-    d.rectangle((0, 0, PSW, 130), fill=(91, 51, 201)); d.text((PSW / 2, 80), "SUIVI DE LIVRAISON", font=E.fI("Bold", 34), fill=(255, 255, 255), anchor="mm")
+    """Live delivery tracking: named streets, blocks with roofs, a park, the river and its bridge; the route in purple,
+    Samir's avatar crawling along it with a trail, the ETA chip, and the steps bar. Home is the red pin, 2.4 km away."""
+    sc = Image.new("RGBA", (PSW, PSH), (236, 238, 242, 255)); d = ImageDraw.Draw(sc); rg = np.random.default_rng(4); f = E.fI
+    d.rounded_rectangle((330, 640, 560, 800), 30, fill=(200, 230, 196)); [d.ellipse((350 + 40 * k, 670 + 30 * (k % 2), 380 + 40 * k, 700 + 30 * (k % 2)), fill=(150, 200, 140)) for k in range(5)]     # a park
+    for k in range(22):
+        x, y = rg.integers(-40, PSW), rg.integers(150, PSH - 230); w_, h_ = rg.integers(70, 150), rg.integers(60, 130)
+        d.rounded_rectangle((x, y, x + w_, y + h_), 8, fill=(222, 224, 232)); d.rounded_rectangle((x + 6, y + 6, x + w_ - 6, y + h_ - 16), 6, fill=(212, 214, 224))
+    d.polygon([(0, 520), (PSW, 470), (PSW, 560), (0, 610)], fill=(166, 202, 236)); d.text((40, 572), "La Seine", font=f("Medium", 22), fill=(90, 130, 180))
+    d.rectangle((260, 480, 330, 600), fill=(200, 204, 214))                                               # the bridge
+    for x0_, lab in ((110, "Rue des Lilas"), (300, "Av. Jaurès"), (470, "Rue Oberkampf")): d.line((x0_, 150, x0_ + 50, PSH - 230), fill=(255, 255, 255), width=24)
+    for y0_ in (300, 420, 720): d.line((0, y0_, PSW, y0_ - 36), fill=(255, 255, 255), width=24)
+    d.text((126, 330), "Rue des Lilas", font=f("Medium", 19), fill=(140, 144, 156)); d.text((340, 760), "Av. Jaurès", font=f("Medium", 19), fill=(140, 144, 156))
+    route = [(300, 690), (298, 620), (295, 540), (300, 420), (330, 300), (430, 262)]
+    for a_, b_ in zip(route, route[1:]): d.line([a_, b_], fill=(91, 51, 201), width=12)
+    p = cl((t - (T_10 - 1.0)) / 9.0); seg = p * (len(route) - 1) * 0.12; i_ = int(seg); fr = seg - i_
+    sx = route[i_][0] + (route[i_ + 1][0] - route[i_][0]) * fr; sy = route[i_][1] + (route[i_ + 1][1] - route[i_][1]) * fr
+    for k in range(6): d.ellipse((sx - 6, sy + 22 + k * 18, sx + 6, sy + 34 + k * 18), fill=(40, 170, 90, 200 - k * 30))   # his trail
+    d.ellipse((410, 238, 450, 278), fill=(205, 24, 24)); d.polygon([(414, 268), (446, 268), (430, 300)], fill=(205, 24, 24)); d.ellipse((422, 250, 438, 266), fill=(255, 255, 255))
+    d.rounded_rectangle((300, 186, 560, 228), 14, fill=(255, 255, 255), outline=(205, 24, 24), width=3); d.text((430, 207), "4B · CHEZ TOI", font=f("Bold", 24), fill=(205, 24, 24), anchor="mm")
+    pul = 1 + 0.3 * abs(np.sin(t * 4)); d.ellipse((sx - 44 * pul, sy - 44 * pul, sx + 44 * pul, sy + 44 * pul), fill=(40, 170, 90, 60))
+    av = T2.char(500, samir=True).crop((35, 0, 315, 280)).resize((70, 70)); m = Image.new("L", (70, 70), 0); ImageDraw.Draw(m).ellipse((0, 0, 69, 69), fill=255)
+    d.ellipse((sx - 42, sy - 42, sx + 42, sy + 42), fill=(40, 170, 90)); sc.paste(av, (int(sx - 35), int(sy - 35)), m)
+    d.rounded_rectangle((sx + 46, sy - 28, sx + 196, sy + 22), 18, fill=(30, 30, 36)); d.text((sx + 121, sy - 3), "10 min", font=f("Bold", 26), fill=(255, 255, 255), anchor="mm")
+    d.ellipse((PSW - 76, 160, PSW - 26, 210), fill=(255, 255, 255), outline=(200, 200, 210), width=2); d.polygon([(PSW - 51, 166), (PSW - 43, 186), (PSW - 59, 186)], fill=(205, 24, 24)); d.text((PSW - 51, 198), "N", font=f("Bold", 16), fill=(60, 60, 70), anchor="mm")
+    d.rounded_rectangle((16, PSH - 230, PSW - 16, PSH - 24), 26, fill=(255, 255, 255))
+    sc.paste(av, (40, PSH - 206), m); d.text((130, PSH - 190), "SAMIR B. · en route", font=f("Bold", 30), fill=(30, 120, 70), anchor="lm")
+    d.text((130, PSH - 150), "arrivée 21:58 · 2,4 km", font=f("Medium", 26), fill=(60, 60, 70), anchor="lm")
+    for k, (lab, on) in enumerate((("Récupérée", True), ("En route", True), ("Arrivé", False))):
+        x_ = 50 + k * 175; d.ellipse((x_, PSH - 100, x_ + 26, PSH - 74), fill=(40, 170, 90) if on else (210, 210, 216))
+        if k < 2: d.line((x_ + 30, PSH - 87, x_ + 170, PSH - 87), fill=(40, 170, 90) if k == 0 else (210, 210, 216), width=6)
+        d.text((x_ + 13, PSH - 52), lab, font=f("Medium", 20), fill=(90, 90, 100), anchor="mm")
+    d.rectangle((0, 0, PSW, 130), fill=(91, 51, 201)); d.text((PSW / 2, 80), "SUIVI DE LIVRAISON", font=f("Bold", 34), fill=(255, 255, 255), anchor="mm")
     return sc
 
 
@@ -246,16 +271,28 @@ def notif(im, t, t0, title, body, y=150, hot=False):
 
 
 def app_accepted(t):
-    sc, d = N1._app("21:47"); u = ease((t - T_ACC) / 0.3)
-    card = Image.new("RGBA", (PSW - 50, 560), (0, 0, 0, 0)); cd = ImageDraw.Draw(card); cd.rounded_rectangle((0, 0, card.width - 1, 559), 30, fill=(255, 255, 255, 255), outline=(200, 25, 25, 255), width=5)
-    cd.text((34, 30), "COMMANDE #0015", font=E.fI("Bold", 32), fill=(200, 25, 25)); cd.text((34, 130), "Adresse", font=E.fI("Regular", 28), fill=(120, 120, 130), anchor="lm"); cd.text((card.width - 34, 130), "4B · CHEZ TOI", font=E.fI("Bold", 34), fill=(200, 25, 25), anchor="rm")
-    cd.text((34, 210), "Statut", font=E.fI("Regular", 28), fill=(120, 120, 130), anchor="lm"); cd.text((card.width - 34, 210), "REFUSÉE PAR TOI", font=E.fI("Bold", 30), fill=(30, 30, 36), anchor="rm")
+    """The order, in detail: who ordered, what, the note, the route preview; then the strip 'accepted by SAMIR B.' slides in."""
+    sc, d = N1._app("21:47"); u = ease((t - T_ACC) / 0.35); f = E.fI
+    card = Image.new("RGBA", (PSW - 40, 700), (0, 0, 0, 0)); cd = ImageDraw.Draw(card); cw = card.width
+    cd.rounded_rectangle((0, 0, cw - 1, 699), 28, fill=(255, 255, 255, 255), outline=(220, 220, 228, 255), width=3)
+    cd.rounded_rectangle((24, 22, 112, 110), 18, fill=(255, 196, 120)); cd.ellipse((44, 42, 92, 90), fill=(214, 120, 50)); cd.ellipse((54, 50, 82, 78), fill=(246, 220, 160))      # a pizza icon
+    cd.text((130, 46), "Chez Toni · Pizzeria", font=f("Bold", 30), fill=(30, 30, 36), anchor="lm"); cd.text((130, 86), "Commande #0015 · 21:41", font=f("Regular", 24), fill=(120, 120, 130), anchor="lm")
+    for k, (q_, it, pr) in enumerate((("1×", "Margherita", "11,50 €"), ("2×", "Tiramisu", "9,00 €"), ("1×", "Coca 33 cl", "2,50 €"))):
+        y = 140 + k * 44; cd.text((30, y), q_, font=f("SemiBold", 25), fill=(120, 120, 130), anchor="lm"); cd.text((80, y), it, font=f("Medium", 26), fill=(40, 40, 46), anchor="lm"); cd.text((cw - 30, y), pr, font=f("Medium", 25), fill=(40, 40, 46), anchor="rm")
+    cd.line((30, 284, cw - 30, 284), fill=(228, 228, 234), width=2)
+    cd.text((30, 316), "Adresse", font=f("Regular", 24), fill=(120, 120, 130), anchor="lm"); cd.text((cw - 30, 316), "4B · CHEZ TOI", font=f("Bold", 28), fill=(205, 24, 24), anchor="rm")
+    cd.rounded_rectangle((24, 344, cw - 24, 404), 14, fill=(255, 246, 220)); cd.text((40, 374), "Note : « Sonnez deux fois. Je vous attends. »", font=f("Medium", 21), fill=(140, 100, 20), anchor="lm")
+    mp = Image.new("RGBA", (cw - 48, 140), (226, 232, 238, 255)); md = ImageDraw.Draw(mp)                                               # a route preview
+    for xx in range(0, mp.width, 70): md.line((xx, 0, xx + 30, 140), fill=(255, 255, 255), width=10)
+    md.line((0, 90, mp.width, 70), fill=(255, 255, 255), width=12); md.rectangle((0, 104, mp.width, 124), fill=(170, 200, 232))
+    md.line([(40, 120), (150, 96), (260, 80), (mp.width - 60, 38)], fill=(91, 51, 201), width=7, joint="curve"); md.ellipse((mp.width - 76, 22, mp.width - 44, 54), fill=(205, 24, 24))
+    card.alpha_composite(mp, (24, 420)); cd.text((30, 590), "Statut", font=f("Regular", 24), fill=(120, 120, 130), anchor="lm"); cd.text((cw - 30, 590), "REFUSÉE PAR TOI", font=f("Bold", 26), fill=(120, 120, 130), anchor="rm")
     if u > 0:
-        cd.rounded_rectangle((28, 280, card.width - 28, 520), 24, fill=(232, 246, 236)); av = T2.char(700, samir=True).crop((70, 30, 420, 380)).resize((150, 150))
-        m = Image.new("L", av.size, 0); ImageDraw.Draw(m).ellipse((0, 0, 149, 149), fill=255); card.paste(av, (50, 320), m)
-        cd.text((230, 360), "Acceptée par", font=E.fI("Regular", 28), fill=(80, 110, 90), anchor="lm"); cd.text((230, 420), "SAMIR B.", font=E.fI("Bold", 54), fill=(30, 120, 70), anchor="lm")
-        cd.text((230, 476), "pourboire +18,00 €", font=E.fI("SemiBold", 28), fill=(30, 120, 70), anchor="lm")
-    sc.alpha_composite(card, (25, 200)); return sc
+        st = Image.new("RGBA", (cw - 24, 110), (0, 0, 0, 0)); sd = ImageDraw.Draw(st); sd.rounded_rectangle((0, 0, st.width - 1, 109), 22, fill=(232, 246, 236, 255), outline=(40, 170, 90, 255), width=4)
+        av = T2.char(600, samir=True).crop((45, 0, 375, 330)).resize((84, 84)); m = Image.new("L", av.size, 0); ImageDraw.Draw(m).ellipse((0, 0, 83, 83), fill=255); st.paste(av, (14, 13), m)
+        sd.text((112, 36), "Acceptée par SAMIR B.", font=f("Bold", 30), fill=(30, 120, 70), anchor="lm"); sd.text((112, 76), "+18,00 € de pourboire · en route", font=f("Medium", 23), fill=(60, 110, 80), anchor="lm")
+        card.alpha_composite(st, (12, int(584 + 160 * (1 - u))))
+    sc.alpha_composite(card, (20, 170)); return sc
 
 
 def chat_screen(t):
@@ -380,7 +417,7 @@ CUTS = [T_10, wt("s1", "fais") - 0.15] + [L_(k) for k in ("n2", "s1", "n3", "s2"
 
 def raw(i, t):
     g = ("night", 0.4); hd = True; btn = None; labels = []; nt = []
-    if t < L_("n2"): im = pov(t, app_accepted(t)); g = None
+    if t < L_("n2"): im = pov(t, app_accepted(t), read=(we("n1") + 0.2, L_("n2") + 0.5)); g = None
     elif t < L_("s1"): im = pov(t, call_screen(t)); g = None; labels = [("plate", L_("n2") + 0.2, "TON MEILLEUR POTE")]
     elif t < wt("s1", "fais") - 0.15: im = samir_cam(t, "happy"); g = None; labels = [("stamp", wt("s1", "dix") - 0.1, "+18 €")]
     elif t < L_("n3"): im = hero_face(t, wt("s1", "fais") - 0.15, L_("s2")); g = ("night", 0.2)
@@ -394,7 +431,7 @@ def raw(i, t):
         im = peephole(t, L_("fs1"), L_("s3")); g = ("night", 0.35); labels = [("label", L_("fs1") + 0.3, "PAR LE JUDAS")]
         if t >= T_SEC: labels = [("stampL", T_SEC + 0.05, "PAS UNE GOUTTE")]
     elif t < T_10: im = samir_cam(t, "worried"); g = None; labels = [("label", L_("s3") + 0.2, "LE VRAI · TREMPÉ")]
-    elif t < L_("c1"): im = pov(t, map_screen(t)); g = None
+    elif t < L_("c1"): im = pov(t, map_screen(t), read=(T_10 + 0.1, L_("c1") + 0.4)); g = None
     elif t < L_("x1"):
         im = clue_card(t, L_("c1") - 0.1); g = None; btn = (C1, L_("c1"), L_("x1"), None)
     elif t < L_("s4"):
@@ -404,7 +441,7 @@ def raw(i, t):
     elif t < t_rew: im = receipt(t, L_("r8")); g = ("paper", 0.4); hd = False
     elif t < L_("y1"): return None
     elif t < L_("y2"):
-        im = pov(t, chat_screen(t)); g = None
+        im = pov(t, chat_screen(t), read=(L_("y1"), L_("y2") + 0.3)); g = None
         if t < L_("y1") + 1.1: btn = (C1, 0, 1, "NE BOUGE PAS")
     elif t < L_("s5"):
         im = door_knock(t, L_("y2"), L_("s5")) if t < T_VOIX + 0.3 else pov(t, chat_screen(t), bg="entdark", dark=0.5); g = ("night", 0.4) if t < T_VOIX + 0.3 else None
@@ -422,6 +459,9 @@ def choice_img(tc):
 def finish(i, t, r, captions=True):
     im, g, hd, btn, labels, nt = r
     if g: im = N1.GRADE(im, i, exp=g[1], warm=True, glow=g[0] != "paper")
+    for kind, t0, txt in labels:                                      # a stamp lands like a hit: the frame jolts in for a quarter second
+        if kind.startswith("stamp") and 0 <= t - t0 < 0.25:
+            z = 1 + 0.06 * (1 - (t - t0) / 0.25); cw, ch = W / z, H / z; im = im.transform((W, H), Image.EXTENT, ((W - cw) / 2, (H - ch) / 2, (W + cw) / 2, (H + ch) / 2), Image.BICUBIC)
     for kind, t0, txt in labels:
         if kind == "plate": TG.name_plate(im, t, t0, txt, (540, 470))
         elif kind == "stamp": TG.stamp_tag(im, t, t0, txt, (620, 720), 96)
