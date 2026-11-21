@@ -57,3 +57,15 @@ close-up on the hero with one exaggerated emotion (sweat drop, wavy mouth, shock
 characters fixed once on an emotion sheet (neutral, joy, shock, sad) and reused; a "video game" variant with gauges,
 a day counter ("JOUR 12/30"), a hero sheet and a vote at the end. Applied in nuit 4 partie 1 v7 (see SKILL.md,
 "One-second readability").
+
+## Three profiles read with TinyFish (November 21, 2026; yt-dlp had been refused)
+
+| Account | Followers | Likes | Best videos (views) | Pattern |
+|---|---|---|---|---|
+| mission.creepy | 63 k | 855 k | Nuit 7: 2.2 M; Nuit 4: 240 k; Nuit 5: 136 k; usual 41-109 k | 15 numbered nights, title "Nuit N - le lieu", one hashtag or two |
+| nepasouvrir | 21.9 k | 222 k | "Et s'il vous plait laissez moi entrer..." 719 k; "Le remplaçant · Partie 1" 264 k; "Je sais que vous êtes là." 147 k | only 8 posts; the title is a creepy line of dialogue; one playlist per story (LA PORTE, LE REMPLAÇANT) |
+| kimonoy | 14.2 k | 283 k | "Partie 2 · T'as choisi de te cacher…" 79 k; SCP "Oui ou non ?" 58 k | each new part is posted as a video reply to a viewer's comment ("Réponse à @…"); long captions ending "A ou B ? la Partie 2 dépend de toi" |
+
+Lessons: number every episode the same way and keep going (one outlier pays for the series); a quoted line of the
+monster as the title works better than a description; post part 2 as a video reply to the comment that voted
+(it shows the viewer's comment on screen and rewards commenting); group each story in a playlist.
