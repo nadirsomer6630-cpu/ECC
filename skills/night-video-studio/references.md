@@ -69,3 +69,13 @@ a day counter ("JOUR 12/30"), a hero sheet and a vote at the end. Applied in nui
 Lessons: number every episode the same way and keep going (one outlier pays for the series); a quoted line of the
 monster as the title works better than a description; post part 2 as a video reply to the comment that voted
 (it shows the viewer's comment on screen and rewards commenting); group each story in a playlist.
+
+## Hashtags (account study, November 21, 2026)
+
+On an account under 1 k followers, hashtags only classify the video; the first seconds decide the reach. Our 14
+posts: the two best story videos carried #mystere #suspense (6.4 k and 982 views; too few to prove it). Useless or
+wrong audience: #pourtoi and variants, #pov (too broad), #animation (animators), #livreur (real couriers' videos),
+#thriller (film trailers), #commande #job #emploi #saturation #nuit #peur #histoires.
+Rule from now on: three hashtags only, #horreur #creepypasta + one rotating test tag, same posting hour:
+nuit 4 partie 1 (v7) #histoiredhorreur, next part #mystere, then #suspense; keep the winner after three posts.
+Description: a line spoken by the monster as the title, the part number, the A/B question, the three tags.
