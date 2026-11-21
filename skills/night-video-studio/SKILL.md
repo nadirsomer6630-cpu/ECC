@@ -84,6 +84,26 @@ button turns to ABONNÉ, then "NUIT N" and two open questions). Call `tags.setup
 The hook sentence tells the whole premise as cause and consequence in one breath ("... et le soir même, il a trouvé
 un mot collé sur sa porte").
 
+### One-second readability, from an animated-series method page (1.28 M views in 6 days, Nov 2026)
+
+Only the public page was read (the paid guide was not). Its before/after images make one point: a wide shot with
+a tiny hero and no text loses the viewer; a close-up, one exaggerated emotion and one phrase read in a second.
+- **Frame 0 on "Imagine": the hero's face, very close**, eyes wide, sweat drop, shock lines (`tags.burst`) behind,
+  and the dilemma as a question on a yellow strip (`tags.banner`, 3 or 4 words in caps: "QUI SONNE CHEZ TOI ?").
+  A face doing nothing lost half of nuit 1's viewers in 2 s; a face with an emotion and a question is the opposite.
+- **A yellow banner on the key shots** that states what the image means, not what the voice says ("IL EST SEC.",
+  "CE N'EST PAS SAMIR.", "IL ÉTAIT DÉJÀ EN BAS."). At most one banner per shot, placed at y 700, under the clock
+  and notifications and clear of the call's self-view.
+- **Exaggerated emotions**: wavy mouth and sweat for fear, a burst of shock lines in the character's colour on the
+  reaction line (the mother's pink, the courier's purple), then it fades in 1.5 s.
+- **The monster always ends in close-up**, never small in a doorway: push in until the face fills the frame.
+- **No black frame**: the second of silence before the shock shows a blade of light growing in a door gap
+  (`dark_gap` in `nuit4.py`).
+- **No shot longer than about 3 s without a change**: split a long beat into wide, close, and a final gesture
+  (the double lifts his head and looks into the peephole).
+- **After a loss, replay the clue** before the rule card (the façade shot again, "TOUT À L'HEURE").
+- Three beats for every scene: hook, action, punchline.
+
 ### Episode 2 assets
 
 `nuit2.py` adds: `handheld` (noise-driven camera, tremor grows with tension), `rain`, `motes` (dust in a beam),

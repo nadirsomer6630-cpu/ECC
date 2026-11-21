@@ -43,6 +43,7 @@ def L_(k): return line_t[k] - 0.12
 def wt(k, frag, n=0): return line_t[k] + [w["s"] for w in REL[k] if frag in E.norm(w["w"])][n]
 def we(k): return line_t[k] + dur[k]
 T_ACC = wt("n1", "quelqu") - 0.1; T_SONNE = wt("n4", "sonne") - 0.1; T_BAS = wt("n4", "bas") - 0.1; T_10 = wt("s3", "dix") - 0.1; T_SEC = wt("pm2", "sec") - 0.1; T_PLUIE = wt("pm2", "pleut") - 0.1
+T_HOOK = wt("n1", "refus") - 0.25; T_REGLE = wt("r8", "gle") - 0.15
 T_PALIER = wt("x1", "palier") - 0.05; T_TROP = wt("x1", "trop") - 0.1; T_FRAPPE = wt("y2", "frappe") - 0.1; T_VOIX = wt("y2", "voix") - 0.1
 words = []
 for k, t0 in line_t.items(): words += [dict(w, s=w["s"] + t0 + 0.1, e=w["e"] + t0 + 0.1, line=k) for w in REL[k]]
@@ -164,24 +165,28 @@ def peephole(t, t0, t1, who=True):
     """What your mother sees through the peephole: the landing bent into a circle, and 'Samir', head down, dry."""
     base = ST["land"].resize((W, H)).copy()
     if who:
-        sp = T2.char(1250, samir=True, head=(0.0, 0.9 + 0.1 * np.sin(t * 0.6)), look=(0.0, 0.9), mouth="line", blink=True); base = put(base, sp, W * 0.5, H * 0.98, shadow=True, mul=(0.85, 0.85, 0.9))
+        up = ease((t - (L_("s3") - 0.9)) / 0.45)
+        sp = T2.char(1250, samir=True, head=(0.0, (0.9 + 0.1 * np.sin(t * 0.6)) * (1 - up)), look=(0.0, 0.9 * (1 - up)), mouth="line", blink=up < 0.5, wide=1.0 + 0.2 * up)
+        base = put(base, sp, W * 0.5, H * 0.98, shadow=True, mul=(0.85, 0.85, 0.9))
     base = Image.eval(base, lambda v: int(min(255, v * 1.15)))
     mx, my, m = _fisheye_maps(W, H); a = cv2.remap(np.asarray(base), mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
     ring = cv2.GaussianBlur(m.astype(np.float32), (0, 0), 14)[..., None]; a = (a * ring).astype(np.uint8)
     im = Image.fromarray(a); d = ImageDraw.Draw(im)
     for k in range(3): d.ellipse((W / 2 - W * 0.47 - k * 8, H / 2 - W * 0.47 - k * 8, W / 2 + W * 0.47 + k * 8, H / 2 + W * 0.47 + k * 8), outline=(20 + 10 * k, 18, 16), width=6)
-    z = 1.0 + 0.25 * ease((t - T_SEC) / 0.6)                        # on "sec", the eye leans in
+    z = (1.0 if t < L_("pm2") else 1.55) + 0.25 * ease((t - T_SEC) / 0.6)   # wide, then a closer shot; on "sec" the eye leans in
     return handheld(E.view(im.resize((int(W * 1.2), int(H * 1.2))), t, t0, t1, z, z + 0.04, 0.5, 0.5, drift=0.2), t, 0.6, seed=12)
 
 
 def mum_door(t, t0, t1):
     """Your mother, close, her face against the door in the dark hall: the reaction shot."""
-    a = speaking("mm1", t); kw = dict(mum=True, look=(0.7, -0.1), blink=blink(t, 0.4), mouth="o" if a > 0.3 else "line", brow=0.8, wide=1.1)
+    a = speaking("mm1", t); k = cl(1 - (t - L_("mm1")) / 1.6) if t >= L_("mm1") else 0.0
+    kw = dict(mum=True, look=(0.7, -0.1), blink=blink(t, 0.4) and k == 0, mouth="o" if a > 0.3 else "line", brow=0.8 + 0.3 * k, wide=1.1 + 0.25 * k, sweat=t >= L_("mm1"))
     kw.update(MO.alive(t, 5, 1.0, a)); sp = hero(2300, **kw)
-    bg = Image.eval(ST["entdark"].filter(ImageFilter.GaussianBlur(9)), lambda v: int(v * 0.9))
+    bg = Image.eval(ST["entdark"].filter(ImageFilter.GaussianBlur(9)), lambda v: int(v * 0.9)); bg = TG.burst(bg, SW * 0.44, SH * 0.5, (230, 120, 160), k, seed=5)
     im = put(bg, sp, SW * 0.44, SH * 1.18, shadow=False, mul=(0.7, 0.72, 0.86), rim=((255, 220, 160), 14, 0.7))
     im = E.spill(im, SW * 0.8, SH * 0.45, 200, 600, (255, 210, 150), 0.18)                         # the light from the landing, under the door
-    return handheld(E.view(im, t, t0, t1, 1.0, 1.06, 0.48, 0.44, drift=0.3), t, 0.8, seed=5)
+    z = 1.0 if t < L_("mm1") else 1.22                                # on her line, the camera is closer: a new shot
+    return handheld(E.view(im, t, t0, t1, z, z + 0.06, 0.48, 0.4, drift=0.3), t, 0.8, seed=5)
 
 
 def map_screen(t):
@@ -245,9 +250,27 @@ def clue_card(t, t0):
     return handheld(bg.convert("RGB"), t, 0.6, seed=14)
 
 
+def hook_face(t):
+    """Frame 0, on 'Imagine': your face, very close, eyes wide, sweat, shock lines behind; one question on a yellow strip.
+    (The guide of every top video: big face, one emotion, one phrase, understood in a second.)"""
+    kw = dict(look=(0.35, -0.1), brow=1.0, wide=1.35, mouth="o", sweat=True, blink=False); kw.update(MO.alive(t, 1, 0.6))
+    sp = hero(3000, **kw); bg = Image.eval(ST["street2"].filter(ImageFilter.GaussianBlur(14)), lambda v: int(v * 0.45))
+    bg = TG.burst(bg, SW * 0.5, SH * 0.45, (120, 70, 230), 1.0, seed=2)
+    im = put(bg, sp, SW * 0.5, SH * 1.5, shadow=False, mul=(0.82, 0.82, 0.96), rim=((255, 190, 120), -14, 0.6))
+    im = rain(E.view(im, t, 0, T_HOOK, 1.08, 1.0, 0.5, 0.45, drift=0.3), t, 140, 0.4)
+    return handheld(im, t, 1.4, seed=2)
+
+
+def dark_gap(t, t0, t1):
+    """The second of silence before the shock: the door is ajar, a blade of landing light grows on the dark wall."""
+    wall = Image.eval(ST["entdark"].resize((W, H)), lambda v: int(v * 0.3)); q = ease((t - t0) / max(0.1, t1 - t0))
+    im = E.spill(wall, 345, 960, 14 + 30 * q, 560, (255, 220, 170), 0.5 + 0.4 * q)
+    return E.spill(im, 420, 1560, 120 + 160 * q, 40, (255, 220, 170), 0.35 * q)
+
+
 def hero_face(t, t0, t1):
     """Your face, lit by the phone, under the rain: you have said no, he laughs."""
-    kw = dict(look=(0.0, 0.6), brow=0.9, wide=1.1, mouth="frown", blink=blink(t)); kw.update(MO.alive(t, 1, 1.0))
+    kw = dict(look=(0.0, 0.6), brow=0.9, wide=1.15, mouth="wavy" if t >= L_("n3") else "frown", sweat=t >= L_("n3"), blink=blink(t)); kw.update(MO.alive(t, 1, 1.0))
     sp = hero(2500, **kw); im = put(N2.soft("street2") if hasattr(N2, "soft") else ST["street2"].filter(ImageFilter.GaussianBlur(5)), sp, SW * 0.47, SH * 1.275, shadow=False, mul=(0.68, 0.7, 0.82), rim=((255, 190, 120), -14, 0.5))
     im = E.spill(im, SW * 0.47, SH * 0.78, 520, 330, (120, 160, 255), 0.12)
     im = rain(E.view(im, t, t0, t1, 1.0, 1.07, 0.5, 0.47, drift=0.6), t, 140, 0.4); d = ImageDraw.Draw(im)
@@ -339,7 +362,7 @@ def landing_open(t, t0, t1):
     if t >= T_PALIER - 0.3: fs = fake_samir(900); ins = ins.copy(); ins.paste(fs, (int(150 - fs.width / 2), 1080 - fs.height + 60), fs)
     wall = Image.eval(ST["entdark"].resize((W, H)), lambda v: int(v * 0.8))
     im = MO.door_open(wall, ins, (330, 420, 750, 1500), 0.85 * q, hinge="right", leaf=N2._LEAF2, light=((255, 220, 170), 0.6))
-    z = 1.0 + 0.9 * ease((t - T_TROP) / 0.8)
+    z = 1.0 + 1.5 * ease((t - T_TROP) / 0.7)
     return handheld(E.view(im.resize((int(W * 1.2), int(H * 1.2))), t, t0, t1, z, z, 0.36, 0.42, drift=0.3), t, 1.2)
 
 
@@ -412,16 +435,17 @@ def hud(im, t):
 
 
 C1 = ("OUVRE", "NE BOUGE PAS")
-CUTS = [T_10, wt("s1", "fais") - 0.15] + [L_(k) for k in ("n2", "s1", "n3", "s2", "n4", "pm1", "fs1", "s3", "x1", "s4", "y1", "y2", "s5")]
+CUTS = [T_HOOK, T_REGLE, L_("mm1"), L_("pm2"), T_10, wt("s1", "fais") - 0.15] + [L_(k) for k in ("n2", "s1", "n3", "s2", "n4", "pm1", "fs1", "s3", "x1", "s4", "y1", "y2", "s5")]
 
 
 def raw(i, t):
     g = ("night", 0.4); hd = True; btn = None; labels = []; nt = []
-    if t < L_("n2"): im = pov(t, app_accepted(t), read=(we("n1") + 0.2, L_("n2") + 0.5)); g = None
+    if t < T_HOOK: im = hook_face(t); g = ("night", 0.25); labels = [("banner", -0.3, "QUI SONNE CHEZ TOI ?")]
+    elif t < L_("n2"): im = pov(t, app_accepted(t), read=(we("n1") + 0.2, L_("n2") + 0.5)); g = None
     elif t < L_("s1"): im = pov(t, call_screen(t)); g = None; labels = [("plate", L_("n2") + 0.2, "TON MEILLEUR POTE")]
     elif t < wt("s1", "fais") - 0.15: im = samir_cam(t, "happy"); g = None; labels = [("stamp", wt("s1", "dix") - 0.1, "+18 €")]
     elif t < L_("n3"): im = hero_face(t, wt("s1", "fais") - 0.15, L_("s2")); g = ("night", 0.2)
-    elif t < L_("s2"): im = hero_face(t, L_("n3"), L_("s2")); g = ("night", 0.2)
+    elif t < L_("s2"): im = hero_face(t, L_("n3"), L_("s2")); g = ("night", 0.2); labels = [("banner", L_("n3") + 0.15, "IL NE T'ÉCOUTE PAS.")]
     elif t < L_("n4"): im = samir_cam(t, "happy"); g = None
     elif t < L_("pm1"):
         im = facade_downstairs(t, L_("n4"), L_("pm1")); g = ("night", 0.5); nt = [(L_("n4") + 0.1, "Maman", "Samir est en bas. Il sonne.", False)]
@@ -429,16 +453,20 @@ def raw(i, t):
     elif t < L_("fs1"): im = mum_door(t, L_("pm1"), L_("fs1")); g = ("night", 0.4)
     elif t < L_("s3"):
         im = peephole(t, L_("fs1"), L_("s3")); g = ("night", 0.35); labels = [("label", L_("fs1") + 0.3, "PAR LE JUDAS")]
-        if t >= T_SEC: labels = [("stampL", T_SEC + 0.05, "PAS UNE GOUTTE")]
+        if t >= L_("pm2"): labels = []
+        if t >= T_SEC: labels = [("banner", T_SEC + 0.05, "IL EST SEC.")]
     elif t < T_10: im = samir_cam(t, "worried"); g = None; labels = [("label", L_("s3") + 0.2, "LE VRAI · TREMPÉ")]
     elif t < L_("c1"): im = pov(t, map_screen(t), read=(T_10 + 0.1, L_("c1") + 0.4)); g = None
     elif t < L_("x1"):
         im = clue_card(t, L_("c1") - 0.1); g = None; btn = (C1, L_("c1"), L_("x1"), None)
     elif t < L_("s4"):
-        im = landing_open(t, L_("x1"), L_("s4")) if t < wt("x1", "ouvre") + 0.6 or t >= T_PALIER - 0.3 else Image.new("RGB", (W, H), (3, 3, 6)); g = None
+        im = landing_open(t, L_("x1"), L_("s4")) if t < wt("x1", "ouvre") + 0.6 or t >= T_PALIER - 0.3 else dark_gap(t, wt("x1", "ouvre") + 0.6, T_PALIER - 0.3); g = None
+        if t >= wt("x1", "sourit"): labels = [("banner", wt("x1", "sourit"), "CE N'EST PAS SAMIR.")]
         if t < L_("x1") + 1.1: btn = (C1, 0, 1, "OUVRE")
     elif t < L_("r8"): im = samir_cam(t, "scared"); g = None
-    elif t < t_rew: im = receipt(t, L_("r8")); g = ("paper", 0.4); hd = False
+    elif t < T_REGLE:                                                 # the clue, replayed: he was already downstairs
+        im = facade_downstairs(t, L_("r8"), T_REGLE); g = ("night", 0.5); hd = False; labels = [("labelT", L_("r8") + 0.1, "TOUT À L'HEURE"), ("banner", L_("r8") + 0.3, "IL ÉTAIT DÉJÀ EN BAS.")]
+    elif t < t_rew: im = receipt(t, T_REGLE - 0.6); g = ("paper", 0.4); hd = False
     elif t < L_("y1"): return None
     elif t < L_("y2"):
         im = pov(t, chat_screen(t), read=(L_("y1"), L_("y2") + 0.3)); g = None
@@ -466,6 +494,8 @@ def finish(i, t, r, captions=True):
         if kind == "plate": TG.name_plate(im, t, t0, txt, (540, 470))
         elif kind == "stamp": TG.stamp_tag(im, t, t0, txt, (620, 720), 96)
         elif kind == "stampL": TG.stamp_tag(im, t, t0, txt, (540, 1300), 72)
+        elif kind == "banner": TG.banner(im, t, t0, txt, y=700)
+        elif kind == "labelT": TG.label(im, t, t0, txt, (540, 590), 38)
         else: TG.label(im, t, t0, txt, (540, 1330), 38)
     if hd: hud(im, t)
     for t0, who, body, hot in nt: notif(im, t, t0, who, body, y=390, hot=hot)
@@ -473,7 +503,7 @@ def finish(i, t, r, captions=True):
     if L_("s2") <= t < L_("n4"):                                      # half-way: the next part is announced
         d = ImageDraw.Draw(im); d.rounded_rectangle((90, 380, 520, 430), 25, fill=(0, 0, 0, 170)); d.text((110, 405), "Abonné · la partie 2 arrive", font=E.fI("SemiBold", 28), fill=(255, 255, 255), anchor="lm")
     if btn: N1.buttons(im, btn[0], t, btn[1], btn[2], btn[3])
-    if t < we("n1") + 0.3: im = title_card(im, t)
+    if T_HOOK <= t < we("n1") + 0.3: im = title_card(im, t)
     if t >= we("c2") - 0.3: im = end_card(im, t, we("c2") - 0.3)
     elif captions: G.karaoke(im, words, t, "present", hl=RED, box=False, y0=1500 if g else 1575, size0=70, stroke=7)
     return im

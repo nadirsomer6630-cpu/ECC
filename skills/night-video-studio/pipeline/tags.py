@@ -144,3 +144,26 @@ def subscribe(im, t, t0, nxt="NUIT 3", sub="Pourquoi il t'a laissé partir ?"):
     if u > 1.0:
         a = _cl((u - 1.0) / 0.3); d.text((540, 930), nxt, font=_f(120 * (0.8 + 0.2 * a)), fill=(232, 186, 74), anchor="mm", stroke_width=6, stroke_fill=(0, 0, 0))
         d.text((540, 1040), sub, font=_f(40), fill=(255, 255, 255), anchor="mm", stroke_width=4, stroke_fill=(0, 0, 0))
+
+
+def banner(im, t, t0, txt, y=700, size=56, angle=-3, t1=None):
+    """One short phrase on a yellow strip at the top of the frame, so the shot reads in one second (3-4 words, caps).
+    It pops in like a sticker and leaves with the shot."""
+    if t < t0 or (t1 is not None and t >= t1): return
+    f = _f(size); w = ImageDraw.Draw(im).textlength(txt, font=f) + size * 1.3; h = size * 1.75
+    lay = Image.new("RGBA", (int(w) + 12, int(h) + 12), (0, 0, 0, 0)); d = ImageDraw.Draw(lay)
+    d.rounded_rectangle((10, 10, w + 10, h + 10), 14, fill=(0, 0, 0, 120))                                  # a hard drop shadow
+    d.rounded_rectangle((0, 0, w, h), 14, fill=(255, 212, 56, 255), outline=INK + (255,), width=6)
+    d.text((w / 2, h / 2 + 2), txt, font=f, fill=INK + (255,), anchor="mm")
+    _paste_rot(im, lay, (540, y), angle, _pop(t, t0, 0.18))
+
+
+def burst(im, cx, cy, col, k=1.0, n=34, seed=0):
+    """Shock lines radiating from behind a face (comic 'choc'), drawn on the background before the character goes on.
+    k fades it (0..1)."""
+    if k <= 0: return im
+    lay = Image.new("RGBA", im.size, (0, 0, 0, 0)); d = ImageDraw.Draw(lay); R = max(im.size) * 1.2; rg = np.random.default_rng(seed)
+    for j in range(n):
+        a0 = 2 * np.pi * j / n + rg.uniform(-0.03, 0.03); da = np.pi / n * rg.uniform(0.35, 0.7)
+        d.polygon([(cx, cy), (cx + R * np.cos(a0), cy + R * np.sin(a0)), (cx + R * np.cos(a0 + da), cy + R * np.sin(a0 + da))], fill=tuple(col) + (int(120 * k),))
+    base = im.convert("RGBA"); base.alpha_composite(lay); return base.convert(im.mode)

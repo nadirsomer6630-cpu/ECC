@@ -47,3 +47,13 @@ Creator's note after nuit 4 part 1: abrupt changes between characters can confus
   phone, or keep the speaker's name on screen.
 - A disguised character (the double wearing someone's face) must differ by one visible, constant sign (white eyes,
   the grin) and be shown in a different place from the real one.
+
+## Method page: tesvideosvirales.com (read November 21, 2026)
+
+A French page selling a guide and a Claude skill for animated series (17 €; only the public page was read). It claims
+1.28 M views in 6 days over two Instagram series (908 k and 378 k), episodes from 90 k to 530 k. Public lessons:
+close-up on the hero with one exaggerated emotion (sweat drop, wavy mouth, shock lines, heart eyes); one phrase of
+3-4 words on a yellow strip at the top; three beats (hook, action, punchline); one saturated background per emotion;
+characters fixed once on an emotion sheet (neutral, joy, shock, sad) and reused; a "video game" variant with gauges,
+a day counter ("JOUR 12/30"), a hero sheet and a vote at the end. Applied in nuit 4 partie 1 v7 (see SKILL.md,
+"One-second readability").
