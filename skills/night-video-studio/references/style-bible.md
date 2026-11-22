@@ -42,3 +42,24 @@ without copying the story itself. Style frames: `adn_1_accroche.png`, `adn_2_ind
 The flat scene with one moving element, the clock with its one-line place under it, at most one notification, and
 the spoken "Imagine." as the only caption. No phone held in the hand at frame 0, no banner before the premise is
 spoken, no recap.
+
+## Second layer: cinematic light and a survival-game interface (added the same day)
+
+From two more accounts the creator sent (method only): zak.kho (2.4 M views on "première nuit au bled": stylised
+cinematic 3D, dramatic moonlight-blue and warm-lamp lighting, acting close-ups, time jumps written as captions
+"4 H 30") and daybyday1to30 (a 30-day series dressed as a retro game: gauges, RPG tags, boss bar, PAUSE menu,
+"VOS VOTES" screen with percentages, choice buttons, countdown). Our version, frames `adn_4..6`:
+
+- **Light**: the flat 2D scene is lit like a cut-scene: the room sinks into night blue, a hard warm cone from the
+  ceiling lamp, a hard moonlight band through the window. Cel-shaded edges, the red eyes stay the brightest thing.
+- **Survival HUD** in a pixel font (Press Start 2P, SIL OFL, from Google Fonts): night number, three hearts (one per
+  wrong choice: a lost heart is a loss with its rule card), a FEAR gauge that rises with the music, the clock.
+- **RPG tags** for a first appearance: "TOI (CLASSE : CAISSIER)", "MAMAN ?" (the question mark when it may be the
+  double).
+- **The double is a boss**: a red "LE DOUBLE (BOSS)" bar appears when he is near.
+- **The in-video choice is a PAUSE menu**: the frame freezes and darkens, two buttons with one line on what each
+  costs, a 10-second countdown, "ÉCRIS A OU B".
+- **Each episode opens on "VOS VOTES"** with the real percentages counted from the previous episode's comments (never
+  invented), then "PARTIE SAUVEGARDÉE": the rule slip as a save file ("Enregistre la vidéo = ta sauvegarde") to turn
+  TikTok saves into a game mechanic.
+- Pixel font only for the game layer; captions, notifications and the slip keep their own fonts.
