@@ -63,3 +63,21 @@ cinematic 3D, dramatic moonlight-blue and warm-lamp lighting, acting close-ups, 
   invented), then "PARTIE SAUVEGARDÉE": the rule slip as a save file ("Enregistre la vidéo = ta sauvegarde") to turn
   TikTok saves into a game mechanic.
 - Pixel font only for the game layer; captions, notifications and the slip keep their own fonts.
+
+## Third layer: Blender sets shaded like the drawings, and the PS1 "danger" picture (November 23)
+
+From two YouTube tutorials the creator sent: a Blender-to-Photoshop concept-art overpaint (build the scene in 3D for
+perspective and light, then repaint it flat) and a PS1-style low-poly tutorial (low resolution, crunchy textures,
+nearest-neighbour pixels, few colours, dithering). Only titles and descriptions could be read from this server
+(YouTube blocked the download), so the methods below are the well-known core of both techniques.
+
+- **`blender_env.py --toon`** (frames `adn_7`): every material keeps its colour (a texture is reduced to its average
+  colour, the paint-over flattens grain), lit with a two-tone Toon BSDF plus a flat 0.35 emission fill so shadows keep
+  their colour, "Standard" view transform, and Freestyle ink lines 2.4 px in the characters' ink colour. The set
+  then matches the 2D characters while keeping real perspective and camera moves. An automatic 2D filter on a normal
+  render (mean-shift + palette) was tried first and rejected: banding rings on every light gradient.
+- **Night is added in 2D** on the toon render: the room sinks into night blue, a hard warm cone under the lamp.
+- **The PS1 picture is a signal** (frame `adn_8`): when the double is near, the image drops to a sixth of the
+  resolution, 16 levels per channel with ordered dithering, nearest-neighbour upscale and a slight horizontal
+  wobble, while the boss bar appears. The viewer learns that the picture breaking down means danger. Calm scenes stay
+  clean.

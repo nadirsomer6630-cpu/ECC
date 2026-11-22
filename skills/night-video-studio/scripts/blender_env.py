@@ -1357,6 +1357,38 @@ if REAL:
         if fc.data_path == "rotation_euler":
             m = fc.modifiers.new("NOISE"); m.scale = 28; m.strength = 0.012 if fc.array_index != 1 else 0.006; m.phase = fc.array_index * 7
 
+if "--toon" in sys.argv:   # cel look: the Blender blockout shaded like the 2D characters (flat colour, two-tone light, ink outlines)
+    def tex_of(sock, depth=0):
+        """The image texture feeding a socket, through mix/hue/bump nodes, if any."""
+        if not sock.is_linked or depth > 4: return None
+        n = sock.links[0].from_node
+        if n.type == "TEX_IMAGE": return n
+        for inp in n.inputs:
+            r = tex_of(inp, depth + 1)
+            if r: return r
+        return None
+    for m in bpy.data.materials:
+        if not m.use_nodes: continue
+        nt = m.node_tree; P = next((n for n in nt.nodes if n.type == "BSDF_PRINCIPLED"), None); out = next((n for n in nt.nodes if n.type == "OUTPUT_MATERIAL"), None)
+        if not P or not out: continue
+        es = P.inputs.get("Emission Strength")
+        if es is not None and es.default_value > 0: continue          # lamps and screens keep glowing
+        bc = P.inputs["Base Color"]; col = list(bc.default_value)[:3]
+        tx = tex_of(bc)
+        if tx is not None and tx.image is not None and tx.image.size[0] > 0:   # a texture: keep its average colour only
+            px = tx.image.pixels[:]; n = len(px) // 4; idx = range(0, n, max(1, n // 4000))
+            col = [sum(px[i * 4 + c] for i in idx) / len(idx) for c in range(3)]
+        toon = nt.nodes.new("ShaderNodeBsdfToon"); toon.component = "DIFFUSE"; toon.inputs["Size"].default_value = 0.9; toon.inputs["Smooth"].default_value = 0.0
+        toon.inputs["Color"].default_value = (*col, 1.0)
+        fill = nt.nodes.new("ShaderNodeEmission"); fill.inputs["Color"].default_value = (*col, 1.0); fill.inputs["Strength"].default_value = 0.35   # flat ambient: shadows keep their colour
+        add = nt.nodes.new("ShaderNodeAddShader"); nt.links.new(toon.outputs[0], add.inputs[0]); nt.links.new(fill.outputs[0], add.inputs[1])
+        nt.links.new(add.outputs[0], out.inputs["Surface"])
+    sc.view_settings.view_transform = "Standard"                      # no filmic curve: flat colours stay flat, ink stays black
+    sc.render.use_freestyle = True; sc.render.line_thickness_mode = "ABSOLUTE"; sc.render.line_thickness = 2.4
+    fs = sc.view_layers[0].freestyle_settings; ls = fs.linesets[0] if len(fs.linesets) else fs.linesets.new("ink")
+    if ls.linestyle is None: ls.linestyle = bpy.data.linestyles.new("ink")
+    ls.linestyle.color = (0.01, 0.008, 0.02); ls.linestyle.thickness = 2.4
+
 if OUT == "info":
     dg = bpy.context.evaluated_depsgraph_get()
     for o in bpy.context.scene.objects:
