@@ -46,6 +46,9 @@ the sources are in `references/craft.md` and `references/catalogue.md`.
   mother's text on top of Samir's call, a phone screen with a red tag), with a 3-4 word yellow banner stating the
   stakes ("IL EST À DEUX ENDROITS."). No title card, no "previously" in the first seconds: the episode number goes
   in the HUD line and the description.
+- **A promise in the first 10 s**: after the premise, say what is coming and when ("Dans une minute, tu vas
+  devoir ouvrir. Une seule réponse te laisse vivant."), and pay it off on time. A countdown keeps viewers past the
+  first seconds better than a situation alone (see the gamified episode study in `references/catalogue.md`).
 - **Short lines**: 3 to 7 words, one image each, no connectors ("Elle ouvre. Sur le palier, Samir. Il sourit.").
   Sounds the hero cannot see are described by the voice.
 - **Length**: a part runs 60 to 65 s; a single episode stays under 1:45. Viewers told the creator long episodes

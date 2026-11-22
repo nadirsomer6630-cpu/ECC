@@ -90,3 +90,17 @@ with "..." and the part number, sometimes followed by "|" and the choice as a qu
 almost always, #creepypasta for the night-rule series, #flippant on three French horror accounts at 237 k to 800 k
 (apokalyps.pov, chapkasurvie, amayn20), #survie on the survival ones. At most one emoji. Long explanatory
 captions are the exception. Correlation only: the caption follows the video's success, it does not make it.
+
+## Structure of a gamified episode, studied second by second (daybyday1to30 "Ép. 2", Nov 17, 83 s, 24.8 k views)
+
+Studied with the `watch` skill (14 keyframes) and a timed faster-whisper transcript. Method only.
+- **0-10 s, the promise**: the whole stake, then a countdown that keeps you watching: "Jordan paie la salle du mec
+  qui drague Léa. Il le sait pas encore. Dans une minute, il va appuyer sur un bouton. Et ça va faire très mal. Pas à
+  lui." The payoff lands at 1:05, as promised. Our openings stated a situation but promised nothing.
+- **10-15 s, the identity card**: "Jordan, 19 ans, friendzoné depuis 7 ans. 30 jours pour son glow-up."
+- **15-18 s, the previous vote paid**: "Vous avez voté massivement. La salle !" on a "VOS VOTES" screen.
+- **Pace**: about 45 lines in 83 s, a new line every 1.8 s; jokes in three beats ("Kilian sort son téléphone. Pas
+  pour l'aider. Pour filmer.").
+- **The HUD reacts to the story**: "AURA +1000" when he finally acts.
+- **The end**: a new knock at the door, three options, "Commente un mot" (a one-word comment is the easiest to
+  write), and a last line that gives viewers power: "Jordan fait ce qu'on lui dit. Pour l'instant."
