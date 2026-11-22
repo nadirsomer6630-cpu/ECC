@@ -79,3 +79,19 @@ wrong audience: #pourtoi and variants, #pov (too broad), #animation (animators),
 Rule from now on: three hashtags only, #horreur #creepypasta + one rotating test tag, same posting hour:
 nuit 4 partie 1 (v7) #histoiredhorreur, next part #mystere, then #suspense; keep the winner after three posts.
 Description: a line spoken by the monster as the title, the part number, the A/B question, the three tags.
+
+## Test log (account @karashiro0) — updated November 22, 2026
+
+Baseline (private stats from TikTok Studio screenshots, public counts read with yt-dlp on Nov 22):
+Nuit 1 (167 s): 41.8 s average watch (25 %), 10.8 % full views, most viewers gone at 0:01, 6.3 followers per 1000 views.
+Ascenseur ep1 (105 s): 20.3 s (19 %), 5.4 % full. "La lumière s'éteint" (27 s): 6.2 k views but 3.4 s (13 %), 1.5 % full.
+Like rate 6-14 % (references 6-15 %); saves 0.1-0.7 % per view (references 0.4-1.2 %).
+
+| # | Video | Variable tested (one only) | Metric | Result | Status |
+|---|---|---|---|---|---|
+| 0 | Nuit 4 partie 1 v7 (82 s, Nov 21) | face + question hook, yellow banners, quote title, #histoiredhorreur | % still watching at 0:02, avg watch %, full % | pending (send Studio at 72 h) | running |
+| 1 | Nuit 4 partie 2 | length 60-65 s (else identical) | full %, avg watch % | | planned |
+| 2 | next part | posted as video reply to the winning comment | views at 24 h, traffic source | | planned |
+| 3 | next part | frame 0 = phone anomaly instead of face | % at 0:02 | | planned |
+| 4 | next part | rule card made to be saved ("RÈGLE N°x") at the end | saves per 1000 views | | planned |
+| 5 | next part | third hashtag #mystere vs #histoiredhorreur | views at 24 h | | planned |
