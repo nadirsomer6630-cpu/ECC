@@ -16,7 +16,7 @@ BAG, BAG_D = (196, 138, 70, 255), (150, 100, 48, 255)
 
 def char(h=900, back=False, dark=False, head=(0.0, 0.0), look=(0.0, 0.0), wide=1.0, brow=0.0, mouth="line", blink=False,
          armL=(0.08, 0.1), armR=(0.08, 0.1), legs=(0.0, 0.0), lean=0.0, sweat=False, phone=None, bag=None, bill=False,
-         cap=True, pack=True, glow=None, crop_top=None, mum=False, samir=False):
+         cap=True, pack=True, glow=None, crop_top=None, mum=False, samir=False, style2=False, strand=0.0):
     """Angles in radians. arm=(shoulder, elbow): 0 hangs down, positive swings outwards and up. legs=(left, right)
     swing forward (+) or back (-), drawn as a sideways stride. head=(tilt, nod). phone/bag: "L" or "R" hand."""
     S = h / 1000 * 2; Wc, Hc = int(700 * S), int(1000 * S)
@@ -149,11 +149,17 @@ def char(h=900, back=False, dark=False, head=(0.0, 0.0), look=(0.0, 0.0), wide=1
                 mc = P(hx0, hy0 - R * 0.72); d.ellipse((mc[0] - 30 * S, mc[1] - 30 * S, mc[0] + 30 * S, mc[1] + 30 * S), fill=(248, 246, 255, 255)); d.ellipse((mc[0] - 12 * S, mc[1] - 36 * S, mc[0] + 42 * S, mc[1] + 18 * S), fill=C["cap"])
         else:
             capsule(P(hx0 - 110, yb + 6), P(hx0 + 110, yb + 6), 14, C["cap_d"], outline=False); rrect(hx0 - 30, yb - 6, hx0 + 30, yb + 22, 8, C["cap_d"], outline=False)
+    if style2 and not back and not mum and not samir:                  # the dark-blue strand escaping from under the visor
+        hair_strand(d, P, hx0, hy0, R, strand, C["ol"], S, dark)
     if not back:
         ey = hy0 + 30; ex = 62; er = 44 * wide
         for s_ in (-1, 1):
             c = P(hx0 + s_ * ex + look[0] * 8, ey + look[1] * 5)
             if dark: continue
+            if style2:
+                hybrid_eye(im, d, c, 44 * S * (1 + 0.25 * (wide - 1)), s_, look, wide, blink, C["ol"], (40, 62, 150, 255) if not (samir or mum) else ((92, 62, 40, 255) if samir else (110, 84, 60, 255)), S)
+                d = ImageDraw.Draw(im); by = ey - 46 - (10 if wide > 1.15 else 0)
+                d.line([P(hx0 + s_ * (ex - 36), by + 4 - brow * 26), P(hx0 + s_ * (ex + 10), by - 8 - brow * 6), P(hx0 + s_ * (ex + 44), by + 2 + brow * 12)], fill=C["ol"], width=int(13 * S), joint="curve"); continue
             if blink:
                 d.arc((c[0] - er * S, c[1] - er * S * 0.5, c[0] + er * S, c[1] + er * S * 0.5), 20, 160, fill=C["ol"], width=int(9 * S)); continue
             d.ellipse((c[0] - er * S - ow * 0.45, c[1] - er * S - ow * 0.45, c[0] + er * S + ow * 0.45, c[1] + er * S + ow * 0.45), fill=C["ol"])
@@ -298,3 +304,47 @@ if __name__ == "__main__":
     h = rider(300, 0.4, 0.0); sh.paste(h, (1150, 250), h); h = rider(300, 1.0, 1.0); sh.paste(h, (1560, 250), h)
     for k, a_ in enumerate((-0.9, -0.4, 0.0, 0.5, 0.9)): w_ = char(300, legs=(a_, -a_)); sh.paste(w_, (k * 180, 250), w_)
     sh.save(sys.argv[1], quality=90)
+
+
+def hybrid_eye(im, d, c, er, side, look, wide, blink, ol, iris, S):
+    """Style 2 eye: an almond whose outer corner lifts (a hybrid of round cartoon eyes and slanted ones), a thick ink
+    upper lid, a coloured iris with a darker ring, a pupil and two highlights. wide > 1 opens it rounder (fear)."""
+    w, h = er * 1.2, er * min(0.95, 0.6 + 0.9 * max(0.0, wide - 1.0)); tilt = er * 0.22
+    def pt(u, upper):                                                 # u in -1..1 from the inner to the outer corner
+        x = c[0] + side * u * w
+        y = c[1] - (tilt * (u + 1) / 2 - tilt * 0.35) + ((-h * (1 - u * u) ** 0.75) if upper else (h * 0.78 * (1 - u * u) ** 1.05))
+        return (x, y)
+    if blink:
+        d.line([pt(u / 10, True) if False else (c[0] + side * (u / 10) * w, c[1] - (tilt * ((u / 10) + 1) / 2 - tilt * 0.35) + h * 0.25 * (1 - (u / 10) ** 2)) for u in range(-10, 11)], fill=ol, width=int(9 * S), joint="curve"); return
+    upper = [pt(u / 12, True) for u in range(-12, 13)]; lower = [pt(u / 12, False) for u in range(12, -13, -1)]
+    poly = upper + lower
+    d.polygon(poly, fill=(252, 252, 250, 255))
+    lay = Image.new("RGBA", im.size, (0, 0, 0, 0)); ld = ImageDraw.Draw(lay)
+    ir = h * 0.95; ic = (c[0] + look[0] * (w - ir) * 0.8, c[1] + look[1] * h * 0.3 + h * 0.05)
+    ld.ellipse((ic[0] - ir, ic[1] - ir, ic[0] + ir, ic[1] + ir), fill=tuple(int(v * 0.6) for v in iris[:3]) + (255,))
+    ld.ellipse((ic[0] - ir * 0.84, ic[1] - ir * 0.84, ic[0] + ir * 0.84, ic[1] + ir * 0.84), fill=iris)
+    pr = ir * (0.42 if wide < 1.2 else 0.3); ld.ellipse((ic[0] - pr, ic[1] - pr, ic[0] + pr, ic[1] + pr), fill=(16, 14, 24, 255))
+    ld.ellipse((ic[0] - ir * 0.55, ic[1] - ir * 0.62, ic[0] - ir * 0.15, ic[1] - ir * 0.22), fill=(255, 255, 255, 255))
+    ld.ellipse((ic[0] + ir * 0.25, ic[1] + ir * 0.2, ic[0] + ir * 0.45, ic[1] + ir * 0.4), fill=(255, 255, 255, 220))
+    m = Image.new("L", im.size, 0); ImageDraw.Draw(m).polygon(poly, fill=255)
+    lay.putalpha(Image.fromarray(__import__("numpy").minimum(__import__("numpy").asarray(lay.getchannel("A")), __import__("numpy").asarray(m))))
+    im.alpha_composite(lay)
+    d2 = ImageDraw.Draw(im)
+    d2.line(lower, fill=ol, width=int(4 * S), joint="curve")
+    d2.line(upper, fill=ol, width=int(11 * S), joint="curve")                       # the heavy upper lid
+    oc = upper[-1]; d2.line([oc, (oc[0] + side * 14 * S, oc[1] - 10 * S)], fill=ol, width=int(8 * S))   # the flick at the outer corner
+
+
+def hair_strand(d, P, hx0, hy0, R, sway, ol, S, dark):
+    """The signature: dark hair under the cap and one long dark-blue lock falling over the forehead to the left
+    eyebrow, with a lighter blue shine. sway (-1..1) swings its tip, for follow-through in animation."""
+    base = (14, 16, 24, 255) if dark else (30, 28, 40, 255); col = (14, 16, 24, 255) if dark else (30, 52, 132, 255); hi = (84, 120, 210, 255)
+    for s_ in (-1, 1):                                                # short dark hair at the temples, under the cap
+        d.polygon([P(hx0 + s_ * (R - 6), hy0 - R * 0.36), P(hx0 + s_ * (R + 4), hy0 - R * 0.05), P(hx0 + s_ * (R - 30), hy0 - R * 0.1), P(hx0 + s_ * (R - 44), hy0 - R * 0.36)], fill=base, outline=ol, width=int(6 * S))
+    pts = []
+    for k in range(9):                                                # the lock: from under the visor, curling down and across
+        u = k / 8; x = hx0 - 104 + 96 * u + 18 * math.sin(u * 3.2) + sway * 60 * u * u; y = hy0 - R * 0.46 + 150 * u - 34 * u * u
+        pts.append((x, y, 46 * (1 - u) ** 0.8 + 7))
+    left = [P(x - w_ * 0.7, y + w_ * 0.2) for x, y, w_ in pts]; right = [P(x + w_ * 0.7, y - w_ * 0.4) for x, y, w_ in reversed(pts)]
+    d.polygon(left + right, fill=col, outline=ol, width=int(7 * S))
+    if not dark: d.line([P(x + 2, y - 8) for x, y, w_ in pts[1:6]], fill=hi, width=int(6 * S), joint="curve")

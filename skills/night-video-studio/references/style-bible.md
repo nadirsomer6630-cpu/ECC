@@ -81,3 +81,27 @@ nearest-neighbour pixels, few colours, dithering). Only titles and descriptions 
   resolution, 16 levels per channel with ordered dithering, nearest-neighbour upscale and a slight horizontal
   wobble, while the boss bar appears. The viewer learns that the picture breaking down means danger. Calm scenes stay
   clean.
+
+## Characters, style 2 (season 2 on)
+
+The creator's choice: a dark-blue lock of hair and hybrid eyes, almond and slanted. `toon2d.char(..., style2=True)`:
+- **Hybrid eyes** (`hybrid_eye`): an almond whose outer corner lifts, a heavy ink upper lid with a flick at the
+  corner, a coloured iris with a darker ring, a pupil and two highlights. Iris colour is part of the colour code:
+  you deep blue, Samir and the mother brown, the double keeps its white eyes with red irises. `wide` opens them
+  rounder for fear; the eyebrows stay and carry the emotion.
+- **The lock** (`hair_strand`, the hero only): dark hair at the temples under the cap and one long dark-blue lock with
+  a light-blue shine falling over the forehead. The double has the same lock, black: the silhouette lies, the eyes
+  do not. `strand` (-1..1) swings it.
+- Sheet: `assets/persos_style2.jpg`.
+
+## Animation rules (`scripts/anim.py`)
+
+From an animation tutorial the creator sent ("How to Animate ANYTHING in Blender!": keyframes shaped in the graph
+editor). Nothing moves linearly:
+- every move ends on an eased key (`keys` with `ease_in_out`, `ease_out`);
+- a move is prepared by a small opposite move (anticipation: he shrinks and looks down before turning);
+- fast moves overshoot and settle (`back_out`);
+- holds give weight: a beat of stillness before and after a scare;
+- loose parts follow late and swing past (`follow`: a damped spring on the lock, the pompom, the bag strap);
+- blinks punctuate: one in the calm hold, one after the shock.
+Test clip: a knock, anticipation, a fast turn with overshoot, eyes snapping wide, the lock swinging behind.
