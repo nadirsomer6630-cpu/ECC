@@ -4,7 +4,8 @@ Read this before writing a description, choosing what to change in the next epis
 Update the test log every time the user sends TikTok Studio screenshots: write the result, then say what is
 confirmed, what is still uncertain and what changes. Formulas: % watched = average watch time / duration;
 like, save, share rate = count / views; followers per 1000 views = new followers / views x 1000. Under 1000 views
-one like moves a rate by a point or more: say so instead of ranking videos on small gaps.
+one like moves a rate by a point or more: say so instead of ranking videos on small gaps. Retention points are
+always written as "x % still watching at 0:0s", never "left", which reads both ways.
 
 ## Hashtags (account study, November 21, 2026)
 
@@ -25,11 +26,11 @@ Like rate 6-14 % (references 6-15 %); saves 0.1-0.7 % per view (references 0.4-1
 
 | # | Video | Variable tested (one only) | Metric | Result | Status |
 |---|---|---|---|---|---|
-| 0 | Nuit 4 partie 1 v7 (82 s, Nov 21) | face + question hook, yellow banners, quote title, #histoiredhorreur | % still watching at 0:02, avg watch %, full % | at 20 h: 241 views, 15.5 s (19 %), 5.0 % full, 33 % left at 0:04, 0 followers | running, re-read at 72 h |
+| 0 | Nuit 4 partie 1 v7 (82 s, Nov 21) | face + question hook, yellow banners, quote title, #histoiredhorreur | % still watching at 0:02, avg watch %, full % | at 20 h: 241 views, 15.5 s (19 %), 5.0 % full, 0 followers; 33 % still watching at 0:04 | running, re-read at 72 h |
 
 Studio snapshot Nov 22 (18:38): Nuit 1 (168 s) 701 views, 42.9 s (26 %), 10.9 % full, 4 followers, For You 93 %.
 Nuit 2 (110 s) 775 views, 21.7 s (20 %), 8.1 % full, 0 followers, For You 95 %. Nuit 3 (119 s) 777 views,
-14.3 s (12 %), 1.9 % full, 51 % left at 0:02, 3 followers, For You 96 %. Every video gets ~95 % of its views on day 1.
+14.3 s (12 %), 1.9 % full, 51 % still watching at 0:02 (49 % gone), 3 followers, For You 96 %. Every video gets ~95 % of its views on day 1.
 Reading: 93-98 % of viewers come from For You and have never seen the previous nights. The nights that open on a
 self-contained premise (N1 "the client has your name", N2 "you're not home yet") hold best; N3 (a dinner that needs
 context) and N4 (recap of the refusal) hold worst. Length does not explain it (N1 is the longest and the best).

@@ -45,16 +45,22 @@ the sources are in `references/craft.md` and `references/catalogue.md`.
   bore them, and every Studio curve loses most viewers in the first two seconds anyway.
 - **One rule, tested**. An in-video choice shows both outcomes: the wrong one ends in a loss whose clue was visible
   before, the clue is replayed ("TOUT À L'HEURE"), a red "RÈGLE N°x" card is written by hand on the order slip
-  (rules 1 to 9 exist; the next is 10), then a tape rewind and the right outcome.
+  (rules 1 to 9 exist; the next is 10, and the count continues across seasons
+  unless the user decides otherwise), then a tape rewind and the right outcome.
 - **The phone carries the story**: the mother's texts as notifications at the top, the video call with Samir (same
   frame every time), order and map apps with real detail. A HUD line stays on screen: night, place, clock.
 - **Dialogue as shot / reverse shot**, a new close-up for every line, and one or two funny lines from Samir.
 - **One shock per video**: one second of silence, then a smear and a negative flash on the monster's close-up.
+- **Ask for the comment at the choice**, not only at the end: a small banner "A OU B ? ÉCRIS-LE" while the
+  in-video choice is on screen. Only 10 to 14 % of viewers reach the end card, so a vote asked only there gets
+  a handful of comments.
 - **The end** makes the next video necessary: a last line that reframes everything, then an end card "TU FERAIS
   QUOI ?" with two buttons, one line each on what the choice costs, "Écris A ou B en commentaire", "Abonne-toi".
 
 Write the lines as `voices/<episode>.json`: `[[id, voice, "[acting tags] text"], ...]` with voices `narr`
-(Alexandre), `samir` (Martin), `mere` (Agnès). Ids starting with `s` are filtered as phone audio by the mix.
+(Alexandre), `samir` (Martin), `mere` (Agnès). Ids starting with `s` are filtered as phone audio by the mix. A new character either speaks
+with one of these voices (the double speaks with the voice it steals) or needs a new ElevenLabs voice chosen with
+the user; never borrow a voice that belongs to another series.
 Never clone or imitate another creator's voice.
 
 ### 3. Voices
@@ -109,7 +115,10 @@ check that the offset is zero. Uploading sends the video to a third party: do it
 ### 9. Deliver the description
 
 Format, from the account's hashtag study:
-`« <a line of the monster or the hook> » 👁️ Nuit N, partie P : <the choice as a question> ? #horreur #creepypasta #<test tag>`
+`« <a line actually spoken in the episode> » 👁️ Nuit N, partie P : <the choice as a question> ? #horreur #creepypasta #<test tag>`
+
+The quote is a line the viewer hears (Samir's "Frérot… il a ma tête.", the double's "Oui, madame. J'ai votre
+commande. Ouvrez."), not banner text: hearing the title in the video is what makes it land.
 
 - Three hashtags only: `#horreur #creepypasta` and one rotating test tag from the test log. Never #pourtoi and its
   variants, #pov, #animation or #livreur (they bring the wrong audience or none).
