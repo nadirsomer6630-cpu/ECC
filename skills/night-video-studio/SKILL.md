@@ -1,154 +1,131 @@
 ---
 name: night-video-studio
-description: Fast production of the French interactive horror TikToks ("Livreur de nuit" and the next night-job episodes) - 2D characters in Blender sets, ElevenLabs voices checked by transcript, phone screens, three in-video choices, then one-command render, partial re-render and quality gate. Use when writing, producing, retouching or checking one of these episodes, or when starting a new night-job episode from the existing one.
+description: Writes, produces, retouches and checks the French interactive horror TikToks of the night-job series ("Livreur de nuit", the courier, Samir, the mother, the double, and the next seasons such as caissier de nuit or gardien de piscine) - script in short lines, ElevenLabs voices checked by transcript, 2D characters in Blender sets, phone screens, in-video choices with both outcomes, one-command render and partial re-render, sound, quality gate, then the TikTok description and the stats follow-up. Use it whenever the user asks for a new episode or part, a fix on a delivered episode, a description or hashtags for one of these videos, or an analysis of their TikTok Studio numbers, even if they only say "fais la suite", "corrige", "je mets quoi en description" or send screenshots of their stats.
 metadata:
   origin: ECC
 ---
 
 # Night video studio
 
-The production kit for the night-job series, built on what the best videos in the niche do and on our own
-statistics. It exists to save time: one script per episode, one command per step, and checks that run before
-anything is sent.
+The production kit of a French TikTok creator's interactive horror series: each night the viewer ("tu") does a
+night job, a double wears the faces of the people he loves, and every choice tests one rule. The user writes in
+French; answer in plain, complete French. The kit exists to save time: one script per episode, one command per
+step, and checks that run before anything is delivered.
 
 ## When to Use
 
-- A new night-job episode (courier, night watchman, baby-sitter...): copy `pipeline/nuit1.py` and its lines file.
-- A retouch on a delivered episode: `make.sh fix` re-renders only the seconds that changed.
-- Before any delivery: `make.sh qa`.
+- A new episode or part: start from `scripts/nuit5.py` (the latest) and a new lines file.
+- A fix on a delivered episode: change the shot, then re-render only the seconds that changed.
+- A description, a pinned comment or hashtags for a video.
+- TikTok Studio screenshots or stats to analyse: read `references/account.md` first and update its test log.
 
 ## How It Works
 
-### What makes a video hold (measured)
+### 1. Decide what this episode tests
 
-| | Ep. 3 v2 (73 s, old format) | Livreur de nuit nuit 1 (2:48) |
-|---|---|---|
-| Average watch | 7.9 s | 41.8 s |
-| Watched to the end | 5 % | 10.8 % |
+Open `references/account.md`. It holds the account's real numbers and the test log: one variable changes per
+video (the opening, the length, the hashtag...) so the next stats can say something. Name the variable before
+writing, and keep the rest of the recipe as it was.
 
-Half the viewers of nuit 1 left within 2 s: the first image was a face doing nothing. Reference videos in the
-niche (230 k to 2.8 M views) all do the following, so every episode does it too:
+### 2. Write the script
 
-1. **Image 0 asks a question.** The voice starts on frame 0 with "Imagine." and the screen already shows the
-   anomaly (a notification "Client : ???", a message from someone who never writes).
-2. **The reveal lands before 5 s**, with a red tag on the phone screen saying what is wrong.
-3. **One rule, tested three times.** Each wrong choice ends in a loss whose clue was visible before, a rule
-   written by hand on the order slip, and a tape rewind.
-4. **The phone carries the story** (order app, messages, counters). A HUD line stays on screen: clock, place,
-   money for the night.
-5. **Comments are asked for at each choice**, not only at the end: few viewers reach the end.
-6. **1:00 to 1:45** is where the references sit; 2:45 is the upper limit.
-7. **Simple 2D characters** (round head, one bright colour) in dark sets. Detailed 3D characters did not pay.
-8. **Description**: hook sentence, "Nuit N", 2 or 3 hashtags (#horreur #creepypasta #survie).
+These rules come from the account's own numbers and from videos of the niche at 0.2 to 2.8 M views. The details and
+the sources are in `references/craft.md` and `references/catalogue.md`.
 
-### What the top videos do that we now apply everywhere
+- **The episode must work for someone who never saw the others.** 93 to 98 % of views come from For You. The nights
+  that opened on a self-contained premise held best (Nuit 1 "le client porte ton nom": 26 % watched, 10.9 % to the
+  end); the ones that opened on context or a recap held worst (Nuit 3: 12 %, 1.9 %). So frame 0 shows the whole
+  premise and its anomaly at once: the voice starts on "Imagine." and the image already shows what is wrong (the
+  mother's text on top of Samir's call, a phone screen with a red tag), with a 3-4 word yellow banner stating the
+  stakes ("IL EST À DEUX ENDROITS."). No title card, no "previously" in the first seconds: the episode number goes
+  in the HUD line and the description.
+- **Short lines**: 3 to 7 words, one image each, no connectors ("Elle ouvre. Sur le palier, Samir. Il sourit.").
+  Sounds the hero cannot see are described by the voice.
+- **Length**: a part runs 60 to 65 s; a single episode stays under 1:45. Viewers told the creator long episodes
+  bore them, and every Studio curve loses most viewers in the first two seconds anyway.
+- **One rule, tested**. An in-video choice shows both outcomes: the wrong one ends in a loss whose clue was visible
+  before, the clue is replayed ("TOUT À L'HEURE"), a red "RÈGLE N°x" card is written by hand on the order slip
+  (rules 1 to 9 exist; the next is 10), then a tape rewind and the right outcome.
+- **The phone carries the story**: the mother's texts as notifications at the top, the video call with Samir (same
+  frame every time), order and map apps with real detail. A HUD line stays on screen: night, place, clock.
+- **Dialogue as shot / reverse shot**, a new close-up for every line, and one or two funny lines from Samir.
+- **One shock per video**: one second of silence, then a smear and a negative flash on the monster's close-up.
+- **The end** makes the next video necessary: a last line that reframes everything, then an end card "TU FERAIS
+  QUOI ?" with two buttons, one line each on what the choice costs, "Écris A ou B en commentaire", "Abonne-toi".
 
-- Frame 0 shows the anomaly with a red tag on the phone screen ("TU N'ES PAS ENCORE RENTRÉ.").
-- One sentence, one framing: in a dialogue scene, wide shot, then the face of whoever speaks.
-- The previous vote is paid off inside the next episode: both outcomes are shown.
-- The final A/B can be solved only by returning viewers (a detail from the previous night): it feeds comments.
-- "À SUIVRE · NUIT N" on the last seconds; description "Abonne-toi pour la nuit N".
-- The camera moves to what the voice names (each rule as it is written, each hand as it is named).
+Write the lines as `voices/<episode>.json`: `[[id, voice, "[acting tags] text"], ...]` with voices `narr`
+(Alexandre), `samir` (Martin), `mere` (Agnès). Ids starting with `s` are filtered as phone audio by the mix.
+Never clone or imitate another creator's voice.
 
-### Emotion, from a 2.4 M-view non-horror reference
+### 3. Voices
 
-- Arc: funny, then embarrassing, then sad, then a flip of point of view (the other person was suffering too).
-- After each scene, a short cut-away to whoever watches or waits (the mother): her reaction carries the emotion.
-- Warm, bright memories against the dark present: a change of palette tells the viewer "this is the past".
-- Story objects as cards (a ticket, a bubble with an icon) say a fact faster than a sentence.
-- The last card names the next episode precisely ("NUIT 3 : LA NUIT DE TA MÈRE"), not a generic "à suivre".
-- Shares and saves come from family emotion; fear alone brings views but fewer shares.
+Copy the newest generator (`scripts/elv11_gen.py`) with its folder path changed. It calls eleven_v3 with the acting
+tags, transcribes every take with faster-whisper, scores it against the line, retries with other seeds then with
+eleven_multilingual_v2, and rejects a take that is still loud in its last 0.15 s (a take cut mid-word once slipped
+through). The API key is injected by the network proxy; the code sends the placeholder "proxy-injected". Whisper
+mishears short words ("Clic" as "Clique", digits for numbers): read the heard text instead of trusting a low score.
 
-### Series rhythm, from a 2.1 M-view account (median 243 k over 21 videos)
+### 4. Build the episode module
 
-- Parts of about 65 s, posted a few days apart; the post title is the choice: "Partie 1 | Tu ... ou tu ... ?".
-- First person: your hands and your phone at the bottom of a wide-lens frame; a companion talks with you.
-- Frame 0 is a title card: time, day, who you are, the situation, the dilemma.
-- Clue cards on objects; a small "Abonné · la partie 2 arrive" chip half-way.
-- End card: "TU FERAIS QUOI ?", two buttons with one line each on what it costs, "Écris-le en commentaire",
-  "Abonne-toi pour la partie 2".
+Copy `scripts/nuit5.py`. Its order matters, because later parts depend on earlier ones: voices and their word
+timings (`at` builds the timeline, `wt(line, word)` gives the time of a spoken word), then shot functions that
+return a 1080x1920 image for a time `t`, then `raw()` that picks the shot, `finish()` that adds grade, HUD,
+banners, notifications, buttons and captions, then the numpy sound mix in `__main__`. Anchor every cut and effect
+on `wt`/`L_`, never on hard-coded seconds, so a new voice take moves everything with it. Word anchors compare
+lowercase words with their accents kept ("s'éteint" -> `"teint"`).
 
-### Dialogue and humour, from an 893 k-view family sketch (15 % likes)
+### 5. Look before rendering
 
-- Dialogue scenes as shot / reverse shot: a close-up on whoever speaks, a new shot for every line.
-- One or two funny lines per part from the companion relieve the fear and raise likes and shares.
-- A caring habit of the mother (food, texts) works as a running gag, then as a clue.
+`python3 probe6.py "0" "L_('s1')+1" ...` (copy it for the new module) renders chosen moments to a contact sheet in
+a few minutes. Check every shot there: frame 0, banners not covering faces or bubbles, the monster big enough,
+nothing black, captions inside the safe zone.
 
-### Labels kit (`pipeline/tags.py`), from a 1.6 M-view recap format (22 k saves)
+### 6. Render
 
-A word stuck on a person or object states a fact in half a second; scenes change every 2 to 3 s. Our own drawings,
-no third-party art: `stamp_tag` (red rubber stamp), `label` (red strip), `name_plate` (gold), `live_bug`, `note`
-(handwritten note typed in with the voice), `poster` ("DISPARU" with a photo), `tape` (crime-scene tape),
-`rec_frame` (camcorder), `grin` (the double's grin painted on a wall: the series motif), `subscribe` (end card: the
-button turns to ABONNÉ, then "NUIT N" and two open questions). Call `tags.setup(E.MONT, E.HAND)` first.
-The hook sentence tells the whole premise as cause and consequence in one breath ("... et le soir même, il a trouvé
-un mot collé sur sa porte").
+- Free disk first: a 60 s episode needs about 0.7 GB of JPEG frames; delete old `*tmp/f*.jpg`.
+- Render in four independent processes, `python3 slices.py <module> k 4 0-<duration>` for k = 0..3, because the
+  multiprocessing pool hung several times. A slice can die silently: count frames, then `fill5.py` renders only
+  the missing ones (run it once more if a few remain).
+- Write `timeline.sig`, then `EI_AUDIO_ONLY=1 python3 <module>.py OUT.mp4` mixes the sound and encodes (x264 CRF 24,
+  maxrate 3.2 Mb/s, loudnorm -13 LUFS).
+- A visual fix with the same voices and pauses: re-render only those seconds with `slices.py <module> k 4 a-b`, then
+  encode again. A changed voice take or pause changes the timeline, and only a full render is then valid.
 
-### One-second readability, from an animated-series method page (1.28 M views in 6 days, Nov 2026)
+### 7. Optional: library sound effects
 
-Only the public page was read (the paid guide was not). Its before/after images make one point: a wide shot with
-a tiny hero and no text loses the viewer; a close-up, one exaggerated emotion and one phrase read in a second.
-- **Frame 0 on "Imagine": the hero's face, very close**, eyes wide, sweat drop, shock lines (`tags.burst`) behind,
-  and the dilemma as a question on a yellow strip (`tags.banner`, 3 or 4 words in caps: "QUI SONNE CHEZ TOI ?").
-  A face doing nothing lost half of nuit 1's viewers in 2 s; a face with an emotion and a question is the opposite.
-- **A yellow banner on the key shots** that states what the image means, not what the voice says ("IL EST SEC.",
-  "CE N'EST PAS SAMIR.", "IL ÉTAIT DÉJÀ EN BAS."). At most one banner per shot, placed at y 700, under the clock
-  and notifications and clear of the call's self-view.
-- **Exaggerated emotions**: wavy mouth and sweat for fear, a burst of shock lines in the character's colour on the
-  reaction line (the mother's pink, the courier's purple), then it fades in 1.5 s.
-- **The monster always ends in close-up**, never small in a doorway: push in until the face fills the frame.
-- **No black frame**: the second of silence before the shock shows a blade of light growing in a door gap
-  (`dark_gap` in `nuit4.py`).
-- **No shot longer than about 3 s without a change**: split a long beat into wide, close, and a final gesture
-  (the double lifts his head and looks into the peephole).
-- **After a loss, replay the clue** before the rule card (the façade shot again, "TOUT À L'HEURE").
-- Three beats for every scene: hook, action, punchline.
+OpusClip AI Producer can lay its library sounds (wood thuds for knocks, clicks, tape rewind, paper, sub impacts,
+clock ticks) at exact milliseconds on an uploaded video, and exported without a watermark when tried (Descript's
+free plan watermarks). Keep our video stream and take only the audio of its export, renormalised to -13 LUFS, then
+check that the offset is zero. Uploading sends the video to a third party: do it for our own renders only.
 
-### Episode 2 assets
+### 8. Quality gate (before saying it is done)
 
-`nuit2.py` adds: `handheld` (noise-driven camera, tremor grows with tension), `rain`, `motes` (dust in a beam),
-`steam`, `reveal` (phone torch: a lit render shows through a cone over a dark render of the same set),
-`seated` (characters behind a table), `key_shot`, `call_screen`, `black_hands`, `bedroom_door`. Blender views
-`--cam=home_entry|home_kitchen --home=dark|lit` (the mother's flat, Poly Haven CC0 furniture). `toon2d.char(mum=True)`
-draws the mother (no bracelet: the red bracelet identifies the double). `opensimplex` is required (`pip install opensimplex`).
-
-### Steps and commands
-
-`pipeline/make.sh` wraps every step (paths `A` scripts, `B` assets; `EP` = episode module, default `nuit1`):
-
-```bash
-make.sh voices [ids]        # eleven_v3 with acting tags; each take transcribed and scored, fallback multilingual_v2
-make.sh probe "0.0" "L_('c1')+1" "T_ECH"   # contact sheet of chosen moments before any render
-make.sh test                # every 15th frame, layout only
-make.sh render OUT.mp4      # full render (about 25 min for 2:45) and encode; refuses under 1.5 GB free disk
-make.sh fix OUT.mp4 12-18   # redo only those seconds (same timeline), re-encode
-make.sh qa OUT.mp4          # per-line transcript score, LUFS, duration, frame count, 72-frame sheet, file size
-```
-
-### Format and speed settings
-
-- Encode x264 CRF 24, maxrate 3.2 Mb/s, AAC 192k, loudnorm -13 LUFS: 45 MB for 2:48, no visible loss.
-- Colour grade is a 3D lookup table (`fast_grade`), lit sprites are cached: 0.4 to 1.2 s per frame on 4 cores.
-- `oxipng -o 2 --strip safe` halves the PNG set renders.
-- A changed voice line or pause changes the timeline: then only a full render is valid.
-
-### Quality rules
-
-- Captions: at most 3 words, each word appears when spoken, spoken word in red.
-- Voices at natural speed, never time-stretched; the acting of a voice cannot be judged by ear, say so.
-- Whisper writes numbers as digits ("2h51"): a low score on such a line is not a voice error; read the heard text.
-- One shock per episode (smear + negative flash after 1 s of silence).
+- Transcribe the final audio passage by passage and compare with the script; re-check a doubtful line with a clip
+  framed around it before concluding.
+- Loudness about -13 LUFS, duration, frame count, a contact sheet of every changed shot.
+- Say plainly that the acting of a voice and the balance of sound effects cannot be judged by transcript.
 - Never overwrite a delivered file: write `_vN`.
+
+### 9. Deliver the description
+
+Format, from the account's hashtag study:
+`« <a line of the monster or the hook> » 👁️ Nuit N, partie P : <the choice as a question> ? #horreur #creepypasta #<test tag>`
+
+- Three hashtags only: `#horreur #creepypasta` and one rotating test tag from the test log. Never #pourtoi and its
+  variants, #pov, #animation or #livreur (they bring the wrong audience or none).
+- A pinned comment that asks the A/B question or points at the fair clue ("tu avais remarqué qu'il était sec ?").
+- Posting advice: the cover is the opening image, the same posting hour every time, a new part posted as a video
+  reply to the comment that won the vote, an older version set to "Seulement moi" rather than deleted.
 
 ## Examples
 
-`pipeline/nuit1.py` is the complete reference episode: timeline from voice timings (`at`, `wt`), shots
-(`lock_screen`, `order_screen`, `facade` with the scooter rider, `entry_shot`, `stairs_shot` with lamps going
-out behind him, `door_mix` for a door whose light follows its opening, `hand_shot`, `swap_shot`, `receipt`),
-overlays (`hud`, `buttons`, `stamp`, `callout`), the three rewinds, and the numpy sound mix.
-`pipeline/toon2d.py` draws the courier and his dark double in any pose (`char`), the seated `rider` and the
-arm through the door (`hand_out`). `voices/nuit1-lines.json` is the script with acting tags.
+**Example 1**: "fais la partie 2, ils ont voté B" -> check the test log, write a cold-open script of about 60 s with
+the vote paid off on screen, generate and check voices, probe, render, gate, then give the file and its
+description.
 
-The pipeline files contain absolute scratch paths of the session that made them; set `A` and `B` (and `NEW` in
-`ei2.py`) when restoring them in a new session. The ElevenLabs key is never in a file: the network proxy injects
-it and the code sends a placeholder.
+**Example 2**: the user sends four TikTok Studio screenshots -> compute % watched and full-view rate for each video,
+compare at equal age, update the test log in `references/account.md`, separate facts from hypotheses, and say what
+the next video should change.
+
+The scripts contain absolute scratch paths of the session that made them; set `A` (scripts) and `B` (assets) when
+restoring them in a new session.

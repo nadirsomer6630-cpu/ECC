@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: stats-review-test-log
+expected_outcome: |
+  An analysis in French that computes the relevant rates with their formulas, compares them with the earlier nights at a comparable age, treats the cold-open test as supported but not proven, proposes one variable to change next with the metric to watch, and gives the updated test log.

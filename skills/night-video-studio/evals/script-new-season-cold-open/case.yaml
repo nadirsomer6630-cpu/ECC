@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: script-new-season-cold-open
+expected_outcome: |
+  A French script for season 2 part 1 (night cashier) that a viewer understands without having seen season 1, about 60 s long, with short lines, a lines file in the series' voice format, a shot list, an in-video choice whose two outcomes are both shown, a numbered rule card, one shock, and an end card with two costed options.
