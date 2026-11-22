@@ -27,6 +27,13 @@ Open `references/account.md`. It holds the account's real numbers and the test l
 video (the opening, the length, the hashtag...) so the next stats can say something. Name the variable before
 writing, and keep the rest of the recipe as it was.
 
+### Look and identity
+
+From season 2 the series follows `references/style-bible.md` (frames in `assets/adn_*.png`): everything in flat 2D
+with sets drawn in the characters' style, one readable scene and a moving element at frame 0, a single big clock as
+HUD, and our signatures (Nuit Express, the growing rule slip, hidden red eyes in the dark, the colour code, the
+loop). Read it before drawing any shot. The Blender sets stay only for retouching season 1.
+
 ### 2. Write the script
 
 These rules come from the account's own numbers and from videos of the niche at 0.2 to 2.8 M views. The details and
