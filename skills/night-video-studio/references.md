@@ -104,3 +104,13 @@ Change of plan: test 1 becomes a cold open that works without the previous parts
 | 3 | next part | frame 0 = phone anomaly instead of face | % at 0:02 | | planned |
 | 4 | next part | rule card made to be saved ("RÈGLE N°x") at the end | saves per 1000 views | | planned |
 | 5 | next part | third hashtag #mystere vs #histoiredhorreur | views at 24 h | | planned |
+
+## Nuit 4 partie 2, season finale (Nov 22): what was applied
+
+60.9 s. Cold open understood without earlier parts (call in the rain + mother's text in frame 0, banner "IL EST À
+DEUX ENDROITS."); both vote outcomes inside the video (A: loss, rule 9, rewind; B: rule 5, survive); last line
+loops into the first line of Nuit 1, last image is Nuit 1's first frame. Hybrid touches from the references:
+recap-style clue tags on people (TREMPÉ / SEC), villain name plate (LE DOUBLE), first-appearance plate (TA MÈRE),
+part-series mid-video chip, method-page yellow banners and close-ups, red eyes in the dark instead of a black frame,
+end card voting the next night job. Library sound effects added with OpusClip AI Producer (free at the time, no
+watermark): video kept from our render, audio taken from the OpusClip export and renormalised to -13 LUFS.
