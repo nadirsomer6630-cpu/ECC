@@ -115,12 +115,15 @@ check that the offset is zero. Uploading sends the video to a third party: do it
 ### 9. Deliver the description
 
 Format, from the account's hashtag study:
-`« <a line actually spoken in the episode> » 👁️ Nuit N, partie P : <the choice as a question> ? #horreur #creepypasta #<test tag>`
+`<Story name>... (partie P) | <the choice as a question> ? #horreur #creepypasta #<test tag>` (the form of the
+November 2026 hits: 2 to 10 words, "...", the part number, the question after "|"), or the same with a quoted
+line actually spoken in the episode as the story name.
 
 The quote is a line the viewer hears (Samir's "Frérot… il a ma tête.", the double's "Oui, madame. J'ai votre
 commande. Ouvrez."), not banner text: hearing the title in the video is what makes it land.
 
-- Three hashtags only: `#horreur #creepypasta` and one rotating test tag from the test log. Never #pourtoi and its
+- Three hashtags only: `#horreur #creepypasta` and one rotating test tag from the test log. #flippant is the strongest
+  third tag seen on French horror accounts; never #pourtoi and its
   variants, #pov, #animation or #livreur (they bring the wrong audience or none).
 - A pinned comment that asks the A/B question or points at the fair clue ("tu avais remarqué qu'il était sec ?").
 - Posting advice: the cover is the opening image, the same posting hour every time, a new part posted as a video

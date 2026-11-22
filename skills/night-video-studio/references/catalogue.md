@@ -69,3 +69,24 @@ a day counter ("JOUR 12/30"), a hero sheet and a vote at the end. Applied in nui
 Lessons: number every episode the same way and keep going (one outlier pays for the series); a quoted line of the
 monster as the title works better than a description; post part 2 as a video reply to the comment that voted
 (it shows the viewer's comment on screen and rewards commenting); group each story in a playlist.
+
+## Descriptions and hashtags of the videos that break through (read November 22, 2026)
+
+Counts read with yt-dlp on the day. A browser agent's list of the same accounts was partly invented (videos that do
+not exist, likes reported as views): only use counts read from the video page itself.
+
+| Creator | Date | Length | Views | Caption |
+|---|---|---|---|---|
+| monsieur.minuit0 | Nov 13 | 86 s | 1.4 M | partie 1 #horreur #creepypasta #histoire #scenario |
+| ilfautsurvivre | Nov 19 | 66 s | 721 k | Squid Game, partie 1 \| Tu lui prends la main ? #OnRegardeQuoi #squidgame #serie |
+| ilfautsurvivre | Nov 21 | 68 s | 590 k | Sans un bruit le film, partie 1 \| Tu lâches sa main ? #sansunbruit #film #onregardequoi |
+| apokalyps.pov | Nov 9 | 75 s | 566 k | La deuxième maman... (partie 1) #survie #horreur #flippant |
+| mission.creepy | Oct 24 | 143 s | 515 k | Nuit 3 - Jacques a dit #horreur #creepypasta |
+| apokalyps.pov | Nov 8 | 174 s | 314 k | Le vol de nuit ✈️ (partie 7) #survie #horreur #flippant |
+| scarystory893 | Oct 29 | 123 s | 219 k | Nuit 1 – Ne réponds pas 📱 Cette nuit, une alerte. Une seule règle. Tu serais mort combien de fois ? 👇 #horreur #creepypasta #histoiredhorreur #peur #fyp |
+
+What they share, with the ten references above: the caption is short (2 to 10 words before the tags): a story name
+with "..." and the part number, sometimes followed by "|" and the choice as a question. 2 to 5 hashtags; #horreur
+almost always, #creepypasta for the night-rule series, #flippant on three French horror accounts at 237 k to 800 k
+(apokalyps.pov, chapkasurvie, amayn20), #survie on the survival ones. At most one emoji. Long explanatory
+captions are the exception. Correlation only: the caption follows the video's success, it does not make it.
