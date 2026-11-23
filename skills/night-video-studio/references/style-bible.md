@@ -248,3 +248,25 @@ back with tall volume, an M hairline with a small widow's peak, 21 thick clumps 
 heavier wavy strands falling in front of each ear, the blue lock and one more strand on the forehead, and the back
 of the hair as one mass behind the ears ending in a few points on the nape. Too many thin strands read as worms and
 long nape points read as pigtails: keep the loose strands few and thick.
+
+## v13 (November 23): hair, mouths and chins redone from scratch, with the lessons of the earlier tries
+
+Mistakes found by rendering each part large, and the rule that replaced each:
+
+- **Hair as noodles** (thin wiggly lines everywhere) -> hair is made of thick clumps (`ribbon`), each lit with its
+  own rounded section, one strand line at most, one crisp pointed highlight (`streak`) per clump so the highlights
+  line up into a band across the crown.
+- **Random waves read as messy or crimped** -> one `wave(y)` for the whole head, so every clump ripples in step
+  like combed hair; long wavelength (170 px): a short one (64 px) reads as crimped zigzags.
+- **A slicked-back cut that read as a fringe or a bowl** -> clumps are broad at the root and pointed at the crown
+  (thin roots at the forehead read as tips falling down), they fan back over the skull, and the hair is drawn
+  under the skin: the forehead is clipped on an uneven hairline with no ink, so the hair grows out of the scalp,
+  with a soft shadow under the hairline. The temple strands and the blue lock are drawn on top afterwards.
+- **Jagged silhouette** -> a smooth crown; the clumps give the texture inside it.
+- **Lips as blurred colour** -> lips are drawn shapes, each lit: an upper lip with a cupid's bow, darker; a fuller
+  lower lip with a highlight; a mouth line heavier in the middle, inked corners. Smile: corners up, upper teeth,
+  dimples. Surprise: a round opening framed by the lips, upper teeth, tongue. Fear: stretched wide, corners down,
+  both rows of teeth. Samir's moustache falls over his upper lip.
+- **A shapeless chin with a hard line across it** -> a muzzle under the lips, the fold under the lower lip, the
+  chin as a ball below it (wider for a wider jaw), a faint cleft for the hero; the stubble has a soft upper edge,
+  and the nose-to-mouth folds are wide and shallow (narrow deep ones drew vertical bars on the mother's face).

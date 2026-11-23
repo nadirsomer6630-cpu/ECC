@@ -84,7 +84,7 @@ class Canvas:
     def put(self, im):
         a = np.asarray(im).astype(np.float32) / 255; self.over(a[..., :3] * 255, a[..., 3])
 
-    def shade(self, mask, albedo, h=None, R=40, line=(2.4, 5.5), dots=True, spec=0.0, rim=1.0, gloss=0.86, flat=0.0):
+    def shade(self, mask, albedo, h=None, R=40, line=(2.4, 5.5), dots=True, spec=0.0, rim=1.0, gloss=0.86, flat=0.0, noink=None):
         """Light a shape like a 3D render, then draw it as a comic panel."""
         ys, xs = np.nonzero(mask)
         if len(ys) == 0: return
@@ -120,6 +120,7 @@ class Canvas:
         mu = m.astype(np.uint8); cxm = xs.mean() / S
         thin = cv2.dilate(mu, k1) > 0; thick = (cv2.dilate(mu, k2) > 0) & ((X < cxm) | (Y > ys.max() / S - 30))
         inkm = (thin | thick) & ~m
+        if noink is not None: inkm &= ~noink[y0:y1, x0:x1]
         if line[0] > 0:
             ink_a = cv2.GaussianBlur(inkm.astype(np.float32), (0, 0), 0.5 * S)
             self.over(np.broadcast_to(INK, hh.shape + (3,)), ink_a, (y0, y1, x0, x1), ink=True)
@@ -179,7 +180,7 @@ def face_height(cx, F, who, mouth, brow, wide):
         h += g(cx + s * (esp + 36), ey + 44, 38, 24, 12 * F["cb"])                 # cheekbone
         h += g(cx + s * (esp + 28), ey + 104, 34, 32, -10 * F["hollow"])           # hollow under it
         h += g(cx + s * 140, ey - 70, 30, 40, -3)                                  # temple
-        h += seg((cx + s * (F["nw"] + 8), nb - 6), (cx + s * (F["mw"] + 10), my + 6), 4.5, -4 * (1.6 if who in ("maman", "double") else 0.8))   # nose-to-mouth fold
+        h += seg((cx + s * (F["nw"] + 8), nb - 6), (cx + s * (F["mw"] + 10), my + 6), 9, -3 * (1.4 if who in ("maman", "double") else 0.7))   # nose-to-mouth fold
         h += g(cx + s * F["nw"] * 0.85, nb - 8, 11, 10, 7)                         # nostril wings
         h += g(cx + s * F["nw"] * 0.42, nb + 1, 6, 3.5, -6)                        # nostrils
     h += g(cx, F["by"] + 2, 26, 12, 6)                                             # between the brows
@@ -187,12 +188,12 @@ def face_height(cx, F, who, mouth, brow, wide):
     h += F["nh"] * ramp * np.exp(-((XX - cx) / 11) ** 2 / 2)                       # the nose bridge
     h += g(cx, nb - 13, F["nw"] * 0.55, 13, 10)                                    # nose tip
     h += g(cx, nb + 18, 7, 11, -2.5)                                               # philtrum
-    open_ = mouth in ("o", "fear")
-    if not open_:
-        h += g(cx, my - 6, F["mw"] * 0.75, 6, 5 * F["lipf"]); h += g(cx, my + 9, F["mw"] * 0.68, 8, 7 * F["lipf"])   # lips
-        h += g(cx, my + (0 if mouth != "smile" else -2), F["mw"], 2.0, -6)          # the mouth line
-    h += g(cx, my + 30, 22, 6, -4)                                                 # under the lower lip
-    h += g(cx, F["chy"] - 26, 34, 22, 9 * F["chin"])                               # chin
+    h += g(cx, my + 2, F["mw"] * 1.1, 16, 4)                                        # the muzzle the lips sit on
+    h += seg((cx - 22, my + 24), (cx + 22, my + 24), 4, -5)                        # the fold under the lower lip
+    cw = 1 + F["K"] / 40
+    h += g(cx, F["chy"] - 24, 22 * cw, 17, 11 * F["chin"])                         # the chin, a ball under the fold
+    h += g(cx, F["chy"] - 3, 26 * cw, 6, -2)
+    if who == "toi": h += seg((cx, F["chy"] - 32), (cx, F["chy"] - 14), 2.5, -2.2)  # a faint cleft
     if mouth == "smile":
         for s in (-1, 1): h += g(cx + s * (esp + 20), ey + 70, 30, 20, 6)           # cheeks lift
     if who == "maman":
@@ -260,19 +261,45 @@ def mouth4(cv, cx, F, mouth, who, look):
             d.polygon(P([(x - 6, yt), (x + 6, yt), (x, yt + 16 - abs(k) * 0.6)]), fill=(240, 232, 214, 255))
             d.polygon(P([(x - 5, yt + 30 - abs(k) * 2), (x + 5, yt + 30 - abs(k) * 2), (x, yt + 18 - abs(k) * 1.4)]), fill=(222, 212, 194, 255))
         cv.put(im); return
-    lip = F["lip"]
-    if mouth == "o":
-        cv.shade(mell((mx - 15, my - 18, mx + 15, my + 20)), (60, 18, 26), R=6, line=(2.2, 3.0), dots=False, rim=0)
-        cv.shade(mell((mx - 10, my - 15, mx + 10, my - 9)), (226, 218, 204), R=3, line=(0, 0), dots=False, rim=0)
+    lip = np.array(F["lip"], np.float32); up_c = tuple(int(v) for v in lip * 0.86); lo_c = tuple(int(min(255, v * 1.08)) for v in lip)
+    dark, teeth = (48, 14, 22), (236, 228, 212)
+    def lips(top, line_, bottom):                                                # upper lip, lower lip, then the mouth line
+        cv.shade(mpoly(top + line_[::-1]), up_c, R=5, line=(0, 0), dots=False, rim=0)
+        cv.shade(mpoly(line_ + bottom), lo_c, R=7, line=(0, 0), dots=False, rim=0, spec=0.5, gloss=0.88)
+    w = mw
+    if mouth in ("line", "smile"):
+        lift = 0 if mouth == "line" else 9
+        top = bez((mx - w, my - lift), (mx - w * 0.6, my - 9 - lift * 0.4), (mx - 12, my - 15), (mx - 6, my - 13), 10) + [(mx, my - 9)] + bez((mx + 6, my - 13), (mx + 12, my - 15), (mx + w * 0.6, my - 9 - lift * 0.4), (mx + w, my - lift), 10)
+        if mouth == "line":
+            line_ = bez((mx - w, my), (mx - w * 0.4, my + 3), (mx + w * 0.4, my + 3), (mx + w, my), 16)
+            bottom = bez((mx + w * 0.85, my + 1), (mx + w * 0.5, my + 21), (mx - w * 0.5, my + 21), (mx - w * 0.85, my + 1), 16)
+            lips(top, line_, bottom)
+            cv.ink(line_[2:-2], 2.2, (64, 30, 34)); cv.ink(line_[6:11], 3.0, (54, 24, 28))
+            for s_ in (-1, 1): cv.ink([(mx + s_ * (w - 3), my - 1), (mx + s_ * (w + 4), my + 1)], 2.4, (70, 34, 36))   # the corners
+        else:                                                                    # a smile: corners up, the upper teeth show
+            upper = bez((mx - w - 2, my - lift), (mx - w * 0.4, my - 2), (mx + w * 0.4, my - 2), (mx + w + 2, my - lift), 16)
+            lower = bez((mx + w + 2, my - lift), (mx + w * 0.4, my + 13), (mx - w * 0.4, my + 13), (mx - w - 2, my - lift), 16)
+            cv.shade(mpoly(top + upper[::-1]), up_c, R=4, line=(0, 0), dots=False, rim=0)
+            cv.shade(mpoly(upper + lower), dark, R=3, line=(1.4, 1.8), dots=False, rim=0)
+            cv.shade(mpoly(upper + [(x, y + 6) for x, y in upper[::-1]]), teeth, R=2, line=(0, 0), dots=False, rim=0)
+            cv.shade(mpoly(lower + bez((mx - w * 0.8, my + 4), (mx - w * 0.5, my + 24), (mx + w * 0.5, my + 24), (mx + w * 0.8, my + 4), 14)), lo_c, R=6, line=(0, 0), dots=False, rim=0, spec=0.5)
+            for s_ in (-1, 1): cv.ink(bez((mx + s_ * (w + 6), my - lift - 8), (mx + s_ * (w + 11), my - lift - 2), (mx + s_ * (w + 11), my - lift + 4), (mx + s_ * (w + 7), my - lift + 8), 6), 1.8, (90, 50, 46), 0.75)   # dimples
         return
-    if mouth == "fear":
-        cv.shade(mpoly([(mx - mw * 0.8, my + 2), (mx - mw * 0.3, my - 4), (mx + mw * 0.3, my - 4), (mx + mw * 0.8, my + 2), (mx + mw * 0.3, my + 12), (mx - mw * 0.3, my + 12)]), (60, 18, 26), R=4, line=(1.8, 2.4), dots=False, rim=0)
-        cv.shade(mpoly([(mx - mw * 0.5, my - 2), (mx + mw * 0.5, my - 2), (mx + mw * 0.42, my + 3), (mx - mw * 0.42, my + 3)]), (226, 218, 204), R=2, line=(0, 0), dots=False, rim=0)
+    if mouth == "o":                                                             # surprise: a round open mouth framed by the lips
+        cv.shade(mell((mx - 20, my - 20, mx + 20, my + 28)), lo_c, R=8, line=(1.2, 2.0), dots=False, rim=0, spec=0.4)
+        cv.shade(mell((mx - 13, my - 13, mx + 13, my + 20)), dark, R=4, line=(0, 0), dots=False, rim=0)
+        cv.shade(mpoly(bez((mx - 11, my - 9), (mx - 6, my - 14), (mx + 6, my - 14), (mx + 11, my - 9), 8) + [(mx + 9, my - 5), (mx - 9, my - 5)]), teeth, R=2, line=(0, 0), dots=False, rim=0)
+        cv.shade(mell((mx - 9, my + 8, mx + 9, my + 19)), (150, 70, 80), R=3, line=(0, 0), dots=False, rim=0)   # tongue
+        cv.shade(mpoly(bez((mx - 21, my - 6), (mx - 16, my - 22), (mx + 16, my - 22), (mx + 21, my - 6), 12) + bez((mx + 13, my - 8), (mx + 8, my - 14), (mx - 8, my - 14), (mx - 13, my - 8), 12)), up_c, R=3, line=(0, 0), dots=False, rim=0)
         return
-    up = 0 if mouth != "smile" else 1
-    line = bez((mx - mw, my - 2 * up * 4), (mx - mw * 0.4, my + 3 + up * 6), (mx + mw * 0.4, my + 3 + up * 6), (mx + mw, my - 2 * up * 4), 14)
-    cv.ink(line, 2.4, (70, 36, 38))
-    for s in (-1, 1): cv.ink([(mx + s * mw, my - 1 - up * 8), (mx + s * (mw + 5), my + 2 - up * 12)], 1.8, (90, 50, 48), 0.8)   # mouth corners
+    # fear: stretched wide, corners pulled down, both rows of teeth
+    upper = bez((mx - w - 4, my + 4), (mx - w * 0.4, my - 6), (mx + w * 0.4, my - 6), (mx + w + 4, my + 4), 16)
+    lower = bez((mx + w + 4, my + 4), (mx + w * 0.4, my + 16), (mx - w * 0.4, my + 16), (mx - w - 4, my + 4), 16)
+    cv.shade(mpoly(bez((mx - w - 4, my + 4), (mx - w * 0.5, my - 14), (mx + w * 0.5, my - 14), (mx + w + 4, my + 4), 14) + upper[::-1]), up_c, R=3, line=(0, 0), dots=False, rim=0)
+    cv.shade(mpoly(upper + lower), dark, R=3, line=(1.4, 1.8), dots=False, rim=0)
+    cv.shade(mpoly(upper[3:-3] + [(x, y + 5) for x, y in upper[3:-3][::-1]]), teeth, R=2, line=(0, 0), dots=False, rim=0)
+    cv.shade(mpoly(lower[4:-4] + [(x, y - 4) for x, y in lower[4:-4][::-1]]), (220, 212, 196), R=2, line=(0, 0), dots=False, rim=0)
+    cv.shade(mpoly(lower + bez((mx - w * 0.9, my + 8), (mx - w * 0.5, my + 26), (mx + w * 0.5, my + 26), (mx + w * 0.9, my + 8), 14)), lo_c, R=5, line=(0, 0), dots=False, rim=0, spec=0.4)
 
 
 def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=False, sway=0.0):
@@ -344,14 +371,14 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
         cv.shade(e, F["skin"], h=eh, rim=1.2)
         if who == "samir" and s < 0: cv.shade(mell((cx - F["T"] - 16, F["ey"] + 60, cx - F["T"] - 4, F["ey"] + 72)), GOLD, R=3, spec=1, dots=False, line=(1, 1.2))
     # ---------- head
+    if who in ("toi", "double"): hair_ribbons(cv, cx, F, who, sway, "back")
     hm = mpoly(head_pts(cx, F))
     hh = dome(hm, 80) + 1.35 * face_height(cx, F, who, mouth, brow, wide)
     alb = np.broadcast_to(np.array(F["skin"], np.float32), hm.shape + (3,)).copy()
-    lipm = (g(cx, F["my"] - 6, F["mw"] * 0.75, 6, 1) + g(cx, F["my"] + 9, F["mw"] * 0.68, 8, 1)) if mouth not in ("o", "fear") else np.zeros_like(XX)
-    alb += (np.array(F["lip"], np.float32) - alb) * np.clip(lipm * 1.6, 0, 1)[..., None] * (who != "double")
+    lipm = g(cx, F["my"] + 2, F["mw"] * 0.9, 12, 1)                                # the mouth zone, kept clean of stubble
     if who == "toi":                                                             # stubble: a blue-grey cast on the jaw and upper lip
-        stub = np.clip(g(cx, F["my"] + 30, 120, 60, 1) + g(cx, F["my"] - 22, 40, 8, 0.8) - lipm * 2, 0, 1) * (YY > F["nb"] + 6)
-        alb *= (1 - 0.18 * stub)[..., None]; alb[..., 2] += 8 * stub
+        stub = np.clip(g(cx, F["my"] + 30, 120, 60, 1) + g(cx, F["my"] - 22, 40, 8, 0.7) - lipm * 2, 0, 1) * ss(F["nb"] + 2, F["nb"] + 26, YY)
+        alb *= (1 - 0.12 * stub)[..., None]; alb[..., 2] += 6 * stub
     if who == "maman":
         for s in (-1, 1): alb += np.array([30, -8, -6], np.float32) * g(cx + s * (F["esp"] + 18), F["ey"] + 56, 24, 12, 1)[..., None]   # blush
     if who == "samir":                                                           # the beard, from the sideburns down the jaw
@@ -363,7 +390,12 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
         hh = hh + bm * 5
     if who == "double":
         alb = alb * (1 - 0.35 * np.clip(g(cx - 66, F["ey"], 40, 26, 1) + g(cx + 66, F["ey"], 40, 26, 1), 0, 1))[..., None]   # bruised sockets
-    cv.shade(hm, alb, h=hh, spec=0.14, gloss=0.95, R=80)
+    skin_m, noink = hm, None
+    if who in ("toi", "double"):                                                 # the forehead ends on a natural, uneven hairline
+        hlx = hairline(cx, F); xs_ = [p[0] for p in reversed(hlx)]; ys_ = [p[1] for p in reversed(hlx)]
+        yh = np.interp(XX, xs_, ys_) + 2.5 * np.sin(XX / 6.0) + 1.5 * np.sin(XX / 2.3)
+        skin_m = hm & (YY > yh); noink = YY < yh + 6
+    cv.shade(skin_m, alb, h=hh, spec=0.14, gloss=0.95, R=80, noink=noink)
     if who == "samir":                                                           # beard hairs
         im, d = cv.layer(); rng = np.random.default_rng(2)
         ys_, xs_ = np.nonzero(hm & (bm > 0.5))
@@ -375,7 +407,7 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
         im, d = cv.layer(); rng = np.random.default_rng(3)                       # fine stubble hairs, the scar
         for _ in range(500):
             x = cx + rng.uniform(-120, 120); y = rng.uniform(F["my"] - 26, F["chy"] - 6)
-            if hm[int(y * S), int(x * S)] and not (abs(x - cx) < F["mw"] and abs(y - F["my"] - 3) < 14): d.line([(x * S, y * S), ((x + 1) * S, (y + 3) * S)], fill=(60, 50, 56, 110), width=S)
+            if hm[int(y * S), int(x * S)] and not (abs(x - cx) < F["mw"] + 6 and abs(y - F["my"] - 3) < 18) and y > F["nb"] + 14: d.line([(x * S, y * S), ((x + 1) * S, (y + 3) * S)], fill=(60, 50, 56, 80), width=S)
         cv.put(im)
         cv.ink([(cx - 112, 318), (cx - 98, 360), (cx - 92, 390)], 3.2, (150, 62, 60)); cv.ink([(cx - 84, 426), (cx - 76, 462)], 2.6, (150, 62, 60))
     if who == "double":                                                          # gold-repaired cracks, black tears
@@ -390,6 +422,16 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
     cv.ink(bez((cx - nw * 0.95, nb - 18), (cx - nw * 1.15, nb - 2), (cx - nw * 0.8, nb + 6), (cx - nw * 0.45, nb + 4), 10), 2.4)
     cv.ink(bez((cx + nw * 0.95, nb - 18), (cx + nw * 1.15, nb - 2), (cx + nw * 0.8, nb + 6), (cx + nw * 0.45, nb + 4), 10), 1.6, (60, 36, 34), 0.8)
     mouth4(cv, cx, F, mouth, who, look)
+    if who == "samir":                                                           # the moustache falls over the upper lip
+        mx, my, mw = cx + look[0] * 4, F["my"], F["mw"]
+        mo = mpoly(bez((mx - mw - 10, my + 6), (mx - mw * 0.8, my - 22), (mx - 14, nb + 10), (mx, nb + 16), 12) + bez((mx, nb + 16), (mx + 14, nb + 10), (mx + mw * 0.8, my - 22), (mx + mw + 10, my + 6), 12)
+                   + bez((mx + mw + 4, my), (mx + mw * 0.4, my - 10), (mx - mw * 0.4, my - 10), (mx - mw - 4, my), 12))
+        cv.shade(mo, (46, 34, 30), R=8, line=(1.0, 1.6), rim=0.6)
+        im, d = cv.layer()
+        for k in range(26):
+            t = k / 25; x = mx - mw - 6 + (2 * mw + 12) * t; y0 = nb + 14 + abs(t - 0.5) * 30
+            d.line([(x * S, y0 * S), ((x + (t - 0.5) * 10) * S, (y0 + 16) * S)], fill=(96, 74, 62, 200) if k % 3 else (16, 10, 8, 220), width=S)
+        cv.put(im)
     if who == "maman":                                                           # gold-rimmed round glasses with a glint
         im, d = cv.layer()
         for s in (-1, 1):
@@ -404,53 +446,95 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
     return cv.done()
 
 
+def wave(y, amp=11.0, lam=170.0):
+    """One wave for the whole head, so every clump ripples in step, like combed hair."""
+    return amp * math.sin((y - 40) / lam * 2 * math.pi)
+
+
+def ribbon(c, w):
+    """A clump: broad at the root, tapering to a point at the far end."""
+    n = len(c); left, right = [], []
+    for i, (x, y) in enumerate(c):
+        a, b = c[max(0, i - 1)], c[min(n - 1, i + 1)]; dx, dy = b[0] - a[0], b[1] - a[1]; l = math.hypot(dx, dy) or 1
+        t = i / (n - 1); ww = w * (0.9 + 0.1 * math.sin(t * math.pi)) * (1 - t) ** 0.75 + 1.2
+        left.append((x - dy / l * ww, y + dx / l * ww)); right.append((x + dy / l * ww, y - dx / l * ww))
+    return left + right[::-1]
+
+
+def streak(c, w, side=1):
+    """The hair highlight: a thin crescent along part of a clump, on its lit side, pointed at both ends."""
+    n = len(c); left, right = [], []
+    for i, (x, y) in enumerate(c):
+        a, b = c[max(0, i - 1)], c[min(n - 1, i + 1)]; dx, dy = b[0] - a[0], b[1] - a[1]; l = math.hypot(dx, dy) or 1
+        ww = w * math.sin(i / (n - 1) * math.pi) + 0.3; ox, oy = dy / l * w * 0.5 * side, -dx / l * w * 0.5 * side
+        left.append((x + ox - dy / l * ww, y + oy + dx / l * ww)); right.append((x + ox + dy / l * ww, y + oy - dx / l * ww))
+    return left + right[::-1]
+
+
+def hairline(cx, F):
+    T, ey = F["T"], F["ey"]
+    return [(cx + T - 2, ey - 44), (cx + T - 8, 300), (cx + 122, 252), (cx + 72, 236), (cx + 30, 238), (cx, 250),
+            (cx - 30, 238), (cx - 72, 236), (cx - 122, 252), (cx - T + 8, 300), (cx - T + 2, ey - 44)]
+
+
+def hair_ribbons(cv, cx, F, who, sway, part="back"):
+    """Slicked back with volume, after the creator's reference cut, made of thick clumps: a dark under-mass, 17 clumps
+    combed back from an M hairline, the sides swept back over the temples, every clump rippling in step, one crisp
+    highlight per clump lining up into a band, two thick strands falling in front of each ear, the blue lock."""
+    T, ey = F["T"], F["ey"]
+    H0 = np.array((46, 32, 27) if who == "toi" else (32, 26, 28), np.float32)
+    HI, HI2 = ((150, 118, 94), (214, 184, 156)) if who == "toi" else ((96, 90, 100), (150, 146, 160))
+    hl = hairline(cx, F)
+    if part == "front":
+        hair_front(cv, cx, F, who, sway, H0, hl); return
+    hl_mass = [(x, y + 16) for x, y in hl]                                       # the hair runs on under the skin of the forehead
+    outer = [(cx + (T + 30) * math.cos(a), 334 - 280 * math.sin(a)) for a in (math.pi * (1 - k / 48) for k in range(49))]
+    cv.shade(mpoly([(cx - T - 8, ey - 16)] + outer + [(cx + T + 8, ey - 16)] + hl_mass), tuple(int(v * 0.8) for v in H0), R=50, rim=0.8)   # the under-mass
+    xs = [p[0] for p in reversed(hl)]; ys = [p[1] for p in reversed(hl)]
+    clumps = []
+    for s_ in (-1, 1):                                                           # the sides, swept back over the temples
+        for k in range(3):
+            y0 = 322 + k * 26
+            c = bez((cx + s_ * (T - 4), y0), (cx + s_ * (T + 20), y0 - 50), (cx + s_ * (T + 26), y0 - 140), (cx + s_ * (T - 16), 130 + k * 18), 24)
+            clumps.append((3, [(x + s_ * wave(y, 4), y) for x, y in c], 15, k))
+    for i in range(-8, 9):                                                       # the top, combed back
+        u = i / 8; rx = cx + u * (T - 8); ry = float(np.interp(rx, xs, ys))
+        c = bez((rx, ry + 16), (rx + u * 30, ry - 80), (cx + u * T * 0.95, 110 + 30 * u * u), (cx + u * T * 0.82, 50 + 70 * u * u), 28)
+        clumps.append((2 - abs(u), [(x + wave(y) * (1 - abs(u) * 0.3), y) for x, y in c], 24 if i % 2 == 0 else 19, i))
+    clumps.sort(key=lambda q: q[0])                                              # outer clumps first, the centre on top
+    for depth, c, w, i in clumps:
+        tint = 1.0 + 0.08 * ((i * 7) % 3 - 1)
+        cv.shade(mpoly(ribbon(c, w)), tuple(int(min(255, v * tint)) for v in H0), R=w * 0.8, line=(0.8, 1.3), rim=0.9)
+        band = [q for q in c if 92 < q[1] < 196]
+        if len(band) > 3:
+            im, d = cv.layer(); d.polygon(P(streak(band, w * 0.32)), fill=HI + (235,)); d.polygon(P(streak(band[1:-1], w * 0.12)), fill=HI2 + (240,)); cv.put(im)
+        mid = c[len(c) // 5: len(c) * 3 // 4]
+        cv.ink([(x - w * 0.35, y) for x, y in mid], 1.1, (14, 9, 9), 0.55)      # one strand line, no more
+
+
+def hair_front(cv, cx, F, who, sway, H0, hl):
+    """What lies on the face: a soft shadow under the hairline, the strands before the ears, the locks."""
+    T, ey = F["T"], F["ey"]
+    sh, d = cv.layer(); d.polygon(P(hl + [(x, y + 22) for x, y in reversed(hl)]), fill=(40, 20, 24, 90)); cv.put(sh.filter(ImageFilter.GaussianBlur(6 * S)))
+    if True:
+        for s_ in (-1, 1):                                                           # two thick strands in front of each ear
+            for (x0, y0, y1, w) in ((T - 16, 280, ey + 46, 12), (T - 34, 266, ey + 4, 8)):
+                c = [(cx + s_ * (x0 + 14 * u) + wave(y, 7, 120) + sway * 18 * u, y) for u, y in ((k / 20, y0 + (y1 - y0) * k / 20) for k in range(21))]
+                cv.shade(mpoly(ribbon(c, w)), tuple(int(v) for v in H0), R=w * 0.8, line=(1.0, 2.0), rim=0.9)
+                cv.ink(c[3:14], 1.0, (14, 9, 9), 0.5)
+        lockc = (40, 70, 190) if who == "toi" else (14, 14, 22)                    # the lock over the left eye, and one beside it
+        c = [(cx - 44 + (26 + sway * 50) * u + wave(y, 9, 120), y) for u, y in ((k / 22, 238 + (ey - 24 - 238) * k / 22) for k in range(23))]
+        cv.shade(mpoly(ribbon(c, 12)), lockc, R=8, line=(1.4, 2.6), dots=False, spec=0.6)
+        if who == "toi":
+            im, d = cv.layer(); d.polygon(P(streak(c[2:12], 4)), fill=(130, 170, 255, 235)); cv.put(im)
+        c2 = [(cx - 14 + (22 + sway * 36) * u + wave(y, 7, 120), y) for u, y in ((k / 16, 242 + (ey - 90 - 242) * k / 16) for k in range(17))]
+        cv.shade(mpoly(ribbon(c2, 8)), tuple(int(v) for v in H0), R=6, line=(1.2, 2.0), dots=False)
+
+
 def hair(cv, cx, F, who, sway, hm):
     T, ey = F["T"], F["ey"]
     if who in ("toi", "double"):
-        H0 = (44, 30, 26) if who == "toi" else (30, 24, 26)
-        # an M hairline with a small widow's peak
-        hl = [(cx + T - 2, ey - 44), (cx + T - 8, 300), (cx + 122, 252), (cx + 72, 234), (cx + 30, 236), (cx, 250),
-              (cx - 30, 236), (cx - 72, 234), (cx - 122, 252), (cx - T + 8, 300), (cx - T + 2, ey - 44)]
-        n = 56; outer = []
-        for k in range(n + 1):                                                # a tall, dense crown with wavy clump tips
-            a = math.pi * (1 - k / n); b = 12 * math.sin(k * math.pi / 3.5) ** 2
-            outer.append((cx + (T + 36 + b) * math.cos(a), 330 - (300 + b) * math.sin(a)))
-        mask = mpoly([(cx - T - 10, ey - 16)] + outer + [(cx + T + 10, ey - 16)] + hl)
-        hh = dome(mask, 60)
-        xs = [p[0] for p in reversed(hl)]; ys = [p[1] for p in reversed(hl)]
-        paths = []
-        for i in range(-10, 11):                                              # 21 clumps swept back, strong waves
-            u = i / 10; rx = cx + u * (T - 8); ry = float(np.interp(rx, xs, ys))
-            base = bez((rx, ry + 4), (rx + u * 34, ry - 90), (cx + u * T * 0.98, 96 + 40 * u * u), (cx + u * 86, 40 + 22 * u * u), 24)
-            amp = 7 + 3 * (i % 3); ph = i * 0.9
-            paths.append([(x + amp * math.sin(j / 24 * 2.4 * math.pi + ph) * (1 - abs(u) * 0.35) * min(1, j / 4), y) for j, (x, y) in enumerate(base)])
-        for s_ in (-1, 1):                                                    # the sides combed back over the temples
-            for k in range(4):
-                y0 = 300 + k * 22
-                paths.append(bez((cx + s_ * (T - 4), y0), (cx + s_ * (T + 14), y0 - 40), (cx + s_ * (T + 20), y0 - 120), (cx + s_ * (T - 20), 120 + k * 20), 20))
-        rid = np.zeros_like(XX)
-        for i, p in enumerate(paths):
-            m_ = Image.new("L", (W * S, H * S), 0); ImageDraw.Draw(m_).line(P(p), fill=255, width=S)
-            dist = cv2.distanceTransform((np.asarray(m_) == 0).astype(np.uint8), cv2.DIST_L2, 5) / S
-            rid = np.maximum(rid, np.exp(-(dist / (6 + 3 * (i % 3))) ** 2) * (9 + 4 * (i % 2)))
-        cv.shade(mask, H0, h=hh + rid, spec=0.4, gloss=0.9, rim=1.0)
-        im, d = cv.layer()                                                    # dense strands, the sheen band
-        for i, p in enumerate(paths):
-            for off in (-7, -3.5, 0, 3.5, 7):
-                d.line(P([(x + off * (1 - j / 30), y) for j, (x, y) in enumerate(p)]), fill=(14, 9, 9, 150 if off else 190), width=S)
-            sg = [q for q in p if 96 < q[1] < 186]
-            if len(sg) > 1: d.line(P([(x + 3, y) for x, y in sg]), fill=(156, 124, 100, 210), width=int(2 * S)); d.line(P([(x - 2, y) for x, y in sg[1:-1]]), fill=(110, 86, 70, 180), width=S)
-        a = np.asarray(im).copy(); a[..., 3] = (a[..., 3] * mask).astype(np.uint8); cv.put(Image.fromarray(a))
-        for s_ in (-1, 1):                                                    # long wavy strands falling in front of the ears
-            for (x0, y0, y1, w0, ph) in ((T - 14, 280, ey + 46, 13, 0.0), (T - 30, 268, ey + 6, 9, 1.6)):
-                c = [(cx + s_ * (x0 + 12 * u + 6 * math.sin(u * 5 + ph)) + sway * 20 * u, y0 + (y1 - y0) * u) for u in (k / 15 for k in range(16))]
-                cv.shade(mpoly(taper(c, w0, 2)), H0, R=5, spec=0.5, gloss=0.88, line=(1.4, 2.4), dots=False)
-        lockc = (40, 70, 190) if who == "toi" else (14, 14, 22)               # the lock over the left eye
-        c = [(cx - 44 + (30 + sway * 60) * u + 11 * math.sin(u * 5.0), 236 + (ey - 26 - 236) * u) for u in (k / 17 for k in range(18))]
-        cv.shade(mpoly(taper(c, 13, 2)), lockc, R=6, spec=1.0, gloss=0.8, line=(1.8, 3.2), dots=False)
-        for (x0, w0, ph) in ((-18, 8, 1.0),):     # a few more strands falling on the forehead
-            c2 = [(cx + x0 + (24 + sway * 40) * u + 10 * math.sin(u * 5.4 + ph), 240 + (ey - 92 - 240 + (x0 % 3) * 8) * u) for u in (k / 13 for k in range(14))]
-            cv.shade(mpoly(taper(c2, w0, 1.4)), H0, R=4, spec=0.6, line=(1.3, 2.2), dots=False)
+        hair_ribbons(cv, cx, F, who, sway, "front")
     elif who == "samir":
         for k in range(-6, 7):                                                    # curls under the beanie
             x = cx + k * 26; y = 262 + abs(k) * 4
