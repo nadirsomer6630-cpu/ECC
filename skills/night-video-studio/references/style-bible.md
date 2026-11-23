@@ -168,3 +168,21 @@ through mobile brows and widened eyes, the villain marked by a white predatory g
 - **Samir**: green beanie with pompom, olive quilted bomber, a gold chain, full beard: the warm one.
 - **Maman**: plum shawl with gold embroidery, round glasses, a rosary, a gold hairpin in the bun, the only blush.
 - **Le double**: your clothes and hair on porcelain-grey skin, gold kintsugi cracks, black tears, red eyes, the grin.
+
+## Characters v7 (November 23): one bone structure per face (sheet `assets/persos_v7.jpg`, `FACE` in `toon3.py`)
+
+The v6 heads were one egg shape for everyone. Now each face has its own skull, cheekbone, jaw and chin (`head_pts`),
+its own eyes (width, height, slant), brows (thickness, arch, slant), nose kind and mouth width:
+
+- **Toi**: high cheekbones, a V jaw to a narrow chin, the most slanted almond eyes, low brooding brows, a straight
+  nose with nostril wings, thin lips, faint nose-to-mouth lines, stubble, the scar: young but worn by the nights.
+- **Samir**: broad square jaw under a full trimmed beard from the sideburns, thick straight brows, heavy upper lids,
+  rounder eyes, a broad nose, a full lower lip, a gold stud in his ear.
+- **Maman**: a round face, soft jaw, small droopy-cornered eyes with crow's feet, thin arched brows, forehead lines,
+  a small nose, thin lips, gold-rimmed round glasses, blush.
+- **Le double**: your face stretched: long chin, hollow cheeks, black-purple sunken eye sockets, eyes slanted even
+  further with a long flick, sharp rising brows, a long hooked nose, deep folds, the grin as wide as the jaw allows.
+
+Rendering: form shadows instead of the v6 vertical split, light from the upper right (left edge of the face, eye
+sockets, under the cheekbones, side of and under the nose, under the lower lip, the chin's shadow on the neck),
+stored in `cv.shade` so `engrave` hatches exactly there; light strokes on the nose bridge and the right cheekbone.
