@@ -128,7 +128,10 @@ same posting hour, a new part as a video reply to the winning comment, an old ve
    then verify counts with yt-dlp). Ask for timestamps, techniques, mistakes, settings, and how to apply them to
    flat 2D characters. Retry with pauses when the models answer 503.
 2. Separate method from identity: keep the method, never the characters, art, titles or voices.
-3. Apply one concrete lesson to the kit (code, rule, or script beat), show the result, and record source, lesson and
+3. Social watch and earning: `references/social.md` (`scripts/veille.py` ranks videos by their real rates; photo
+   carousels through TinyFish image links; what each platform pays for and under which conditions; every video at
+   least 61 s).
+4. Apply one concrete lesson to the kit (code, rule, or script beat), show the result, and record source, lesson and
    where it went in `references/learned.md`. Tools and their pitfalls: `references/tools.md`.
 
 ## Examples

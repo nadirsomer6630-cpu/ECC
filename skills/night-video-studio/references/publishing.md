@@ -6,8 +6,8 @@ Chaque nuit est produite une fois, puis coupée en deux publications le même jo
 
 | Créneau | Vidéo | Durée | Rôle |
 |---|---|---|---|
-| Midi (12 h 30) | Partie 1 : le dilemme, l'énigme, le choix A/B | 55-62 s | attirer (For You), faire commenter : le vote et le mot caché |
-| Soir (19 h 30) | Partie 2 : la réponse, la règle, la boucle | 28-35 s | récompenser ceux qui ont commenté, publier en réponse vidéo au commentaire gagnant, annoncer la nuit suivante |
+| Midi (12 h 30) | Partie 1 : le dilemme, l'énigme, le choix A/B | 61-65 s | attirer (For You), faire commenter : le vote et le mot caché |
+| Soir (19 h 30) | Partie 2 : la réponse, la règle, la boucle, puis l'accroche de la nuit suivante | 61-65 s | récompenser ceux qui ont commenté, publier en réponse vidéo au commentaire gagnant, annoncer la nuit suivante |
 
 Pourquoi : les meilleurs comptes du créneau publient les parties à quelques jours d'écart ; publier la réponse le soir
 même garde l'attente courte (le public qui a voté revient voir s'il avait raison) et double le nombre de vidéos sans
@@ -42,3 +42,10 @@ leurs descriptions et le commentaire épinglé.
   jours, la publier en réponse vidéo uniquement, ou passer à partie 2 le lendemain midi.
 - La qualité ne doit pas baisser : si une nuit n'est pas prête, publier une énigme courte (15-20 s, un indice, « trouve
   ce qui cloche ») tirée des plans existants plutôt qu'un épisode bâclé.
+
+## Mise à jour (23 novembre) : au moins 61 s, et trois plateformes
+
+Seules les vidéos d'au moins une minute comptent pour les récompenses créateurs de TikTok (voir `social.md`) : les deux
+parties durent au moins 61 s ; la partie 2 se termine par l'accroche de la nuit suivante (« Demain, gardien de
+piscine. Règle onze... »), ce qui l'allonge et donne une raison de revenir. Chaque vidéo finie part aussi en YouTube
+Shorts et en Reels Instagram le même jour (même fichier, même titre-question), publiée par le créateur.
