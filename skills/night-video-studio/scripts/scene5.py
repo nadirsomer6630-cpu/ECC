@@ -143,3 +143,32 @@ if __name__ == "__main__":
     im = vignette(bg)
     caption(im, ["Une", "lumière", "s'allume"], key="lumière")
     im.save(out, quality=92); print("ok")
+
+
+STYLE_LINE = ("Flat 2D cel animation, big-headed characters with bold black contours and flat colour fills, one hard "
+              "shadow step leaning violet, a thin lavender moonlight rim; standing in a dark cinematic 3D night set.")
+
+
+def render_shot(spec, sets):
+    """Render one shot from the seven-field spec (references/prompts.md). The style and the identities are fixed in
+    code (toon5, scene5); a spec may only choose what varies: framing, pose, expression, light, text."""
+    from PIL import ImageFilter
+    bg = sets[spec.get("set", "aisle")].copy()
+    who, pose = spec.get("who", "toi"), spec.get("pose", "stand"); ex = spec.get("expr", {}); light = spec.get("light", 1.0)
+    boil = spec.get("boil", 0); shot = spec.get("shot", "wide")
+    def tinted(img, k=(0.84, 0.88, 1.0)):
+        a = np.asarray(img).astype(np.float32); a[..., :3] *= np.array(k); return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8), "RGBA")
+    if shot == "wide":
+        place(bg, figure5(who, pose, light=light, boil=boil, **ex), spec.get("x", 540), spec.get("foot", 1560), spec.get("height", 1050))
+    elif shot == "close":
+        bg = bg.filter(ImageFilter.GaussianBlur(14))
+        bg.alpha_composite(tinted(toon5.bust5(who, light=light, boil=boil, **ex)).resize((1180, 1180)), (-50, 560))
+    elif shot in ("far-threat", "over-shoulder"):
+        far = spec.get("far", "double")
+        place(bg, figure5(far, spec.get("far_pose", "stand"), boil=boil), spec.get("x", 560), spec.get("foot", 1010), spec.get("height", 300), tint=(1.0, 0.82, 0.62), shade=0.9)
+        fg = tinted(back5(who, boil=boil), (0.7, 0.74, 0.86))
+        bg.alpha_composite(fg.resize((1300, 1300)).filter(ImageFilter.GaussianBlur(2)), (-520, 900))
+    hud(bg, *spec.get("hud", ("Caissier de nuit", "Nuit 1", "/ 30", "Caisse 3", "02:14")))
+    im = vignette(bg, 0.6 if shot != "wide" else 0.55)
+    if spec.get("text"): caption(im, spec["text"].split(), key=spec.get("key"), y=1240 if shot == "close" else 1180)
+    return im

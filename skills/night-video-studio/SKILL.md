@@ -71,6 +71,10 @@ contact shadow), a fixed HUD (place + "NUIT 1 / 30" on the left, a label + the c
 in heavy white capitals with one orange word, a cold grade and a vignette. `scripts/frames_s2.py` builds three
 test frames; `assets/comparaison_reference_vs_nous.jpg` is the side-by-side to beat.
 
+Prompts (`references/prompts.md`): the fixed style line, the negative line, each character's identity anchors,
+the seven-field shot spec (`scene5.render_shot(spec, sets)`, demo `scripts/shots_demo.py`) and the script prompt.
+Every shot of an episode is written as a spec first; only the per-shot fields may vary.
+
 ### 4. Voices
 
 Copy the newest generator (`scripts/elv11_gen.py`): eleven_v3 with acting tags, every take transcribed with

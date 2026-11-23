@@ -1,0 +1,56 @@
+[
+ {
+  "shot": "wide",
+  "who": "toi",
+  "pose": "phone",
+  "expr": {
+   "look": [
+    0.4,
+    -0.1
+   ]
+  },
+  "light": 1.0,
+  "text": "Ta mère t'écrit",
+  "key": "mère",
+  "boil": 1
+ },
+ {
+  "shot": "close",
+  "who": "toi",
+  "expr": {
+   "wide": 1.35,
+   "brow": 1.0,
+   "mouth_": "o",
+   "look": [
+    0.6,
+    0.0
+   ]
+  },
+  "light": -0.5,
+  "text": "Elle dort pourtant",
+  "key": "dort",
+  "boil": 2,
+  "hud": [
+   "Caissier de nuit",
+   "Nuit 1",
+   "/ 30",
+   "Caisse 3",
+   "02:17"
+  ]
+ },
+ {
+  "shot": "far-threat",
+  "who": "toi",
+  "far": "maman",
+  "text": "Elle est là",
+  "key": "là",
+  "boil": 3,
+  "hud": [
+   "Caissier de nuit",
+   "Nuit 1",
+   "/ 30",
+   "Caisse 3",
+   "02:18"
+  ]
+ }
+]

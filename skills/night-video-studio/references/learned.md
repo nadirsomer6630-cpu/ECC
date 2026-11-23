@@ -50,3 +50,11 @@ accent colour; the 70/30 rule (one odd detail makes a character memorable); stor
 Side by side with lucdgain's "LE SUPERMARCHÉ EP 01" the remaining gap was the frame, not the faces: lit 3D sets,
 full-body figures standing in them, over-the-shoulder and close-up shots, a fixed HUD, heavy captions with one orange
 word. Became `references/art-direction.md`, `scripts/supermarche.py`, `scripts/scene5.py`, `scripts/frames_s2.py`.
+
+## Prompt sources (November 23)
+
+OpenCreator's sun-style writing template, scenar.app's public steps, the storytime video, Loova, Neolemon, Elser,
+the cartoon-show master-style workflow, Promptmake and PromptHero style tokens, a dark-fantasy reveal prompt,
+Questas, MindStudio, Alici and storysnap shot structures, and video-shotcraft's transition and typography cards.
+Became `references/prompts.md` (style line, negative line, identity anchors, seven-field shot spec, script prompt)
+and `scene5.render_shot`.
