@@ -270,3 +270,16 @@ Mistakes found by rendering each part large, and the rule that replaced each:
 - **A shapeless chin with a hard line across it** -> a muzzle under the lips, the fold under the lower lip, the
   chin as a ball below it (wider for a wider jaw), a faint cleft for the hero; the stubble has a soft upper edge,
   and the nose-to-mouth folds are wide and shallow (narrow deep ones drew vertical bars on the mother's face).
+
+## v14 (November 23): faces after the reference face's structure
+
+Structure only, never the identity: a long angular face, high cheekbones as a long ridge toward the temple, the
+plane under them hollowed toward the mouth (shadow side only), a strong brow ridge, thick low brows drawn down
+toward the centre, deep-set hooded eyes (a skin fold over the outer lid, a low heavy crease), a long straight nose,
+fuller lips with a marked philtrum (two ridges and a groove), corners slightly down at rest, a defined chin, a
+thicker neck with an Adam's apple. Dosed per character in `FACE` (`hood`, `philtrum`, `corners`, `adam`, `cb`,
+`hollow`, `brow_r`, `lipf`): full on you, heavier on Samir, pushed to the extreme on the double, only cheekbones and
+gaze on the mother (her forehead lines are faint ink, not relief: relief lines read as shiny bars).
+
+Shader lesson: every small dip in the height map leaves an isolated shadow island in the light, which reads as a
+stain. `Canvas.shade` now removes shadow islands under 7000 px (at 2x), edge included, before the tones are drawn.

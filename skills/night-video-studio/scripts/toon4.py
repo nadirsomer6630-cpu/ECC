@@ -98,6 +98,10 @@ class Canvas:
         d = np.clip(nx * KEY[0] + ny * KEY[1] + nz * KEY[2], 0, 1)
         ao = np.clip(1 - np.maximum(0, cv2.GaussianBlur(hb, (0, 0), 7 * S) - hb) * 0.05, 0.5, 1)
         d = d * (0.55 + 0.45 * ao)
+        sm = ((d < 0.39) & m).astype(np.uint8)                                  # clean the tones: a shadow island too small to
+        n_, lab, st, _ = cv2.connectedComponentsWithStats(sm, connectivity=8)   # mean anything is a stain, so it goes
+        small = st[:, cv2.CC_STAT_AREA] < 7000; small[0] = False
+        d = np.where(small[lab], np.maximum(d, 0.45), d)
         t1, t2 = ss(0.33, 0.37, d), ss(0.70, 0.73, d)                          # three flat tones
         ramp = RAMP[0][None, None] + (RAMP[1] - RAMP[0])[None, None] * t1[..., None] + (RAMP[2] - RAMP[1])[None, None] * t2[..., None]
         alb = np.broadcast_to(np.array(albedo, np.float32)[:3], hh.shape + (3,)) if isinstance(albedo, tuple) else albedo[y0:y1, x0:x1]
@@ -145,17 +149,21 @@ class Canvas:
 
 # ---------------------------------------------------------------- the characters
 FACE = dict(
-    toi=dict(T=150, C=156, cby=440, J=122, jy=536, K=14, chy=620, round=0.7, ey=396, esp=66, ew=34, eh=13, lift=5, ir=13,
-             by=362, bw=9, bs=-0.6, nb=488, nw=23, nh=16, my=540, mw=34, lipf=1.0, brow_r=1.0, cb=1.0, hollow=0.5, socket=1.0, chin=1.0,
-             skin=(222, 180, 148), lip=(178, 112, 100), iris=(54, 92, 200), neck=82),
-    samir=dict(T=168, C=176, cby=446, J=148, jy=548, K=34, chy=616, round=0.6, ey=398, esp=70, ew=33, eh=13, lift=1, ir=13,
-               by=364, bw=12, bs=0.0, nb=494, nw=32, nh=14, my=546, mw=38, lipf=1.4, brow_r=1.1, cb=0.8, hollow=0.2, socket=0.9, chin=0.8,
+    toi=dict(T=148, C=160, cby=424, J=126, jy=552, K=20, chy=640, round=0.55, ey=394, esp=66, ew=35, eh=10, lift=3, ir=13,
+             by=368, bw=12, bs=-1.3, nb=500, nw=24, nh=21, my=554, mw=37, lipf=1.25, brow_r=1.7, cb=1.6, hollow=1.0, socket=1.5, chin=1.3,
+             philtrum=4.0, hood=1.0, adam=1.0, corners=-1.5,
+             skin=(222, 180, 148), lip=(178, 112, 100), iris=(54, 92, 200), neck=90),
+    samir=dict(T=168, C=180, cby=430, J=150, jy=556, K=34, chy=626, round=0.55, ey=398, esp=70, ew=33, eh=11, lift=1, ir=13,
+               by=370, bw=15, bs=-0.8, nb=500, nw=32, nh=17, my=552, mw=39, lipf=1.4, brow_r=1.5, cb=1.3, hollow=0.6, socket=1.2, chin=1.0,
+               philtrum=3.5, hood=0.8, adam=1.2, corners=-0.5,
                skin=(176, 122, 88), lip=(128, 74, 64), iris=(104, 66, 38), neck=94),
-    maman=dict(T=158, C=162, cby=446, J=136, jy=524, K=24, chy=604, round=0.9, ey=400, esp=64, ew=31, eh=12, lift=-1, ir=12,
-               by=358, bw=5, bs=0.6, nb=484, nw=20, nh=11, my=532, mw=30, lipf=0.7, brow_r=0.6, cb=0.7, hollow=0.0, socket=0.8, chin=0.6,
+    maman=dict(T=156, C=164, cby=436, J=134, jy=528, K=24, chy=610, round=0.85, ey=400, esp=64, ew=31, eh=11, lift=-1, ir=12,
+               by=360, bw=6, bs=0.4, nb=488, nw=20, nh=13, my=536, mw=31, lipf=0.9, brow_r=0.8, cb=1.1, hollow=0.3, socket=1.0, chin=0.7,
+               philtrum=2.5, hood=0.5, adam=0.0, corners=0.0,
                skin=(232, 196, 170), lip=(184, 120, 116), iris=(104, 74, 48), neck=76),
-    double=dict(T=146, C=150, cby=430, J=106, jy=546, K=8, chy=650, round=0.55, ey=392, esp=66, ew=36, eh=12, lift=10, ir=13,
-                by=352, bw=8, bs=1.2, nb=500, nw=18, nh=20, my=560, mw=34, lipf=0.6, brow_r=1.4, cb=1.4, hollow=1.3, socket=2.0, chin=1.2,
+    double=dict(T=146, C=158, cby=420, J=112, jy=556, K=12, chy=664, round=0.5, ey=392, esp=66, ew=37, eh=10, lift=12, ir=13,
+                by=356, bw=10, bs=1.4, nb=506, nw=20, nh=24, my=566, mw=34, lipf=0.6, brow_r=2.0, cb=2.0, hollow=1.6, socket=2.2, chin=1.4,
+                philtrum=3.0, hood=1.2, adam=1.0, corners=0.0,
                 skin=(176, 180, 188), lip=(120, 110, 120), iris=(240, 30, 30), neck=70),
 )
 CLOTH = dict(toi=((80, 58, 120), (40, 38, 48)), double=((80, 58, 120), (30, 28, 36)), samir=((92, 110, 72), (120, 124, 136)), maman=((104, 58, 86), (238, 226, 206)))
@@ -177,8 +185,8 @@ def face_height(cx, F, who, mouth, brow, wide):
         h += g(cx + s * 60, F["by"] + 4, 44, 12, 9 * F["brow_r"])                  # brow ridge
         h += g(cx + s * esp, ey + 2, 36, 22, -15 * F["socket"])                    # eye socket
         h += g(cx + s * esp, ey + 2, 24, 13, 6)                                    # the eyeball under the lids
-        h += g(cx + s * (esp + 36), ey + 44, 38, 24, 12 * F["cb"])                 # cheekbone
-        h += g(cx + s * (esp + 28), ey + 104, 34, 32, -10 * F["hollow"])           # hollow under it
+        h += seg((cx + s * (esp + 6), ey + 40), (cx + s * (esp + 62), ey + 26), 20, 11 * F["cb"])   # cheekbone, a long ridge toward the temple
+        h += seg((cx + s * (esp + 46), ey + 62), (cx + s * (F["mw"] + 34), my - 16), 18, -8 * F["hollow"] * (1.0 if s < 0 else 0.0))   # the hollow under it, a long plane down to the mouth
         h += g(cx + s * 140, ey - 70, 30, 40, -3)                                  # temple
         h += seg((cx + s * (F["nw"] + 8), nb - 6), (cx + s * (F["mw"] + 10), my + 6), 9, -3 * (1.4 if who in ("maman", "double") else 0.7))   # nose-to-mouth fold
         h += g(cx + s * F["nw"] * 0.85, nb - 8, 11, 10, 7)                         # nostril wings
@@ -187,7 +195,8 @@ def face_height(cx, F, who, mouth, brow, wide):
     ramp = np.clip((YY - (ey - 26)) / (nb - ey + 26), 0, 1) ** 1.25 * (YY < nb + 4)
     h += F["nh"] * ramp * np.exp(-((XX - cx) / 11) ** 2 / 2)                       # the nose bridge
     h += g(cx, nb - 13, F["nw"] * 0.55, 13, 10)                                    # nose tip
-    h += g(cx, nb + 18, 7, 11, -2.5)                                               # philtrum
+    for s in (-1, 1): h += seg((cx + s * 6, nb + 8), (cx + s * 8, my - 12), 2.6, 1.6 * F.get("philtrum", 2.5) / 2.5)   # philtrum ridges
+    h += g(cx, (nb + my) / 2 - 4, 4.5, 11, -F.get("philtrum", 2.5))                 # philtrum groove
     h += g(cx, my + 2, F["mw"] * 1.1, 16, 4)                                        # the muzzle the lips sit on
     h += seg((cx - 22, my + 24), (cx + 22, my + 24), 4, -5)                        # the fold under the lower lip
     cw = 1 + F["K"] / 40
@@ -197,7 +206,6 @@ def face_height(cx, F, who, mouth, brow, wide):
     if mouth == "smile":
         for s in (-1, 1): h += g(cx + s * (esp + 20), ey + 70, 30, 20, 6)           # cheeks lift
     if who == "maman":
-        for y in (296, 314, 330): h += seg((cx - 80, y + 4), (cx + 80, y + 4), 2.2, -1.2)   # forehead lines
         for s in (-1, 1):
             for k in (-8, 4): h += seg((cx + s * (esp + F["ew"] + 2), ey + k * 0.6), (cx + s * (esp + F["ew"] + 22), ey + k * 1.8), 2, -3)   # crow's feet
     if who == "double":
@@ -232,7 +240,12 @@ def eye4(cv, cx, cy, side, F, look, wide, blink, who):
         E2(ir * 2.0, 70); cv.put(gl.filter(ImageFilter.GaussianBlur(6 * S)))
     cv.ink(up, 3.4); cv.ink(lo[3:-3], 1.3, (120, 70, 66), 0.8)
     oc = up[-1]; cv.ink([oc, (oc[0] + side * 7, oc[1] - 4)], 3)                                 # outer corner
-    cv.ink([(x, y - 7 - 3 * (1 - abs(i - 16) / 16)) for i, (x, y) in enumerate(up) if 6 <= i <= 28], 1.4, (90, 56, 52), 0.85)   # lid crease
+    hood = F.get("hood", 0.5)
+    crease = [(x, y - 5 - 2 * (1 - abs(i - 16) / 16)) for i, (x, y) in enumerate(up) if 4 <= i <= 30]
+    if hood:                                                                        # the brow's fold hangs over the outer lid
+        fold = [(x, y - (2 + 5 * hood) * max(0.0, (i - 6) / 24) ** 0.8) for i, (x, y) in enumerate(crease)]
+        im2, d2 = cv.layer(); d2.polygon(P(fold + [(x, y - 9) for x, y in reversed(fold)]), fill=(70, 40, 40, int(70 * hood))); cv.put(im2.filter(ImageFilter.GaussianBlur(2 * S)))
+    cv.ink(crease, 1.6 + 0.6 * hood, (80, 48, 46), 0.9)                                  # lid crease
     for k in range(5):                                                                            # lashes at the outer half
         x, y = up[18 + k * 3]; cv.ink([(x, y), (x + side * (3 + k), y - 4 - k * 0.6)], 1.2)
 
@@ -269,10 +282,10 @@ def mouth4(cv, cx, F, mouth, who, look):
     w = mw
     if mouth in ("line", "smile"):
         lift = 0 if mouth == "line" else 9
-        top = bez((mx - w, my - lift), (mx - w * 0.6, my - 9 - lift * 0.4), (mx - 12, my - 15), (mx - 6, my - 13), 10) + [(mx, my - 9)] + bez((mx + 6, my - 13), (mx + 12, my - 15), (mx + w * 0.6, my - 9 - lift * 0.4), (mx + w, my - lift), 10)
+        lf = F.get("lipf", 1.0); top = bez((mx - w, my - lift), (mx - w * 0.6, my - 9 * lf - lift * 0.4), (mx - 12, my - 15 * lf), (mx - 6, my - 13 * lf), 10) + [(mx, my - 9 * lf)] + bez((mx + 6, my - 13 * lf), (mx + 12, my - 15 * lf), (mx + w * 0.6, my - 9 * lf - lift * 0.4), (mx + w, my - lift), 10)
         if mouth == "line":
-            line_ = bez((mx - w, my), (mx - w * 0.4, my + 3), (mx + w * 0.4, my + 3), (mx + w, my), 16)
-            bottom = bez((mx + w * 0.85, my + 1), (mx + w * 0.5, my + 21), (mx - w * 0.5, my + 21), (mx - w * 0.85, my + 1), 16)
+            dn = -F.get("corners", 0.0); line_ = bez((mx - w, my + dn), (mx - w * 0.4, my + 3), (mx + w * 0.4, my + 3), (mx + w, my + dn), 16)
+            bottom = bez((mx + w * 0.85, my + 1 + dn), (mx + w * 0.5, my + 21 * lf), (mx - w * 0.5, my + 21 * lf), (mx - w * 0.85, my + 1 + dn), 16)
             lips(top, line_, bottom)
             cv.ink(line_[2:-2], 2.2, (64, 30, 34)); cv.ink(line_[6:11], 3.0, (54, 24, 28))
             for s_ in (-1, 1): cv.ink([(mx + s_ * (w - 3), my - 1), (mx + s_ * (w + 4), my + 1)], 2.4, (70, 34, 36))   # the corners
@@ -341,7 +354,7 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
         for s in (-1, 1): cv.ink([(cx + s * 112, 770), (cx + s * 20, 1250)], 3, GOLD)                 # gold trim on the cardigan
     # ---------- neck, with the jaw's shadow on it
     nk = mpoly([(cx - F["neck"], 540), (cx + F["neck"], 540), (cx + F["neck"] + 10, 720), (cx - F["neck"] - 10, 720)])
-    nh = dome(nk, 70) + seg((cx - 40, 620), (cx - 60, 720), 8, 4) + seg((cx + 40, 620), (cx + 60, 720), 8, 4) + g(cx, F["chy"] + 10, 60, 30, -30)
+    nh = dome(nk, 70) + seg((cx - 40, 620), (cx - 60, 720), 8, 5) + seg((cx + 40, 620), (cx + 60, 720), 8, 5) + g(cx, F["chy"] + 10, 60, 30, -30) + g(cx, F["chy"] + 46, 10, 14, 7 * F.get("adam", 0))
     cv.shade(nk, F["skin"], h=nh)
     if who in ("toi", "double"):                                                 # headphones round the neck
         cv.shade(mline(bez((cx - 170, 700), (cx - 150, 790), (cx + 150, 790), (cx + 170, 700)), 16), (36, 34, 44), R=6, spec=0.6)
@@ -414,6 +427,8 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
         for path in (bez((cx - 96, 290), (cx - 80, 340), (cx - 110, 380), (cx - 90, 430), 8), bez((cx + 90, 270), (cx + 70, 330), (cx + 104, 380), (cx + 80, 450), 8), bez((cx + 30, F["my"] + 20), (cx + 50, F["my"] + 50), (cx + 40, F["my"] + 70), (cx + 60, F["chy"] - 10), 6)):
             cv.ink(path, 4.5, GOLD_D); cv.ink(path, 2.2, (240, 200, 110))
         for s in (-1, 1): cv.ink(bez((cx + s * 62, F["ey"] + 12), (cx + s * 66, F["ey"] + 60), (cx + s * 58, F["ey"] + 100), (cx + s * 64, F["ey"] + 150), 10), 4, (10, 8, 12))
+    if who == "maman":                                                           # forehead lines, drawn faintly
+        for k, y in enumerate((300, 316, 331)): cv.ink(bez((cx - 74 + k * 8, y + 4), (cx - 30, y - 2), (cx + 30, y - 2), (cx + 74 - k * 8, y + 4), 14), 1.3, (120, 80, 70), 0.4)
     # ---------- facial features
     browc = dict(toi=(26, 18, 16), double=(18, 16, 20), samir=(24, 16, 12), maman=(96, 86, 82))[who]
     for s in (-1, 1): brow4(cv, cx, F, s, brow, wide, browc)
