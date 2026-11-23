@@ -83,3 +83,18 @@ Abrupt changes between characters confuse viewers (the creator's note).
   (`dark=True`), `monster_face`; `n2motion.py`: perspective doors, one-piece hands, sleeves.
 - Set stills (Blender, Poly Haven CC0): street, landing lit/dark/with bag, closed door, stairs, entry and kitchen
   lit/dark, bedroom.
+
+## Storytime blueprint (youtu.be/NZ596meuUK8, AI storytime with Claude Code + Higgsfield, watched by Gemini Nov 23)
+
+The tool there generates the images with a paid AI video service; our pipeline draws them, so only the method is
+kept. The story shape, checked against our episodes:
+1. Hook, 0-5 s, a shock sentence with no intro (ours: "Imagine." over the anomaly already on screen).
+2. Context in one or two sentences.
+3. Escalation by the rule of three: three attempts or signs, each worse than the last (three knocks, three texts,
+   three times the double is almost caught).
+4. The pivot: one absurd or desperate decision (the in-video A/B choice sits here).
+5. Climax and payoff: its consequence, shown, not told.
+6. Landing: a last line that calls back the opening (our loop to frame 0, or the reframing line).
+Production rules from the same video: a model sheet so the characters never drift between scenes (an inconsistent
+character makes the video read fake); a breakdown per scene (description, narration line, image, motion); subtle
+motion (blinks, small nods) rather than big moves; 60-65 s of voice; an edit that removes every dead second.

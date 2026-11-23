@@ -195,8 +195,8 @@ def hair_toi(cv, cx, L, sway, hm):
     cv.poly(taper(c2, 8, 1.5), H0, 4)                                        # one loose strand
 
 
-def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=False, sway=0.0, size=1000, light=1.0, boil=None):
-    L = LOOK[who]; cv = Canvas(); cx = 500
+def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=False, sway=0.0, size=1000, light=1.0, boil=None, turn=0.0):
+    L = LOOK[who]; cvB = Canvas(); cv = cvB; cx = 500                     # layers: body, head, features, hair
     # ---------- body: one bright garment each
     sh = bez((160, 1000), (170, 820), (300, 756), (430, 744)) + bez((570, 744), (700, 756), (830, 820), (840, 1000))
     if who in ("toi", "double"):
@@ -236,6 +236,7 @@ def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=F
         for x in (340, 660): cv.ell((x - 46, 700, x + 46, 800), (34, 32, 44, 255), 6); cv.ell((x - 22, 724, x + 22, 776), L["top"], 0)
     if who == "samir": cv.stroke(bez((440, 760), (460, 812), (540, 812), (560, 760)), 4, (214, 176, 84, 255))   # a thin chain
     # ---------- ears, head
+    cvH = Canvas(); cv = cvH
     for s in (-1, 1):
         e = cv.ell((cx + s * 206 - 30, 400, cx + s * 206 + 30, 500), L["skin"], 6)
         cv.stroke(bez((cx + s * 200, 420), (cx + s * 218, 430), (cx + s * 218, 470), (cx + s * 204, 482), 8), 3, tone(L["skin"], 0.85))
@@ -251,13 +252,14 @@ def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=F
     if who != "double":
         for s in (-1, 1): cv.inside(hm, ell=(cx + s * 128 - 34, 506, cx + s * 128 + 34, 534), fill=(244, 150, 146, 120) if who != "samir" else (200, 100, 80, 90), blur=4)   # blush
     # ---------- character marks
+    cvF = Canvas(); cv = cvF
     if who == "toi":
         cv.stroke([(cx - 132, 334), (cx - 116, 378)], 4, (176, 92, 86, 255))                    # the scar through the left brow
         cv.stroke([(cx - 104, 488), (cx - 96, 510)], 3, (176, 92, 86, 255))
     if who == "samir":                                                                           # a short beard along the jaw, a moustache
-        bm = cv.mask(bez((cx - 206, 450), (cx - 196, 620), (cx + 196, 620), (cx + 206, 450)) + bez((cx + 206, 450), (cx + 140, 700), (cx - 140, 700), (cx - 206, 450)))
-        hole = cv.mask(ell=(cx - 52, 560, cx + 52, 618))
-        cv.im.paste(Image.new("RGBA", cv.im.size, (40, 30, 26, 255)), (0, 0), ImageChops.subtract(ImageChops.multiply(bm, hm), hole))
+        bm = cvH.mask(bez((cx - 206, 450), (cx - 196, 620), (cx + 196, 620), (cx + 206, 450)) + bez((cx + 206, 450), (cx + 140, 700), (cx - 140, 700), (cx - 206, 450)))
+        hole = cvH.mask(ell=(cx - 52, 560, cx + 52, 618))
+        cvH.im.paste(Image.new("RGBA", cv.im.size, (40, 30, 26, 255)), (0, 0), ImageChops.subtract(ImageChops.multiply(bm, hm), hole))
         cv.poly([(cx - 56, 578), (cx - 40, 552), (cx, 546), (cx + 40, 552), (cx + 56, 578), (cx + 30, 566), (cx, 564), (cx - 30, 566)], (40, 30, 26, 255), 0)
     if who == "double":                                                                          # black tears, a crack
         for s in (-1, 1): cv.stroke([(cx + s * 92, 470), (cx + s * 96, 530), (cx + s * 90, 590)], 6, (10, 8, 12, 255))
@@ -271,6 +273,7 @@ def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=F
     cv.stroke(bez((cx + 6, 486), (cx + 22, 510), (cx + 18, 528), (cx - 6, 530), 12), 5, tone(L["skin"], 0.75))   # a small nose
     mouth(cv, cx, L, mouth_, who, look)
     # ---------- hair, on top
+    cvR = Canvas(); cv = cvR
     if who in ("toi", "double"):
         hair_toi(cv, cx, L, sway, hm)
     elif who == "samir":
@@ -287,8 +290,23 @@ def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=F
         for s in (-1, 1):
             for k in range(3): cv.stroke(bez((cx + s * 4, 250 + k * 4), (cx + s * (60 + k * 20), 180), (cx + s * (150 + k * 16), 210 + k * 20), (cx + s * (200 - k * 4), 330 + k * 30), 16), 3, L["hair_d"] if k else L["hair_l"])
         cv.stroke([(cx + 20, 66), (cx + 84, 116)], 5, (150, 118, 70, 255))                     # a hairpin
-    out = cv.done(size)
+    # ---------- the turn: a 2D cheat for three-quarter views, each layer slides by its depth and the far side narrows
+    for layer, depth in ((cvH, 18), (cvF, 60), (cvR, 34)):
+        cvB.im.alpha_composite(turn_warp(layer.im, turn, depth, cx))
+    out = cvB.done(size)
     return line_boil(out, boil) if boil is not None else out
+
+
+def turn_warp(im, t, shift, cx=500):
+    """Slide a layer toward the turn by `shift`*t and squeeze its far side (35 % at t = 1): features slide most,
+    the hair less, the skull least, so the face reads as turned without a new drawing."""
+    if not t: return im
+    a = np.asarray(im); h, w = a.shape[:2]
+    X = np.arange(w, dtype=np.float32) / SS; rel = X - (cx + shift * t)
+    scale = np.where(np.sign(rel) == np.sign(t), 1 + 0.06 * abs(t), 1 - 0.35 * abs(t))
+    mx = np.ascontiguousarray(np.broadcast_to(((cx + rel / scale) * SS)[None, :], (h, w))).astype(np.float32)
+    my = np.ascontiguousarray(np.broadcast_to(np.arange(h, dtype=np.float32)[:, None], (h, w)))
+    return Image.fromarray(cv2.remap(a, mx, my, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT), "RGBA")
 
 
 def line_boil(im, seed, amp=1.3, scale=60):
@@ -304,6 +322,12 @@ def line_boil(im, seed, amp=1.3, scale=60):
 
 if __name__ == "__main__":
     import sys
+    if len(sys.argv) > 2 and sys.argv[2] == "model":                       # the model sheet: 3/4 left, front, 3/4 right
+        Sh = Image.new("RGB", (3 * 420 + 40, 4 * 450 + 40), (24, 22, 34)); d = ImageDraw.Draw(Sh)
+        for r, who in enumerate(["toi", "samir", "maman", "double"]):
+            for c, (lab, t) in enumerate((("3/4 gauche", -0.5), ("face", 0.0), ("3/4 droite", 0.5))):
+                b = bust5(who, size=400, turn=t, look=(t * 0.6, 0.0)); Sh.paste(b, (20 + c * 420, 20 + r * 450), b); d.text((30 + c * 420, 425 + r * 450), f"{who.upper()} · {lab}", fill=(200, 190, 220))
+        Sh.save(sys.argv[1], quality=92); print("ok"); sys.exit()
     rows = ["toi", "samir", "maman", "double"]
     exps = [("neutre", dict()), ("peur", dict(wide=1.4, brow=1.0, mouth_="o", look=(0.2, 0.0))), ("sourire", dict(mouth_="smile", brow=-0.4, look=(-0.3, 0.1))), ("inquiet", dict(mouth_="fear", brow=0.8, look=(0.0, 0.4)))]
     Sh = Image.new("RGB", (4 * 420 + 40, 4 * 450 + 40), (24, 22, 34)); d = ImageDraw.Draw(Sh)

@@ -373,3 +373,10 @@ What our Python pipeline took (`toon5.py`, test `scripts/anim_test_v18.py`, 3 s)
 - Compositing: characters on their own layer, a blurred foreground object for depth, a glow on magic objects (the
   moon brooch, the double's eyes), a vignette, a cold grade with crushed blacks.
 - Mixamo motion would need the user to download it (the session cannot log in); not used.
+
+## Model sheet (November 23): `python3 toon5.py out.jpg model`, `assets/persos_v18_fiche_modele.jpg`
+
+Three-quarter left, front, three-quarter right for every character, from one drawing: `bust5(..., turn=-1..1)` draws
+the body, the head, the features and the hair on separate layers and `turn_warp` slides each by its depth (features
+60, hair 34, skull 18, body 0) while the far side narrows by 35 % at turn 1. Use turn 0.3-0.5; a full profile needs
+its own drawing and does not exist yet. Look the eyes toward the turn (`look=(turn * 0.6, 0)`).
