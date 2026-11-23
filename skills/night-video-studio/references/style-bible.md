@@ -349,3 +349,27 @@ the slicked-back wavy dark brown-black hair, the scar, the tired crescents under
 
 `bust5(who, look, brow, mouth_, wide, blink, sway, size)` -> RGBA; `python3 toon5.py out.jpg` writes the sheet in
 about 25 s (toon4 needed 5 min).
+
+## Animation and compositing, from two Grease Pencil tutorials (watched by Gemini, November 23)
+
+1. "2D animation over 3D in Blender" (youtu.be/CljGkkmH-Z0): a base mesh rigged on Mixamo (check the licence of the
+   motion library for commercial use) gives proportions and perspective; the Graph Editor changes a pose (move a
+   rotation curve), the speed (scale keys on X) and the intensity (scale on Y, to exaggerate); trace the key poses
+   first (walk: contact, down, passing, up), structure before detail; Grease Pencil Sculpt mode adjusts a drawing
+   without redrawing it; clean-up on a new layer with closed lines so fills work.
+2. "A 2D character in a 3D painted scene" (youtu.be/VmekmH0QJMs): collections and render layers because Grease
+   Pencil ignores the camera's depth of field; Vector/linear keys for constant motion (falling snow); a Noise
+   modifier for a living, trembling line; onion skin; straight-ahead or pose-to-pose; simple circles for structure;
+   a fill layer with a palette sampled from the model sheet; render PNG RGBA with transparency and a Z pass; composite
+   with Alpha Over, an animated blur on foreground objects, Hue/Saturation and Exposure for the mood; glow on magic
+   objects; a vignette.
+
+What our Python pipeline took (`toon5.py`, test `scripts/anim_test_v18.py`, 3 s):
+- `line_boil(im, seed)`: the Noise modifier by hand, 1-2 px smooth displacement, a new seed per drawing.
+- Animate on twos: 12 drawings a second, each held two frames.
+- `bust5(..., light=-1..1)`: the one shadow shape moves to the side away from the light and widens as the light
+  turns to the front (a moving candle moves the shadow).
+- Horror timing: a long held pose, then a brutal pose with no in-between (the double is simply there, bigger).
+- Compositing: characters on their own layer, a blurred foreground object for depth, a glow on magic objects (the
+  moon brooch, the double's eyes), a vignette, a cold grade with crushed blacks.
+- Mixamo motion would need the user to download it (the session cannot log in); not used.

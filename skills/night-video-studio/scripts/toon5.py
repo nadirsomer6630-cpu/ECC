@@ -195,7 +195,7 @@ def hair_toi(cv, cx, L, sway, hm):
     cv.poly(taper(c2, 8, 1.5), H0, 4)                                        # one loose strand
 
 
-def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=False, sway=0.0, size=1000):
+def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=False, sway=0.0, size=1000, light=1.0, boil=None):
     L = LOOK[who]; cv = Canvas(); cx = 500
     # ---------- body: one bright garment each
     sh = bez((160, 1000), (170, 820), (300, 756), (430, 744)) + bez((570, 744), (700, 756), (830, 820), (840, 1000))
@@ -209,6 +209,8 @@ def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=F
             stripe = (240, 240, 248, 255) if who == "toi" else (90, 30, 40, 255)
             cv.stroke(bez((cx + s * 150, 770), (cx + s * 230, 780), (cx + s * 300, 820), (cx + s * 330, 910)), 9, stripe)      # sleeve stripes
             cv.poly([(cx + s * 70, 744), (cx + s * 140, 736), (cx + s * 132, 700), (cx + s * 70, 712)], L["top_d"], 5)         # collar
+        g_ = Image.new("RGBA", cv.im.size, (0, 0, 0, 0)); ImageDraw.Draw(g_).ellipse([270 * SS, 800 * SS, 380 * SS, 910 * SS], fill=(255, 220, 120, 90))
+        cv.im.alpha_composite(g_.filter(ImageFilter.GaussianBlur(14 * SS)))
         cv.ell((290, 820, 360, 890), (226, 190, 96, 255), 5); cv.ell((306, 832, 344, 872), (150, 116, 52, 255), 0); cv.ell((316, 826, 354, 866), (226, 190, 96, 255), 0)   # the moon brooch
         cv.rim(body)
     elif who == "samir":
@@ -242,9 +244,10 @@ def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=F
     if who == "samir": cv.ell((cx - 222, 486, cx - 210, 498), (214, 176, 84, 255), 3)
     if who == "maman": cv.ell((cx - 74, 50, cx + 74, 170), L["hair"], 7)                                      # the bun, behind
     hpts = head_pts(cx, L); hm = cv.poly(hpts, L["skin"], 8)
-    left = [p for p in hpts if p[0] < cx - 30]                                                                   # ONE soft shadow shape
-    cv.inside(hm, pts=left + [(x + 42 + 14 * math.sin((y - 150) / 520 * math.pi), y) for x, y in reversed(left)], fill=tone(L["skin"]))
-    cv.rim(hm)
+    side = -1 if light >= 0 else 1; depth = 30 + 40 * (1 - abs(light))                                            # ONE shadow shape, on the side
+    edge = [p for p in hpts if (p[0] - cx) * side > 30]                                                           # away from the light; it widens
+    cv.inside(hm, pts=edge + [(x - side * (depth + 14 * math.sin((y - 150) / 520 * math.pi)), y) for x, y in reversed(edge)], fill=tone(L["skin"]))   # as the light turns
+    cv.rim(hm, side=-side)
     if who != "double":
         for s in (-1, 1): cv.inside(hm, ell=(cx + s * 128 - 34, 506, cx + s * 128 + 34, 534), fill=(244, 150, 146, 120) if who != "samir" else (200, 100, 80, 90), blur=4)   # blush
     # ---------- character marks
@@ -284,7 +287,19 @@ def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=F
         for s in (-1, 1):
             for k in range(3): cv.stroke(bez((cx + s * 4, 250 + k * 4), (cx + s * (60 + k * 20), 180), (cx + s * (150 + k * 16), 210 + k * 20), (cx + s * (200 - k * 4), 330 + k * 30), 16), 3, L["hair_d"] if k else L["hair_l"])
         cv.stroke([(cx + 20, 66), (cx + 84, 116)], 5, (150, 118, 70, 255))                     # a hairpin
-    return cv.done(size)
+    out = cv.done(size)
+    return line_boil(out, boil) if boil is not None else out
+
+
+def line_boil(im, seed, amp=1.3, scale=60):
+    """The Noise modifier of Grease Pencil, by hand: a smooth random displacement of 1-2 px, different for each
+    drawing, so the ink 'lives' like hand-drawn animation. Change the seed every 2 frames (animation on twos)."""
+    a = np.asarray(im); h, w = a.shape[:2]; rng = np.random.default_rng(seed)
+    gh, gw = max(2, h // scale), max(2, w // scale)
+    dx = cv2.resize(rng.normal(0, 1, (gh, gw)).astype(np.float32), (w, h), interpolation=cv2.INTER_CUBIC) * amp * w / 1000
+    dy = cv2.resize(rng.normal(0, 1, (gh, gw)).astype(np.float32), (w, h), interpolation=cv2.INTER_CUBIC) * amp * w / 1000
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    return Image.fromarray(cv2.remap(a, xx + dx, yy + dy, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT), "RGBA")
 
 
 if __name__ == "__main__":
