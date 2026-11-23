@@ -186,3 +186,13 @@ its own eyes (width, height, slant), brows (thickness, arch, slant), nose kind a
 Rendering: form shadows instead of the v6 vertical split, light from the upper right (left edge of the face, eye
 sockets, under the cheekbones, side of and under the nose, under the lower lip, the chin's shadow on the neck),
 stored in `cv.shade` so `engrave` hatches exactly there; light strokes on the nose bridge and the right cheekbone.
+
+## Characters v8 (November 23): semi-realistic faces after the creator's model (sheet `assets/persos_v8.jpg`, `REAL`)
+
+The creator sent a semi-realistic 3D portrait as the model for the 2D faces. We take its face construction, not its
+identity (not its hair colours, eye colours or outfit): small intense eyes whose iris is cut by the upper lid, with
+the lid's shadow on the eyeball and a single small highlight; low, heavy, flat brows close to the eyes; a sculpted
+nose (bridge line, light down the bridge, rounded tip, wings, dark nostrils); real lips (cupid's bow, fuller lower
+lip with a highlight, philtrum); a strong jaw for the hero; form shadows blurred so they read as painted. The hero's
+scar now runs from the forehead through the brow and down the cheek. `FACE[who].update(REAL[who])` switches it on;
+`toon3_v7.py` keeps the cartoon-eyed v7.

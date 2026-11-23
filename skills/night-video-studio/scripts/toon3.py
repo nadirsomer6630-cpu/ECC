@@ -71,7 +71,7 @@ def lock_poly(center, w0, w1=2):
 FACE = dict(   # the bone structure of each face: head (temple T, cheekbone C at cby, jaw corner J at jy, chin half-width
                # K at chy), eyes (width, height, slant, spacing, height, iris), brows (thickness, height, slant), nose
                # (tip height, width, kind), mouth (height, width), and how hollow the cheeks and eye sockets are
-    toi=dict(T=214, C=222, cby=468, J=152, jy=592, K=34, chy=712, ew=74, eh=31, lift=22, esp=114, ey=448, ir=30,
+    toi=dict(T=214, C=224, cby=468, J=184, jy=612, K=60, chy=716, ew=74, eh=31, lift=22, esp=114, ey=448, ir=30,
              bw=11, by=366, bs=-0.6, nl=550, nw=25, nose="straight", my=622, mw=40, hollow=0.6, socket=0.5),
     samir=dict(T=230, C=244, cby=490, J=210, jy=644, K=86, chy=706, ew=68, eh=33, lift=6, esp=120, ey=452, ir=29,
                bw=16, by=372, bs=0.0, nl=560, nw=40, nose="broad", my=624, mw=52, hollow=0.25, socket=0.35),
@@ -80,6 +80,14 @@ FACE = dict(   # the bone structure of each face: head (temple T, cheekbone C at
     double=dict(T=206, C=212, cby=450, J=132, jy=620, K=24, chy=752, ew=82, eh=29, lift=36, esp=112, ey=446, ir=30,
                 bw=8, by=348, bs=1.2, nl=570, nw=19, nose="sharp", my=640, mw=40, hollow=1.0, socket=1.0),
 )
+REAL = dict(   # the semi-realistic face (creator's model, Nov 23): small intense eyes, the iris cut by the upper lid,
+               # low heavy brows close to the eyes, a sculpted nose, real lips, soft shadows
+    toi=dict(ew=60, eh=18, lift=12, ir=19, by=406, bw=16, bs=-1.0, nl=566, nw=30, my=636, mw=46, real=True),
+    samir=dict(ew=58, eh=19, lift=4, ir=19, by=410, bw=17, real=True),
+    maman=dict(ew=54, eh=19, lift=-2, ir=17, by=396, bw=8, real=True),
+    double=dict(ew=64, eh=17, lift=22, ir=19, by=398, bw=11, nl=580, my=650, real=True),
+)
+for k_, v_ in REAL.items(): FACE[k_].update(v_)
 
 
 def head_pts(cx, F):
@@ -101,18 +109,22 @@ def eye(cv, cx, cy, side, L, look, wide, blink, who, F=None):
     if blink:
         cv.stroke([bot(u / 10)[0:1] + (bot(u / 10)[1] - h * 0.55,) for u in range(-10, 11)], 8); return
     up = [top(u / 14) for u in range(-14, 15)]; lo = [bot(u / 14) for u in range(14, -15, -1)]
-    m = cv.mask(); ImageDraw.Draw(m).polygon(cv.P(up + lo), fill=255); cv.put(m, (252, 252, 250, 255), 0)
+    real = F.get("real")
+    m = cv.mask(); ImageDraw.Draw(m).polygon(cv.P(up + lo), fill=255); cv.put(m, (238, 232, 224, 255) if real else (252, 252, 250, 255), 0)
     lay = Image.new("RGBA", cv.im.size, (0, 0, 0, 0)); ld = ImageDraw.Draw(lay)
     ir = F["ir"] if wide < 1.15 else F["ir"] * 0.8; ix, iy = cx + look[0] * 28, cy + look[1] * 10 + 2
     def E(x, y, r, col): ld.ellipse(((x - r) * SS, (y - r) * SS, (x + r) * SS, (y + r) * SS), fill=col)
     E(ix, iy, ir, tuple(int(v * 0.55) for v in L["iris"][:3]) + (255,)); E(ix, iy, ir * 0.82, L["iris"])
     E(ix, iy + ir * 0.25, ir * 0.55, tuple(min(255, int(v * 1.35)) for v in L["iris"][:3]) + (255,))       # lighter lower iris
     E(ix, iy, ir * (0.42 if who != "double" else 0.16), (14, 12, 22, 255))
-    if who != "double": E(ix - ir * 0.38, iy - ir * 0.4, ir * 0.24, (255, 255, 255, 255)); E(ix + ir * 0.35, iy + ir * 0.3, ir * 0.11, (255, 255, 255, 230))
+    if who != "double" and real: E(ix + ir * 0.3, iy - ir * 0.3, ir * 0.2, (255, 255, 255, 235))
+    elif who != "double": E(ix - ir * 0.38, iy - ir * 0.4, ir * 0.24, (255, 255, 255, 255)); E(ix + ir * 0.35, iy + ir * 0.3, ir * 0.11, (255, 255, 255, 230))
+    if real:                                                                                     # the upper lid casts a shadow on the eyeball
+        ld.polygon(cv.P(up + [(x, y + 7) for x, y in reversed(up)]), fill=(0, 0, 0, 80))
     lay.putalpha(ImageChops.multiply(lay.getchannel("A"), m)); cv.im.alpha_composite(lay)
-    cv.stroke(lo, 3.5); cv.stroke(up, 13 if who == "samir" else 10)
-    cv.stroke([(x, y - 15 - 6 * (1 - abs(i - 14) / 14)) for i, (x, y) in enumerate(up) if 5 <= i <= 23], 3.5, tuple(int(v * 0.72) for v in L["skin_d"][:3]) + (255,))   # lid crease
-    oc = up[-1]; fl = 26 if who == "double" else 16; cv.stroke([oc, (oc[0] + side * fl, oc[1] - fl * 0.75)], 8)   # the flick
+    cv.stroke(lo[6:] if real else lo, 2.5 if real else 3.5); cv.stroke(up, (9 if who == "samir" else 7) if real else (13 if who == "samir" else 10))
+    cv.stroke([(x, y - (11 if real else 15) - 6 * (1 - abs(i - 14) / 14)) for i, (x, y) in enumerate(up) if 5 <= i <= 23], 3.5, tuple(int(v * 0.72) for v in L["skin_d"][:3]) + (255,))   # lid crease
+    oc = up[-1]; fl = (18 if who == "double" else 9) if real else (26 if who == "double" else 16); cv.stroke([oc, (oc[0] + side * fl, oc[1] - fl * 0.75)], 8)   # the flick
     if who == "maman":
         for k in (-10, 4): cv.stroke([(oc[0] + side * 10, oc[1] + k), (oc[0] + side * 30, oc[1] + k * 1.6)], 3, tuple(int(v * 0.75) for v in L["skin_d"][:3]) + (255,))   # crow's feet
     if who == "maman":
@@ -197,6 +209,7 @@ def _draw(cv, who, L, cx, look, brow, mouth, wide, blink, sway, size, grim):
     plane([(cx - 8, ey - 8), (cx - 10 - nwd * 0.5, nl - 40), (cx - nwd - 8, nl + 4), (cx - 6, nl + 6)], 170)   # left side of the nose
     plane((cx - nwd, nl + 8, cx + nwd * 0.6, nl + 24), 130, dark, True)                                    # under the nose
     plane((cx - F["mw"] * 0.6, F["my"] + 20, cx + F["mw"] * 0.5, F["my"] + 40), 140, dark, True)          # under the lower lip
+    if F.get("real"): sh = sh.filter(ImageFilter.GaussianBlur(5 * SS))                                    # painted, not cut out
     sh.putalpha(ImageChops.multiply(sh.getchannel("A"), hm)); cv.im.alpha_composite(sh)
     cv.shade = ImageChops.multiply(cv.shade, hm)
     lite = tuple(min(255, int(v * 1.1) + 8) for v in L["skin"][:3]) + (255,)                             # plane lights on the right
@@ -254,7 +267,7 @@ def _draw(cv, who, L, cx, look, brow, mouth, wide, blink, sway, size, grim):
     # brows
     for s_ in (-1, 1):                                        # brows: thick and straight (Samir), thin and arched (the mother),
         x0 = cx + s_ * esp; y0 = F["by"] - (10 if wide > 1.15 else 0); bs = F["bs"]   # low and brooding (you), sharp and rising (the double)
-        arch = 16 if who == "maman" else 6
+        arch = (12 if who == "maman" else 2) if F.get("real") else (16 if who == "maman" else 6)
         c = [(x0 - s_ * 56, y0 + 8 - brow * 26 + bs * 6), (x0 - s_ * 12, y0 - arch - brow * 12), (x0 + s_ * 30, y0 - arch - 2 - brow * 4 - bs * 6), (x0 + s_ * 62, y0 + 4 + brow * 14 - bs * 16)]
         cv.poly(lock_poly(bez(c[0], c[1], c[2], c[3], 10), F["bw"], 3), L.get("hair_lo", INK) if who in ("toi", "double") else ((90, 80, 78, 255) if who == "maman" else (30, 20, 16, 255)), 2)
     for s_ in (-1, 1): eye(cv, cx + s_ * esp, ey, s_, L, look, wide, blink, who, F)
@@ -263,7 +276,16 @@ def _draw(cv, who, L, cx, look, brow, mouth, wide, blink, sway, size, grim):
         cv.stroke([(cx - 24, ey - 10), (cx + 24, ey - 10)], 5, GOLD_D)
     # nose, by kind
     nl, nwd = F["nl"], F["nw"]; sk = tuple(int(v * 0.8) for v in L["skin_d"][:3]) + (255,)
-    if F["nose"] == "sharp":                                  # long and thin, a hooked point
+    lite_ = tuple(min(255, int(v * 1.1) + 8) for v in L["skin"][:3]) + (255,)
+    if F.get("real"):                                         # sculpted: the bridge, a rounded tip, the wings, the nostrils
+        nk = nwd * (0.7 if F["nose"] == "sharp" else 1.0)
+        cv.stroke(bez((cx - 12, ey - 4), (cx - 8, nl - 70), (cx - 18, nl - 40), (cx - nk * 0.6, nl - 16), 12), 4, sk)
+        cv.stroke(bez((cx + 2, ey + 10), (cx + 6, nl - 60), (cx + 8, nl - 36), (cx + 6, nl - 16), 10), 6, lite_)   # light down the bridge to the tip
+        cv.stroke(bez((cx - nk * 0.6, nl - 2), (cx - nk * 0.3, nl + 12), (cx + nk * 0.3, nl + 12), (cx + nk * 0.6, nl - 2), 10), 4, sk)
+        for s_ in (-1, 1):
+            cv.stroke(bez((cx + s_ * nk * 0.55, nl + 4), (cx + s_ * (nk + 14), nl + 2), (cx + s_ * (nk + 14), nl - 22), (cx + s_ * (nk + 2), nl - 32), 10), 4)
+            ImageDraw.Draw(cv.im).ellipse([(cx + s_ * nk * 0.5 - 8) * SS, (nl - 1) * SS, (cx + s_ * nk * 0.5 + 8) * SS, (nl + 6) * SS], fill=(56, 36, 32, 255))
+    elif F["nose"] == "sharp":                                  # long and thin, a hooked point
         cv.stroke(bez((cx - 6, ey - 10), (cx - 2, nl - 60), (cx - 14, nl - 20), (cx - 4, nl + 4), 12), 5, sk)
         cv.stroke(bez((cx - 18, nl - 2), (cx - 6, nl + 10), (cx + 8, nl + 8), (cx + 16, nl - 4), 10), 5)
     else:
@@ -283,6 +305,15 @@ def _draw(cv, who, L, cx, look, brow, mouth, wide, blink, sway, size, grim):
     elif mouth == "o": cv.ell((mx - 22, my - 26, mx + 22, my + 26), (90, 26, 36, 255), 6)
     elif mouth == "smile": cv.stroke(bez((mx - 50 * k_, my - 12), (mx - 20 * k_, my + 22), (mx + 20 * k_, my + 22), (mx + 50 * k_, my - 12)), 9)
     elif mouth == "fear": cv.stroke([(mx - 44 * k_, my + 4), (mx - 22 * k_, my - 8), (mx, my + 4), (mx + 22 * k_, my - 8), (mx + 44 * k_, my + 4)], 8)
+    elif F.get("real"):                                       # real lips: a cupid's bow, a fuller lower lip with a highlight
+        W = 36 * k_; lip = tuple(int(a * 0.62 + b * 0.38) for a, b in zip(L["skin_d"][:3], (150, 70, 70))) + (255,)
+        lip_l = tuple(min(255, int(v * 1.12)) for v in lip[:3]) + (255,)
+        if who != "samir":
+            for s_ in (-1, 1): cv.stroke([(mx + s_ * 7, my - 14), (mx + s_ * 5, nl + 18)], 3, L["skin_d"])
+        cv.poly([(mx - W, my), (mx - W * 0.5, my - 9), (mx - 8, my - 14), (mx, my - 9), (mx + 8, my - 14), (mx + W * 0.5, my - 9), (mx + W, my), (mx + W * 0.5, my + 2), (mx - W * 0.5, my + 2)], lip, 0)
+        cv.poly(bez((mx - W * 0.8, my + 1), (mx - W * 0.5, my + 24), (mx + W * 0.5, my + 24), (mx + W * 0.8, my + 1)), lip_l, 0)
+        cv.stroke(bez((mx - W, my), (mx - W * 0.4, my + 4), (mx + W * 0.4, my + 4), (mx + W, my), 12), 5, (60, 34, 34, 255))
+        cv.stroke([(mx - 10, my + 12), (mx + 10, my + 12)], 4, tuple(min(255, v + 40) for v in lip_l[:3]) + (255,))
     else:
         cv.stroke(bez((mx - 40 * k_, my + 2), (mx - 14 * k_, my - 6), (mx + 14 * k_, my - 6), (mx + 40 * k_, my + 2), 10), 7)
         lw = 9 if who == "samir" else 5                       # the lower lip: full for Samir, thin for the mother
@@ -308,7 +339,8 @@ def grim_bust(who, L, look, brow, mouth, wide, blink, sway, tilt, size):
                 rx = (k * 37) % 300 - 150; ry = (k * 53) % 120
                 x = cx + rx * 0.9; y = 590 + ry * 0.7 - abs(rx) * 0.15
                 if 430 < y < 690: d.ellipse(((x - 2) * SS, (y - 2) * SS, (x + 2) * SS, (y + 2) * SS), fill=(110, 84, 70, 200))
-            cv.stroke([(cx - 150, 330), (cx - 128, 372)], 5, (150, 96, 90, 255))               # the scar through the left eyebrow
+            cv.stroke([(cx - 150, 340), (cx - 134, 384), (cx - 128, 420)], 5, (150, 70, 66, 255))     # the scar through the left eyebrow
+            cv.stroke([(cx - 112, 482), (cx - 104, 520)], 4, (150, 70, 66, 255))                       # and on down the cheek
             F = FACE["toi"]; e_, y_ = F["esp"], F["ey"] + 36
             for s_ in (-1, 1): cv.stroke(bez((cx + s_ * (e_ + 44), y_ - 4), (cx + s_ * (e_ + 14), y_ + 10), (cx + s_ * (e_ - 16), y_ + 10), (cx + s_ * (e_ - 40), y_), 8), 4, tuple(int(v * 0.8) for v in L["skin_d"][:3]) + (255,))   # tired under-eyes
         else:                                                     # the double: gold-repaired cracks, black tears
