@@ -213,3 +213,23 @@ dark-fantasy gold accents and rim light, and engraved hatching inside the form s
   shadow with fine hairs; the hairpin in the centred bun.
 - **Symmetry check**: render a bust at 1000 px with a red centre line before delivering a new face; everything
   mirrors except what is meant not to (the light from the right, the blue lock, the scar, the double's cracks).
+
+## Characters v10 (November 23): redrawn from scratch, "render then comic" (`scripts/toon4.py`, `assets/persos_v10*.jpg`)
+
+Sources: the creator's semi-realistic portrait (anatomy and lighting only, not its identity) and chazee_xiao's
+"2D ANIMATIC -> RENDER -> FINAL" (Spider-Verse-style fan animation, 6 s, 619 k views, read by Gemini): the final
+image is a 3D-lit render redrawn as a comic: flat tones, halftone dots in the half-shadow, hatching in the deep
+shadow, a stylised coloured rim light, ink weight that varies with the light, colour misregistration, paper grain,
+animation on twos, hand-drawn speed lines instead of motion blur.
+
+How `toon4.py` does it: every shape has a height map (a distance-transform dome plus gaussian bumps and creases:
+brow ridge, sockets, eyeballs, cheekbones and hollows, nose bridge, tip and wings, nostrils, philtrum, lips, chin,
+nose-to-mouth folds, wrinkles, hair clumps, cloth folds and quilting); `Canvas.shade` derives normals, lights them
+(sodium key from the upper right, cold moonlight rim from the left, ambient occlusion from the height map, a small
+specular), quantises to three tones, adds halftone dots, hatching and the rim band, then inks the outline thicker
+on the shadow side. `done()` applies the night-city grade (signature colours kept), a red misregistration ghost of
+the ink and grain. Eyes, brows (single hairs), mouths, glasses, cracks and stubble are drawn on top.
+
+Use: `bust4(who, look, brow, mouth, wide, blink, sway)` -> RGBA 1000x1250; `python3 toon4.py out.jpg` (sheet) or
+`python3 toon4.py out.jpg big` (four neutral busts). About 18 s per bust. When animating, hold each drawing for two
+frames (on twos) and use drawn speed lines, as in the reference.
