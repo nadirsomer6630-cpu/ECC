@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toon5
 from toon5 import Canvas, bez, tone, taper, SS
 
-FONTS = "/tmp/claude-0/-home-user-ecc/3c5713f1-7bcc-53da-9c7e-6ad539a42789/scratchpad/fonts/dl2/"
+FONTS = os.environ.get("NVS_FONTS", "/tmp/claude-0/-home-user-ecc/3c5713f1-7bcc-53da-9c7e-6ad539a42789/scratchpad/fonts/dl2/")   # Anton.ttf: SIL OFL, Google Fonts
 ORANGE = (255, 168, 38)
 PANTS = dict(toi=(38, 36, 52, 255), double=(22, 20, 28, 255), samir=(60, 64, 80, 255), maman=(70, 52, 66, 255))
 
