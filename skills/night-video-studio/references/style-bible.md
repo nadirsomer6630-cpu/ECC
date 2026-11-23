@@ -152,3 +152,19 @@ stop 2 to 5 frames after the body** (`anim.overlap`), **arcs** (`anim.arc`), tim
 in-between frames), and **squash and stretch with constant volume** (`anim.squash`, the "Maintain Volume" idea).
 Test clip with the v4 hero: hold, knock, he sinks (squash, anticipation), the head snaps on a Vector key with a
 stretch, overshoots and settles, the eyes open on the impact frame, the locks follow three frames late.
+
+## Characters v6 (November 23): dark fantasy x gritty city (sheet `assets/persos_v6.jpg`, `bust(..., grim=True)`)
+
+Mood references only (a rainy, sepia, hard-lit city crime game; a gold-and-ruin dark fantasy RPG): never their
+characters, symbols, logos or UI. What the 12 Gemini design reads of our reference TikToks agreed on, applied here:
+thick black outlines, flat cel colour, one signature colour and one signature accessory per character, emotions
+through mobile brows and widened eyes, the villain marked by a white predatory grin and red eyes.
+
+- **Finish (`engrave`)**: colour 28 % desaturated with a warm sepia cast (the gritty city), except saturated
+  signature colours that stay vivid; key light from the right, so the left third of every figure falls in a hard
+  shadow, hatched, cross-hatched where it is darkest; a thin gold rim light on the right edge; grain.
+- **Toi**: purple leather jacket with gold piping, frayed dark cloak fastened by a gold moon brooch, stubble, a scar
+  through the left eyebrow, tired under-eyes; the dark-blue lock and blue eyes are the only vivid colours.
+- **Samir**: green beanie with pompom, olive quilted bomber, a gold chain, full beard: the warm one.
+- **Maman**: plum shawl with gold embroidery, round glasses, a rosary, a gold hairpin in the bun, the only blush.
+- **Le double**: your clothes and hair on porcelain-grey skin, gold kintsugi cracks, black tears, red eyes, the grin.

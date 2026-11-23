@@ -49,6 +49,12 @@ LOOKS = dict(
     maman=dict(skin=(238, 200, 168, 255), skin_d=(216, 172, 138, 255), hair=(120, 108, 106, 255), iris=(104, 78, 52, 255),
                top=(214, 132, 152, 255), top_d=(178, 100, 122, 255), tee=(250, 238, 240, 255)),
 )
+GOLD = (196, 160, 84, 255); GOLD_D = (130, 100, 48, 255)
+LOOKS5 = dict(
+    toi=dict(LOOKS["toi"], skin=(214, 182, 152, 255), skin_d=(174, 138, 112, 255), top=(74, 54, 108, 255), top_d=(52, 38, 80, 255), cloak=(40, 38, 46, 255), cloak_d=(26, 24, 30, 255)),
+    samir=dict(LOOKS["samir"], skin=(176, 128, 92, 255), skin_d=(140, 98, 70, 255), top=(84, 104, 70, 255), top_d=(58, 76, 48, 255)),
+    maman=dict(LOOKS["maman"], skin=(222, 188, 160, 255), skin_d=(190, 152, 126, 255), top=(92, 52, 78, 255), top_d=(64, 34, 54, 255)),
+)
 LOOKS["double"] = dict(LOOKS["toi"], skin=(150, 158, 176, 255), skin_d=(120, 128, 150, 255), hair_hi=(54, 46, 50, 255), lock=(14, 14, 22, 255), shine=(40, 40, 60, 255), iris=(210, 20, 30, 255))
 
 
@@ -86,8 +92,16 @@ def eye(cv, cx, cy, side, L, look, wide, blink, who):
         for k in (0.55, 0.8): p = top(k); cv.stroke([p, (p[0] + side * 6, p[1] - 12)], 4)               # lashes
 
 
-def bust(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=False, sway=0.0, tilt=0.0, size=1000):
+def bust(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=False, sway=0.0, tilt=0.0, size=1000, grim=False):
     L = LOOKS[who]; cv = Canvas(1000, 1000); cx = 500 + tilt * 30
+    if grim:
+        L = dict(LOOKS5.get(who, LOOKS5["toi"] if who == "double" else L))
+        if who == "double": L.update(skin=(178, 180, 186, 255), skin_d=(140, 142, 152, 255), lock=(14, 14, 22, 255), shine=(40, 40, 60, 255), iris=(230, 30, 30, 255), hair_hi=(54, 46, 50, 255))
+        return grim_bust(who, L, look, brow, mouth, wide, blink, sway, tilt, size)
+    return _draw(cv, who, L, cx, look, brow, mouth, wide, blink, sway, size, False)
+
+
+def _draw(cv, who, L, cx, look, brow, mouth, wide, blink, sway, size, grim):
     # clothes, after the reference creators: an open track jacket over a hoodie (the hero), a quilted puffer (Samir),
     # a cardigan over a turtleneck (the mother)
     shoulders = bez((160, 1000), (170, 815), (300, 755), (420, 742)) + bez((580, 742), (700, 755), (830, 815), (840, 1000))
@@ -98,11 +112,15 @@ def bust(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fal
         cv.poly([(440, 760), (560, 760), (590, 1000), (410, 1000)], hood, 6)                                                   # the hoodie between the open panels
         for s_ in (-1, 1):
             cv.poly([(500 + s_ * 70, 742), (500 + s_ * 100, 770), (500 + s_ * 92, 1000), (500 + s_ * 62, 1000)], L["top_d"], 5)   # zip edges
-            cv.stroke(bez((500 + s_ * 150, 760), (500 + s_ * 230, 770), (500 + s_ * 300, 810), (500 + s_ * 330, 900)), 9, (240, 240, 248, 255))   # sleeve stripes
-            cv.stroke(bez((500 + s_ * 150, 790), (500 + s_ * 220, 800), (500 + s_ * 285, 835), (500 + s_ * 310, 920)), 9, (240, 240, 248, 255))
+            if not grim:
+                cv.stroke(bez((500 + s_ * 150, 760), (500 + s_ * 230, 770), (500 + s_ * 300, 810), (500 + s_ * 330, 900)), 9, (240, 240, 248, 255))   # sleeve stripes
+                cv.stroke(bez((500 + s_ * 150, 790), (500 + s_ * 220, 800), (500 + s_ * 285, 835), (500 + s_ * 310, 920)), 9, (240, 240, 248, 255))
+            else:
+                cv.stroke(bez((500 + s_ * 160, 800), (500 + s_ * 220, 830), (500 + s_ * 250, 900), (500 + s_ * 260, 1000)), 5, L["top_d"])   # leather seams
             cv.poly([(500 + s_ * 70, 742), (500 + s_ * 140, 735), (500 + s_ * 132, 700), (500 + s_ * 70, 712)], L["top_d"], 5)       # stand-up collar
-        for k in range(8): cv.stroke([(500 + 89, 790 + k * 26), (500 + 83, 800 + k * 26)], 4, (200, 200, 210, 255))                # zip teeth
-        cv.ell((650, 870, 726, 946), (246, 244, 252, 255), 5); cv.ell((670, 862, 740, 932), L["top"], 0)                       # the moon patch
+        if not grim:
+            for k in range(8): cv.stroke([(500 + 89, 790 + k * 26), (500 + 83, 800 + k * 26)], 4, (200, 200, 210, 255))                # zip teeth
+            cv.ell((650, 870, 726, 946), (246, 244, 252, 255), 5); cv.ell((670, 862, 740, 932), L["top"], 0)                       # the moon patch
     elif who == "samir":
         cv.poly(bez((330, 790), (350, 690), (650, 690), (670, 790)) + [(600, 780), (500, 755), (400, 780)], (120, 124, 138, 255), 6)   # grey hood
         cv.poly(shoulders, L["top"])
@@ -127,7 +145,8 @@ def bust(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fal
     sh = Image.new("RGBA", cv.im.size, (0, 0, 0, 0)); sd = ImageDraw.Draw(sh)                            # cel shadow on the cheek and jaw
     sd.polygon(cv.P(bez((cx + 225, 380), (cx + 215, 560), (cx + 120, 680), (cx, 700)) + [(cx + 60, 640), (cx + 170, 520), (cx + 190, 400)]), fill=L["skin_d"][:3] + (150,))
     sh.putalpha(ImageChops.multiply(sh.getchannel("A"), hm)); cv.im.alpha_composite(sh)
-    for s_ in (-1, 1): cv.ell((cx + s_ * 125 - 34, 520, cx + s_ * 125 + 34, 548), (246, 160, 150, 255), 0)  # blush
+    if not grim or who == "maman":
+        for s_ in (-1, 1): cv.ell((cx + s_ * 125 - 34, 520, cx + s_ * 125 + 34, 548), (246, 160, 150, 255) if not grim else (214, 150, 140, 255), 0)  # blush
     # hair, by character
     if who in ("toi", "double"):
         H0, HI, LO = L["hair"], L["hair_hi"], L["hair_lo"]
@@ -189,6 +208,64 @@ def bust(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fal
     return cv.done(size)
 
 
+def grim_bust(who, L, look, brow, mouth, wide, blink, sway, tilt, size):
+    """The hybrid dark-fantasy / gritty-urban version: worn clothes with gold-thread details, a frayed cloak, grit on
+    the faces, then an engraved finish (hatching in the shadows, a gold rim light, grain)."""
+    cv = Canvas(1000, 1000); cx = 500 + tilt * 30
+    if who in ("toi", "double"):                                   # the frayed cloak behind the shoulders, fastened on the left
+        frayed = [(120, 1000), (150, 860), (230, 770), (360, 730), (640, 730), (770, 770), (850, 860), (880, 1000)]
+        cv.poly(frayed, L.get("cloak", (30, 28, 34, 255)) if who == "toi" else (16, 14, 20, 255), 7)
+        for k in range(9): x = 140 + k * 92; cv.poly([(x, 1000), (x + 30, 960), (x + 60, 1000)], (24, 22, 28, 255), 0)
+    _draw(cv, who, L, cx, look, brow, mouth, wide, blink, sway, size, True)
+    d = ImageDraw.Draw(cv.im)
+    if who in ("toi", "double"):
+        cv.stroke(bez((160, 1000), (170, 815), (300, 755), (420, 742)), 9, GOLD); cv.stroke(bez((580, 742), (700, 755), (830, 815), (840, 1000)), 9, GOLD)   # gold piping
+        cv.ell((300, 770, 380, 850), GOLD, 6); cv.ell((318, 788, 362, 832), GOLD_D, 0); cv.ell((328, 784, 370, 826), GOLD, 0)   # the moon brooch on the cloak
+        if who == "toi":
+            for k in range(60):                                   # stubble
+                rx = (k * 37) % 300 - 150; ry = (k * 53) % 120
+                x = cx + rx * 0.9; y = 590 + ry * 0.7 - abs(rx) * 0.15
+                if 430 < y < 690: d.ellipse(((x - 2) * SS, (y - 2) * SS, (x + 2) * SS, (y + 2) * SS), fill=(110, 84, 70, 200))
+            cv.stroke([(cx - 150, 330), (cx - 128, 372)], 5, (150, 96, 90, 255))               # the scar through the left eyebrow
+            for s_ in (-1, 1): cv.stroke(bez((cx + s_ * 160, 482), (cx + s_ * 130, 496), (cx + s_ * 100, 496), (cx + s_ * 78, 486), 8), 4, L["skin_d"])   # tired under-eyes
+        else:                                                     # the double: gold-repaired cracks, black tears
+            for (x0, y0, pts) in ((cx - 140, 300, [(30, 60), (10, 120), (40, 190)]), (cx + 120, 260, [(-20, 70), (10, 140), (-30, 230)]), (cx + 30, 620, [(40, 30), (20, 70)])):
+                path = [(x0, y0)] + [(x0 + a, y0 + b) for a, b in pts]; cv.stroke(path, 6, GOLD)
+            for s_ in (-1, 1): cv.stroke([(cx + s_ * 118, 480), (cx + s_ * 122, 540), (cx + s_ * 116, 600)], 7, (10, 8, 12, 255))
+    elif who == "samir":                                          # a gold chain, a heavier beard
+        cv.stroke(bez((420, 760), (450, 840), (550, 840), (580, 760)), 6, GOLD)
+        for k in range(12): x = 430 + k * 13; y = 790 + 30 * math.sin((k / 11) * math.pi); d.ellipse(((x - 4) * SS, (y - 4) * SS, (x + 4) * SS, (y + 4) * SS), outline=GOLD_D, width=2 * SS)
+    elif who == "maman":                                          # gold embroidery on the shawl, a rosary, a hairpin
+        for k in range(10): x = 230 + k * 58; cv.stroke([(x, 820 + 18 * math.sin(k)), (x + 28, 840)], 4, GOLD)
+        for k in range(14): t_ = k / 13; x = 460 + 80 * t_; y = 800 + 160 * math.sin(t_ * math.pi) ; d.ellipse(((x - 5) * SS, (y - 5) * SS, (x + 5) * SS, (y + 5) * SS), fill=(120, 60, 50, 255))
+        cv.stroke([(cx + 90, 120), (cx + 190, 190)], 6, GOLD)
+    return engrave(cv.done(size))
+
+
+def engrave(img, hatch=9, rim=(214, 176, 96)):
+    """Engraved finish: diagonal hatching only in the darker parts, a thin gold rim light on the right edge, grain."""
+    a = np.asarray(img).astype(np.float32); rgb, al = a[..., :3], a[..., 3:]
+    lum = rgb.mean(axis=2); h, w = lum.shape; yy, xx = np.mgrid[0:h, 0:w]
+    body = al[..., 0] > 200
+    keep = (rgb.max(axis=2) - rgb.min(axis=2)) > 100                                            # signature colours (blue lock, red eyes) stay vivid
+    orig = rgb.copy()
+    gray = lum[..., None]; rgb[:] = rgb * 0.72 + gray * 0.28                                     # gritty-urban grade: 28 % less colour,
+    rgb *= np.array([1.0, 0.97, 0.86])                                                          # then a warm sepia cast
+    rgb[keep] = orig[keep]
+    edge_x = w * (0.43 + 0.035 * np.sin(yy / h * 7.0))                                          # key light from the right: the left
+    shade = (xx < edge_x) & body                                                                # third of every figure falls in shadow
+    rgb[shade] *= 0.66
+    lines = ((xx + yy) % hatch < 1.6) & ((lum < 120) | shade) & body
+    rgb[lines] *= 0.55
+    cross = ((xx - yy) % hatch < 1.4) & shade & (lum < 90)                                      # cross-hatching in the deepest shadow
+    rgb[cross] *= 0.6
+    edge = cv2.dilate((al[..., 0] > 128).astype(np.uint8), np.ones((5, 5), np.uint8)) - (al[..., 0] > 128).astype(np.uint8)
+    shift = np.roll(edge, -4, axis=1).astype(bool) & (al[..., 0] > 128) & (xx > w * 0.5)
+    rgb[shift] = rgb[shift] * 0.3 + np.array(rim) * 0.7
+    rgb += np.random.default_rng(7).normal(0, 6, rgb.shape) * (al > 0)
+    return Image.fromarray(np.clip(np.concatenate([rgb, al], axis=2), 0, 255).astype(np.uint8), "RGBA")
+
+
 if __name__ == "__main__":
     import sys
     from PIL import ImageFont
@@ -199,4 +276,12 @@ if __name__ == "__main__":
         for c, (e, kw) in enumerate(exps):
             if who == "double" and c > 0: kw = dict(kw, mouth="line")
             b = bust(who, size=400, **kw); S.paste(b, (20 + c * 420, 20 + r * 450), b); d.text((30 + c * 420, 425 + r * 450), f"{name} · {e}", fill=(20, 20, 30))
+    G = "--grim" in sys.argv
+    if G:
+        S = Image.new("RGB", (4 * 420 + 40, 4 * 450 + 40), (28, 30, 34)); d = ImageDraw.Draw(S)
+        for r, (who, name) in enumerate(rows):
+            for c, (e, kw) in enumerate(exps):
+                if who == "double" and c > 0: kw = dict(kw, mouth="line")
+                b = bust(who, size=400, grim=True, **kw); S.paste(b, (20 + c * 420, 20 + r * 450), b); d.text((30 + c * 420, 425 + r * 450), f"{name} · {e}", fill=(200, 190, 160))
     S.save(sys.argv[1] if len(sys.argv) > 1 else "/home/user/persos_v3.jpg", quality=90); print("ok")
+
