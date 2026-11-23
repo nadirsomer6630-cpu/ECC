@@ -132,3 +132,14 @@ and notifications), `halftone` (grungy halftone: the clue replayed "TOUT À L'HE
 between set and character: covers), `pixel_stretch` (a stretched column with noise: the double's glitch),
 `line_drawing` (pen drawing: memories, the rule card). The gradient-sky and liquid-chrome effects were left out:
 nothing in the series needs them.
+
+## Characters v4 (November 23): hair after Zak, clothes after the reference creators (sheet `assets/persos_v4.jpg`)
+
+- **Your hair**: messy slicked-back, smooth waves, dark brown-black (base, light-brown wave strokes combed back,
+  near-black sides at the temples), a high hairline so the forehead shows, two loose wavy strands falling forward:
+  the dark-blue lock with its shine over the left eye, and a brown one on the right. Both swing with `sway`.
+- **Faces**: tapered eyebrows in the hair colour, a lid crease above each hybrid eye, a nose drawn with its bridge in
+  shadow colour and an inked tip, a lower lip in shadow colour.
+- **Clothes**: you wear an open purple track jacket with white sleeve stripes, a stand-up collar, zip teeth and the
+  moon patch, over a dark hoodie whose hood shows behind the neck, headphones around the neck; Samir a quilted green
+  puffer with a high collar over a grey hood; the mother a pink cardigan over a cream turtleneck.
