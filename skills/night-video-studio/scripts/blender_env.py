@@ -1389,6 +1389,16 @@ if "--toon" in sys.argv:   # cel look: the Blender blockout shaded like the 2D c
     if ls.linestyle is None: ls.linestyle = bpy.data.linestyles.new("ink")
     ls.linestyle.color = (0.01, 0.008, 0.02); ls.linestyle.thickness = 2.4
 
+if "--ps1" in sys.argv:   # PS1 look, after the low-poly tutorial: 128 px textures read with "Closest", no film filter
+    for img in bpy.data.images:
+        if img.size[0] > 128: img.scale(128, max(1, int(128 * img.size[1] / img.size[0])))
+    for m in bpy.data.materials:
+        if m.use_nodes:
+            for n in m.node_tree.nodes:
+                if n.type == "TEX_IMAGE": n.interpolation = "Closest"
+    sc.render.filter_size = 0.0
+    # the pixelation itself (scale x0.25, nearest, scale back) is done in 2D by the episode script: same operation
+
 if OUT == "info":
     dg = bpy.context.evaluated_depsgraph_get()
     for o in bpy.context.scene.objects:

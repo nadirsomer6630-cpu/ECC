@@ -77,6 +77,11 @@ nearest-neighbour pixels, few colours, dithering). Only titles and descriptions 
   then matches the 2D characters while keeping real perspective and camera moves. An automatic 2D filter on a normal
   render (mean-shift + palette) was tried first and rejected: banding rings on every light gradient.
 - **Night is added in 2D** on the toon render: the room sinks into night blue, a hard warm cone under the lamp.
+- **`blender_env.py --ps1`** follows the tutorial's own settings (transcript read on Nov 23): every texture
+  scaled to 128 px and read with "Closest" interpolation, film filter size 0; the pixelation (x0.25 down, nearest
+  back up, the tutorial's "Scale 0.25 / Pixelate / Scale 4" compositor chain) is done in 2D by the episode script
+  because Blender 5 moved the compositor. The overpaint tutorial's rule also holds: 3D solves perspective, light and
+  proportions, but must not dictate the final look; simplify and push shapes in 2D on top.
 - **The PS1 picture is a signal** (frame `adn_8`): when the double is near, the image drops to a sixth of the
   resolution, 16 levels per channel with ordered dithering, nearest-neighbour upscale and a slight horizontal
   wobble, while the boss bar appears. The viewer learns that the picture breaking down means danger. Calm scenes stay
