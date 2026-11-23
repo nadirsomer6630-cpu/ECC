@@ -84,14 +84,14 @@ class Canvas:
 
 LOOK = dict(
     toi=dict(skin=(238, 198, 164, 255), hair=(44, 30, 26, 255), hair_d=(24, 16, 14, 255), hair_l=(112, 82, 66, 255),
-             lock=(36, 62, 160, 255), lock_l=(110, 150, 240, 255), iris=(46, 80, 186, 255), top=(112, 72, 214, 255),
+             lock=(40, 66, 160, 255), lock_l=(110, 146, 226, 255), iris=(46, 80, 186, 255), top=(112, 72, 214, 255),
              top_d=(80, 50, 168, 255), inner=(38, 36, 50, 255), chin=672, jaw=1.0),
     samir=dict(skin=(190, 136, 98, 255), hair=(32, 24, 20, 255), iris=(104, 66, 38, 255), top=(54, 156, 98, 255),
                top_d=(34, 116, 70, 255), inner=(118, 122, 136, 255), chin=676, jaw=1.12),
     maman=dict(skin=(240, 204, 176, 255), hair=(132, 120, 118, 255), hair_d=(96, 86, 86, 255), hair_l=(196, 188, 186, 255),
                iris=(108, 78, 52, 255), top=(218, 128, 156, 255), top_d=(180, 96, 124, 255), inner=(246, 234, 218, 255), chin=664, jaw=1.04),
 )
-LOOK["double"] = dict(LOOK["toi"], skin=(176, 182, 196, 255), hair=(26, 22, 26, 255), hair_d=(12, 10, 14, 255), hair_l=(70, 62, 70, 255),
+LOOK["double"] = dict(LOOK["toi"], skin=(168, 178, 182, 255), hair=(26, 22, 26, 255), hair_d=(12, 10, 14, 255), hair_l=(70, 62, 70, 255),
                       lock=(14, 14, 20, 255), lock_l=(60, 60, 80, 255), iris=(230, 30, 34, 255), top=(52, 38, 88, 255), top_d=(34, 24, 62, 255),
                       inner=(18, 16, 24, 255), chin=696, jaw=0.9)
 
@@ -112,7 +112,7 @@ def eye(cv, cx, cy, side, L, look, wide, blink, who, smile):
     if blink:
         cv.stroke([bot(u / 12)[:1] + (bot(u / 12)[1] - h * 0.5,) for u in range(-12, 13)], 8); return
     up = [top(u / 16) for u in range(-16, 17)]; lo = [bot(u / 16) for u in range(16, -17, -1)]
-    m = cv.mask(up + lo); cv.put(m, (250, 248, 244, 255), 0)
+    m = cv.mask(up + lo); cv.put(m, (250, 248, 244, 255) if who != "double" else (24, 12, 20, 255), 0)   # the double: black eyes
     lay = Image.new("RGBA", cv.im.size, (0, 0, 0, 0)); d = ImageDraw.Draw(lay)
     ir = 27 if wide < 1.15 else 19; ix, iy = cx + look[0] * 26, cy + look[1] * 10 + 2
     def E(x, y, r, c): d.ellipse([(x - r) * SS, (y - r) * SS, (x + r) * SS, (y + r) * SS], fill=c)
@@ -125,7 +125,7 @@ def eye(cv, cx, cy, side, L, look, wide, blink, who, smile):
     d.polygon(cv.P(up + [(x, y + 9) for x, y in reversed(up)]), fill=(60, 40, 70, 60))           # the lid's shadow on the eye
     lay.putalpha(ImageChops.multiply(lay.getchannel("A"), m)); cv.im.alpha_composite(lay)
     if who == "double":
-        g = Image.new("RGBA", cv.im.size, (0, 0, 0, 0)); ImageDraw.Draw(g).ellipse([(ix - 34) * SS, (iy - 34) * SS, (ix + 34) * SS, (iy + 34) * SS], fill=(255, 40, 30, 90))
+        g = Image.new("RGBA", cv.im.size, (0, 0, 0, 0)); ImageDraw.Draw(g).ellipse([(ix - 30) * SS, (iy - 30) * SS, (ix + 30) * SS, (iy + 30) * SS], fill=(255, 30, 20, 150))
         cv.im.alpha_composite(g.filter(ImageFilter.GaussianBlur(10 * SS)))
     cv.stroke(lo[2:-2], 3.5); cv.stroke(up, 9)
     oc = up[-1]; cv.stroke([oc, (oc[0] + side * 14, oc[1] - 10)], 7)                                  # the flick
@@ -137,7 +137,7 @@ def eye(cv, cx, cy, side, L, look, wide, blink, who, smile):
 
 def brows(cv, cx, L, who, brow, wide):
     col = {"maman": (96, 84, 82, 255), "samir": (26, 18, 14, 255)}.get(who, L.get("hair_d", INK))
-    th = {"samir": 17, "maman": 8, "double": 12}.get(who, 14); sl = {"double": 1.0, "toi": -0.3}.get(who, 0.0)
+    th = {"samir": 17, "maman": 8, "double": 14}.get(who, 14); sl = {"double": 1.8, "toi": -0.3}.get(who, 0.0)
     for s in (-1, 1):
         x0 = cx + s * 94; y0 = 368 - (10 if wide > 1.15 else 0)
         c = bez((x0 - s * 54, y0 + 8 - brow * 24 + sl * 4), (x0 - s * 14, y0 - 6 - brow * 10), (x0 + s * 26, y0 - 8 - brow * 2 - sl * 6), (x0 + s * 58, y0 + 4 + brow * 12 - sl * 12), 14)
@@ -146,12 +146,25 @@ def brows(cv, cx, L, who, brow, wide):
 
 def mouth(cv, cx, L, kind, who, look):
     mx, my = cx + look[0] * 8, 588
-    if who == "double":                                                     # the grin, too wide, sharp teeth
-        g = bez((mx - 120, my - 24), (mx - 80, my + 56), (mx + 80, my + 56), (mx + 120, my - 24)) + bez((mx + 120, my - 24), (mx + 50, my + 8), (mx - 50, my + 8), (mx - 120, my - 24))
-        cv.poly(g, (74, 10, 22, 255), 6)
-        for k in range(-5, 6):
-            x = mx + k * 20; y = my - 6 + abs(k) * 3.4
-            cv.poly([(x - 8, y), (x + 8, y), (x, y + 18)], (246, 240, 226, 255), 0)
+    if who == "double":                                                     # the grin: too wide, cut into the cheeks
+        gw = 118
+        upper = bez((mx - gw, my - 26), (mx - 50, my + 2), (mx + 50, my + 2), (mx + gw, my - 26), 40)
+        lower = bez((mx + gw, my - 26), (mx + 80, my + 70), (mx - 80, my + 70), (mx - gw, my - 26), 40)
+        for sgn in (-1, 1):                                                 # the cuts that carry the grin up the cheeks
+            cv.stroke(bez((mx + sgn * gw, my - 26), (mx + sgn * (gw + 16), my - 44), (mx + sgn * (gw + 22), my - 66), (mx + sgn * (gw + 16), my - 84), 10), 4, (110, 20, 30, 255))
+        m = cv.poly(upper + lower[1:-1], (34, 4, 10, 255), 6)
+        cv.inside(m, ell=(mx - 60, my + 4, mx + 60, my + 56), fill=(8, 2, 4, 255))                       # the throat
+        cv.inside(m, pts=upper + [(x, y + 9) for x, y in reversed(upper)], fill=(120, 26, 40, 255))      # gums
+        def teeth(curve, down, n, longest):
+            pts = [curve[int(i)] for i in np.linspace(2, len(curve) - 3, n)]
+            for i in range(n - 1):
+                (x0, y0), (x1, y1) = pts[i], pts[i + 1]; t = (i + 0.5) / (n - 1)
+                fang = 1.5 if i in (2, n - 4) else 1.0                       # two long fangs among needles
+                ln = longest * fang * (0.45 + 0.55 * math.sin(t * math.pi)) * (0.85 + 0.15 * ((i * 7) % 3) / 2)
+                tip = ((x0 + x1) / 2, (y0 + y1) / 2 + (ln if down else -ln))
+                cv.inside(m, pts=[(x0, y0 + (3 if down else -3)), (x1, y1 + (3 if down else -3)), tip], fill=(236, 228, 206, 255))
+                cv.stroke([(x0, y0 + (3 if down else -3)), tip, (x1, y1 + (3 if down else -3))], 1.6, (60, 30, 30, 255))
+        teeth(upper, True, 16, 26); teeth(lower[::-1], False, 13, 18)
         return
     if kind == "o":
         cv.ell((mx - 20, my - 22, mx + 20, my + 26), (92, 26, 38, 255), 6)
@@ -180,19 +193,33 @@ def hair_toi(cv, cx, L, sway, hm):
     hairline = ([(cx + 190, 376)] + bez((cx + 178, 300), (cx + 142, 248), (cx + 84, 230), (cx + 32, 238)) + [(cx, 258)]
                 + bez((cx - 32, 238), (cx - 84, 230), (cx - 142, 248), (cx - 178, 300)) + [(cx - 190, 376)])
     top = cv.poly(sil + hairline, H0, 8)
-    cv.inside(top, pts=sil[:30] + [(cx - 150, 300), (cx - 190, 420)], fill=tone(H0, 0.75))          # the shadow side
-    waves = [((cx - 150, 280), (cx - 186, 220), (cx - 160, 150), (cx - 120, 112)), ((cx - 80, 240), (cx - 100, 180), (cx - 70, 120), (cx - 30, 92)),
-             ((cx - 6, 246), (cx - 20, 180), (cx + 20, 116), (cx + 60, 82)), ((cx + 70, 236), (cx + 70, 170), (cx + 120, 116), (cx + 160, 104)),
-             ((cx + 146, 266), (cx + 170, 210), (cx + 196, 170), (cx + 206, 150))]
-    for w_ in waves: cv.stroke(bez(*w_, 20), 5, HD)                           # combed-back waves
-    for (p0, p1, p2, p3) in (((cx - 118, 210), (cx - 132, 170), (cx - 110, 132), (cx - 84, 116)), ((cx - 40, 196), (cx - 46, 160), (cx - 22, 124), (cx + 10, 106)),
-                             ((cx + 40, 190), (cx + 44, 156), (cx + 82, 124), (cx + 116, 114))):
-        cv.inside(top, pts=taper(bez(p0, p1, p2, p3, 16), 6, 1), fill=HL)    # highlights along the waves
-    c = [(cx - 50 + (30 + sway * 60) * u + 14 * math.sin(u * 5.2), 244 + 166 * u) for u in (k / 15 for k in range(16))]
-    lk = cv.poly(taper(c, 15, 2.5), L["lock"], 5)                            # the lock over the left eye
-    if L["lock"][2] > 100: cv.inside(lk, pts=taper([(x + 4, y) for x, y in c[2:9]], 3, 1), fill=L["lock_l"])
-    c2 = [(cx + 46 + (24 + sway * 30) * u + 8 * math.sin(u * 4 + 1), 242 + 86 * u) for u in (k / 10 for k in range(11))]
-    cv.poly(taper(c2, 8, 1.5), H0, 4)                                        # one loose strand
+    # volume as shapes, not lines: three clumps swept back, each with a shadow under it and a light on top
+    clumps = [((cx - 168, 300), (cx - 196, 220), (cx - 150, 140), (cx - 96, 104)), ((cx - 70, 236), (cx - 92, 170), (cx - 40, 110), (cx + 20, 80)),
+              ((cx + 40, 236), (cx + 40, 170), (cx + 100, 112), (cx + 168, 110)), ((cx + 150, 280), (cx + 178, 220), (cx + 206, 180), (cx + 212, 150))]
+    for k, c4 in enumerate(clumps):
+        path = bez(*c4, 20)
+        cv.inside(top, pts=taper([(x - 10, y + 4) for x, y in path], 9, 1.5), fill=tone(H0, 0.6))            # the groove between clumps
+        if k < 3:
+            cv.inside(top, pts=taper([(x + 18, y - 2) for x, y in path[4:16]], 6, 1.5), fill=HL)            # light on the clump
+    cv.inside(top, pts=sil[:30] + [(cx - 150, 300), (cx - 190, 420)], fill=tone(H0, 0.78))                 # the shadow side
+    # the lock: a clump of his own hair that leaves the mass at the parting and falls over the left eye, dyed
+    # dark blue toward the tip (brown at the root, so it grows out of the hair instead of sitting on the forehead)
+    c = [(x + sway * 50 * (k / 23) ** 1.5, y) for k, (x, y) in enumerate(bez((cx - 8, 196), (cx - 30, 300), (cx - 98, 320), (cx - 70, 418), 23))]   # curves round the brow, hooks at the tip
+    shape = taper(c, 17, 2.5); m = ImageChops.subtract(cv.mask(shape), top)   # it starts at the hairline: the root is under the hair
+    r_ = int(4 * SS); kk = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r_ + 1, 2 * r_ + 1))
+    ink = Image.fromarray(cv2.dilate(np.asarray(m), kk)); cut_ = top
+    cv.im.paste(Image.new("RGBA", cv.im.size, INK), (0, 0), ImageChops.subtract(ink, cut_))
+    navy = L["lock"]
+    for i in range(len(c) - 1):                                              # brown root, blue tip
+        t = min(1.0, 0.55 + i / (len(c) - 2) * 1.5)
+        col = tuple(int(a_ + (b_ - a_) * t) for a_, b_ in zip(H0[:3], navy[:3])) + (255,)
+        seg_ = cv.mask([shape[i], shape[i + 1], shape[-i - 2], shape[-i - 1]]) if i < len(c) - 1 else None
+        cv.im.paste(Image.new("RGBA", cv.im.size, col), (0, 0), ImageChops.multiply(seg_.filter(ImageFilter.MaxFilter(3)), m))
+    c3 = [(x + sway * 40 * (k / 15) ** 1.5, y) for k, (x, y) in enumerate(bez((cx - 30, 270), (cx - 56, 318), (cx - 104, 338), (cx - 104, 384), 15))]
+    m3 = cv.put(ImageChops.subtract(cv.mask(taper(c3, 7, 1.2)), top), navy, 3)                       # a thinner strand splitting off the lock
+    if navy[2] > 100: cv.inside(m, pts=taper([(x + 6, y) for x, y in c[8:18]], 3.5, 1.0), fill=L["lock_l"][:3] + (190,))
+    for (p0, p1, p2, p3) in (((cx + 52, 240), (cx + 64, 214), (cx + 92, 206), (cx + 112, 222)), ((cx + 20, 244), (cx + 24, 222), (cx + 44, 206), (cx + 66, 204))):
+        cv.poly(taper(bez(p0, p1, p2, p3, 12), 4, 1), H0, 2.5)              # two wisps lifting at the hairline
 
 
 def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=False, sway=0.0, size=1000, light=1.0, boil=None, turn=0.0):
@@ -261,6 +288,11 @@ def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=F
         hole = cvH.mask(ell=(cx - 52, 560, cx + 52, 618))
         cvH.im.paste(Image.new("RGBA", cv.im.size, (40, 30, 26, 255)), (0, 0), ImageChops.subtract(ImageChops.multiply(bm, hm), hole))
         cv.poly([(cx - 56, 578), (cx - 40, 552), (cx, 546), (cx + 40, 552), (cx + 56, 578), (cx + 30, 566), (cx, 564), (cx - 30, 566)], (40, 30, 26, 255), 0)
+    if who == "double":                                                                          # hollow sockets, veins
+        for s in (-1, 1):
+            cv.inside(hm, ell=(cx + s * 94 - 86, 380, cx + s * 94 + 86, 510), fill=(46, 22, 56, 170), blur=10)
+            for (dx, dy, ex_, ey_) in ((70, -20, 110, -60), (60, 30, 100, 70), (-60, 40, -90, 90)):
+                cv.stroke(bez((cx + s * (94 + dx * 0.6), 440 + dy * 0.6), (cx + s * (94 + dx), 440 + dy), (cx + s * (94 + ex_ * 0.8), 440 + ey_ * 0.9), (cx + s * (94 + ex_), 440 + ey_), 8), 2, (88, 50, 96, 255))
     if who == "double":                                                                          # black tears, a crack
         for s in (-1, 1): cv.stroke([(cx + s * 92, 470), (cx + s * 96, 530), (cx + s * 90, 590)], 6, (10, 8, 12, 255))
         cv.stroke([(cx + 120, 260), (cx + 104, 300), (cx + 124, 334), (cx + 110, 372)], 3, (60, 50, 70, 255))

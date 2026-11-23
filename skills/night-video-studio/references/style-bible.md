@@ -380,3 +380,17 @@ Three-quarter left, front, three-quarter right for every character, from one dra
 the body, the head, the features and the hair on separate layers and `turn_warp` slides each by its depth (features
 60, hair 34, skull 18, body 0) while the far side narrows by 35 % at turn 1. Use turn 0.3-0.5; a full profile needs
 its own drawing and does not exist yet. Look the eyes toward the turn (`look=(turn * 0.6, 0)`).
+
+## v19 (November 23): a natural lock and hair, a double that frightens
+
+- **The lock** was a glossy blue tube pasted on the forehead. Now it is a clump of his own hair: it leaves the hair
+  mass at the hairline (the part over the hair is cut away, so it never sits on top of the hair), blue from the
+  hairline (dyed), curves round the brow and hooks at the tip, a thinner strand splits off it, one soft highlight.
+  A wide flat root read as a box: keep the root narrow and already blue where it shows.
+- **The hair**: volume drawn as shapes (a dark groove under each swept-back clump, a light on top), not as stroked
+  lines; the stick-like loose strand became two small wisps lifting at the hairline.
+- **The double's teeth** sat on a straight line while the mouth curves, so they poked out at the corners. Teeth are
+  now placed along the upper and lower lip curves, clipped inside the mouth, needles with two long fangs, an
+  outline each, gums, a black throat.
+- **The double was not frightening**: black sclera with a glowing red slit iris, hollow violet sockets with veins,
+  the grin cut up into the cheeks, sharper rising brows, a colder skin. It keeps the hero's hair and clothes.
