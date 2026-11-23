@@ -110,3 +110,25 @@ editor). Nothing moves linearly:
 - loose parts follow late and swing past (`follow`: a damped spring on the lock, the pompom, the bag strap);
 - blinks punctuate: one in the calm hold, one after the shock.
 Test clip: a knock, anticipation, a fast turn with overshoot, eyes snapping wide, the lock swinging behind.
+
+## Characters v3: a new design from scratch (`scripts/toon3.py`, sheet `assets/persos_v3.jpg`)
+
+Replaces the round-headed season 1 drawings for season 2 (the creator asked for a complete redesign with the same
+criteria). Busts for close-ups and dialogue; every part is a mask with an ink line grown around it.
+- **You**: an egg-shaped head with a defined jaw (anime-leaning, after the cinematic sketches), spiky black hair with
+  a pointed fringe and **one dark-blue lock** with a light shine over the left eye, **hybrid eyes** (almond, outer
+  corner lifted, heavy upper lid with a flick, blue iris with two highlights), a purple bomber with the Nuit Express
+  moon patch, headphones around the neck. No cap any more: the lock must be seen.
+- **Samir**: green knitted beanie with pompom, curls under it, short beard, brown eyes, green jacket.
+- **The mother**: grey bun, thin round glasses, lashes, pink cardigan with buttons.
+- **The double**: your face and hair with grey-blue skin, a black lock, red irises with pin pupils, a grin too wide.
+`bust(who, look, brow, mouth, wide, blink, sway, tilt, size)`; `sway` swings the lock for follow-through.
+
+## Effects (`scripts/fx.py`, demo `assets/fx_demo.jpg`)
+
+From "8 MIND-BLOWING Photoshop Effects In Under 8 Minutes!" (Wave Index; transcript read Nov 23), rebuilt for frames:
+`halation` (threshold, blur, screen, red tint: lamps and neons), `frosted` (frosted-glass panel for the PAUSE menu
+and notifications), `halftone` (grungy halftone: the clue replayed "TOUT À L'HEURE"), `text_behind` (the title
+between set and character: covers), `pixel_stretch` (a stretched column with noise: the double's glitch),
+`line_drawing` (pen drawing: memories, the rule card). The gradient-sky and liquid-chrome effects were left out:
+nothing in the series needs them.
