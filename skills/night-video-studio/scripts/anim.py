@@ -25,3 +25,21 @@ def follow(t, driver, delay=0.08, freq=3.2, damp=4.0, dt=1 / 60):
         target = driver(max(0.0, tt - delay)); a = (2 * math.pi * freq) ** 2 * (target - x) - 2 * damp * v
         v += a * dt; x += v * dt; tt += dt
     return x
+
+
+# --- from the Blender animation tutorial, as Gemini read it (keyframes, graph editor, the principles) ---
+def vector(u): return clamp(u)                              # "Vector" handles: a straight, hard move for impacts
+
+def arc(u, p0, p1, height):
+    """Natural moves follow arcs: from p0 to p1 through a bump of `height` at mid-way (a parabola)."""
+    u = clamp(u); x = p0[0] + (p1[0] - p0[0]) * u; y = p0[1] + (p1[1] - p0[1]) * u - 4 * height * u * (1 - u)
+    return x, y
+
+def squash(amount):
+    """Squash and stretch with constant volume ("Maintain Volume"): amount > 0 squashes (wider, shorter), < 0 stretches.
+    Returns (scale_x, scale_y) with scale_x * scale_y = 1."""
+    sy = 1 - amount; return 1 / sy, sy
+
+def overlap(t, curve, frames=3, fps=30):
+    """Overlapping action: a part that copies the main curve 2 to 5 frames late (hair, arms, a bag)."""
+    return curve(max(0.0, t - frames / fps))

@@ -143,3 +143,12 @@ nothing in the series needs them.
 - **Clothes**: you wear an open purple track jacket with white sleeve stripes, a stand-up collar, zip teeth and the
   moon patch, over a dark hoodie whose hood shows behind the neck, headphones around the neck; Samir a quilted green
   puffer with a high collar over a grey hood; the mother a pink cardigan over a cream turtleneck.
+
+## Animation, completed with the tutorial itself (watched by Gemini on Nov 23)
+
+"How to Animate ANYTHING in Blender!" read by Gemini (`scripts/gemini_look.py`): keyframes and the graph editor,
+easing, **Vector keys for hard impacts** (`anim.vector`), anticipation, overshoot, **overlapping action: loose parts
+stop 2 to 5 frames after the body** (`anim.overlap`), **arcs** (`anim.arc`), timing (a fast impact has almost no
+in-between frames), and **squash and stretch with constant volume** (`anim.squash`, the "Maintain Volume" idea).
+Test clip with the v4 hero: hold, knock, he sinks (squash, anticipation), the head snaps on a Vector key with a
+stretch, overshoots and settles, the eyes open on the impact frame, the locks follow three frames late.
