@@ -102,7 +102,7 @@ class Canvas:
         n_, lab, st, _ = cv2.connectedComponentsWithStats(sm, connectivity=8)   # mean anything is a stain, so it goes
         small = st[:, cv2.CC_STAT_AREA] < 7000; small[0] = False
         d = np.where(small[lab], np.maximum(d, 0.45), d)
-        t1, t2 = ss(0.33, 0.37, d), ss(0.70, 0.73, d)                          # three flat tones
+        t1, t2 = ss(0.30, 0.40, d), ss(0.66, 0.76, d)                          # three tones with soft edges
         ramp = RAMP[0][None, None] + (RAMP[1] - RAMP[0])[None, None] * t1[..., None] + (RAMP[2] - RAMP[1])[None, None] * t2[..., None]
         alb = np.broadcast_to(np.array(albedo, np.float32)[:3], hh.shape + (3,)) if isinstance(albedo, tuple) else albedo[y0:y1, x0:x1]
         col = alb * ramp
@@ -111,8 +111,8 @@ class Canvas:
             u, v = (X + Y) * 0.7071, (X - Y) * 0.7071; p = 6.5
             fu, fv = (u % p) - p / 2, (v % p) - p / 2
             dark = np.clip((0.40 - d) / 0.24, 0, 1) * (d > 0.13)
-            col[(fu * fu + fv * fv) < (p * 0.48 * dark) ** 2] *= 0.74
-            col[(((X - Y) % 6.0) < 1.1) & (d <= 0.13)] *= 0.62                 # hatching in the deep shadow
+            col[(fu * fu + fv * fv) < (p * 0.42 * dark) ** 2] *= 0.84
+            col[(((X - Y) % 6.0) < 1.0) & (d <= 0.13)] *= 0.72                 # hatching in the deep shadow
         if rim:
             r = np.clip(nx * RIM[0] + ny * RIM[1] + nz * RIM[2], 0, 1) * (1 - nz) ** 1.1
             col += RIM_C * 0.38 * rim * ss(0.3, 0.34, r)[..., None]
@@ -167,6 +167,23 @@ FACE = dict(
                 skin=(176, 180, 188), lip=(120, 110, 120), iris=(240, 30, 30), neck=70),
 )
 CLOTH = dict(toi=((80, 58, 120), (40, 38, 48)), double=((80, 58, 120), (30, 28, 36)), samir=((92, 110, 72), (120, 124, 136)), maman=((104, 58, 86), (238, 226, 206)))
+
+
+SOFT = 0.62          # softness after the second reference creator: 1 = the angular v14 faces, lower = softer
+
+
+def soften(F, k=SOFT):
+    """Rounder, gentler faces: less relief, rounder jaw and chin, bigger and calmer eyes, thinner brows."""
+    F = dict(F)
+    for key in ("cb", "hollow", "brow_r", "socket", "chin", "nh", "philtrum", "hood"):
+        if key in F: F[key] = F[key] * k
+    F["eh"] = F["eh"] + 3 * (1 - k) / 0.38; F["lift"] = F["lift"] * k; F["bw"] = F["bw"] * (0.6 + 0.4 * k)
+    F["bs"] = F["bs"] * k; F["round"] = min(1.0, F.get("round", 0.6) + 0.3 * (1 - k) / 0.38)
+    F["corners"] = F.get("corners", 0) * k                                   # the chin stays narrow (a wide chin reads square);
+    F["J"] = F["J"] - 8 * (1 - k) / 0.38; F["jy"] = F["jy"] - 8 * (1 - k) / 0.38      # the jaw rounds off higher instead
+    F["round"] = min(1.0, F["round"] + 0.15)
+    F["C"] = F["C"] - 4 * (1 - k) / 0.38                                     # cheekbones less flared
+    return F
 
 
 def head_pts(cx, F):
@@ -239,6 +256,9 @@ def eye4(cv, cx, cy, side, F, look, wide, blink, who):
         gl, gd = cv.layer(); E2 = lambda r, a: gd.ellipse([(ix - r) * S, (iy - r) * S, (ix + r) * S, (iy + r) * S], fill=(255, 40, 30, a))
         E2(ir * 2.0, 70); cv.put(gl.filter(ImageFilter.GaussianBlur(6 * S)))
     cv.ink(up, 3.4); cv.ink(lo[3:-3], 1.3, (120, 70, 66), 0.8)
+    if who != "double":                                                            # soft crescents under the eyes
+        bag = [(x, y + 6 + 2 * math.sin(i / 20 * math.pi)) for i, (x, y) in enumerate(lo[6:-6])]
+        cv.ink(bag, 1.8, (150, 96, 90), 0.5)
     oc = up[-1]; cv.ink([oc, (oc[0] + side * 7, oc[1] - 4)], 3)                                 # outer corner
     hood = F.get("hood", 0.5)
     crease = [(x, y - 5 - 2 * (1 - abs(i - 16) / 16)) for i, (x, y) in enumerate(up) if 4 <= i <= 30]
@@ -316,7 +336,7 @@ def mouth4(cv, cx, F, mouth, who, look):
 
 
 def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=False, sway=0.0):
-    F = FACE[who]; cv = Canvas(); cx = 500
+    F = soften(FACE[who]); cv = Canvas(); cx = 500
     top, sec = CLOTH[who]
     # ---------- body and clothes
     sh = [(cx - F["neck"] - 4, 640), (cx - 290, 700), (cx - 410, 800), (cx - 450, 1250), (cx + 450, 1250), (cx + 410, 800), (cx + 290, 700), (cx + F["neck"] + 4, 640)]
@@ -392,6 +412,7 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
     if who == "toi":                                                             # stubble: a blue-grey cast on the jaw and upper lip
         stub = np.clip(g(cx, F["my"] + 30, 120, 60, 1) + g(cx, F["my"] - 22, 40, 8, 0.7) - lipm * 2, 0, 1) * ss(F["nb"] + 2, F["nb"] + 26, YY)
         alb *= (1 - 0.12 * stub)[..., None]; alb[..., 2] += 6 * stub
+    for s in (-1, 1): alb += np.array([16, -2, -4], np.float32) * g(cx + s * (F["esp"] + 20), F["ey"] + 52, 26, 14, 1)[..., None] * (who != "double")   # warm cheeks
     if who == "maman":
         for s in (-1, 1): alb += np.array([30, -8, -6], np.float32) * g(cx + s * (F["esp"] + 18), F["ey"] + 56, 24, 12, 1)[..., None]   # blush
     if who == "samir":                                                           # the beard, from the sideburns down the jaw
@@ -408,7 +429,7 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
         hlx = hairline(cx, F); xs_ = [p[0] for p in reversed(hlx)]; ys_ = [p[1] for p in reversed(hlx)]
         yh = np.interp(XX, xs_, ys_) + 2.5 * np.sin(XX / 6.0) + 1.5 * np.sin(XX / 2.3)
         skin_m = hm & (YY > yh); noink = YY < yh + 6
-    cv.shade(skin_m, alb, h=hh, spec=0.14, gloss=0.95, R=80, noink=noink)
+    cv.shade(skin_m, alb, h=hh, spec=0.12, gloss=0.95, R=80, noink=noink, line=(3.2, 4.6))
     if who == "samir":                                                           # beard hairs
         im, d = cv.layer(); rng = np.random.default_rng(2)
         ys_, xs_ = np.nonzero(hm & (bm > 0.5))

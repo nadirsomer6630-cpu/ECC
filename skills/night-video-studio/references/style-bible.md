@@ -283,3 +283,15 @@ gaze on the mother (her forehead lines are faint ink, not relief: relief lines r
 
 Shader lesson: every small dip in the height map leaves an isolated shadow island in the light, which reads as a
 stain. `Canvas.shade` now removes shadow islands under 7000 px (at 2x), edge included, before the tones are drawn.
+
+## v15 (November 23): softened after lucdgain (136.6 k followers, 13.5 M likes)
+
+lucdgain's characters (watched on three recent videos: "LE SUPERMARCHÉ EP 01" 72 s, 12.5 k views; its finale; a
+244 s hotel story): big round pale heads, small soft eyes with a half-moon line of tiredness under them, thin brows,
+minimal nose and mouth, hair as solid shapes, a thick even outline, flat colours with one gentle shadow, warm
+cheeks. We take the softness, never the characters: `soften()` (`SOFT` = 0.62) lowers the relief of the v14
+structure (cheekbones, hollows, brow ridge, sockets, chin, nose, philtrum, hooded lids), rounds the jaw higher
+while the chin stays narrow (a wide chin read square again), opens the eyes a little and calms their slant and the
+frown, thins the brows. Shading: wider tone edges, lighter halftone and hatching, a steadier outline on the head;
+warm cheeks on everyone but the double; soft under-eye crescents (tired night workers) on everyone but the double.
+`SOFT = 1` gives back the angular v14 faces.
