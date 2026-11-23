@@ -323,3 +323,29 @@ Applied:
   lining) plus a silver hoop in the right ear; Samir gold and orange (a heavy two-row gold chain, an orange stripe on
   the beanie cuff, a gold tooth when he smiles); the mother gold and rose (a glasses chain hanging to her shoulders,
   pearl earrings, two crossed hairpins with rose beads); the double red (red rings on the cups, red lining).
+
+## v18 (November 23): the CURRENT characters, redrawn from zero (`scripts/toon5.py`, `assets/persos_v18*.jpg`)
+
+Supersedes v10 to v17 (`toon4.py` stays only as a record). The creator found v17 full of hair errors and too radical
+a change, and asked for the creators' style, with dark fantasy as the only theme (GTA IV and Elden Ring dropped).
+
+What the creators share (politiquepixels, pixels.stories, proteine.facile, lucdgain, daybyday1to30, zak.kho): big
+heads, big expressive eyes, thick brows, thick black outlines, flat colours with one soft shadow, hair as a few
+simple shapes with a few lines, one bright garment, dark sets.
+
+Mistakes of v10-v17 and the rule each one gave:
+- Procedural hair (17 then 7 computed clumps) made gaps, scallops, a feather crown, chevrons -> hair is drawn by hand
+  as one designed silhouette, a few wave lines and a few highlight shapes, symmetric except the waves and the lock.
+- Stacked effects (height maps, halftone, hatching, rim light, misregistration, sepia) made faces noisy and plastic
+  -> flat colours, ONE shadow shape per form, a thin moonlight line, nothing else.
+- Realistic proportions (small eyes, long necks) lost the expressions on a phone -> big heads, big eyes.
+- Every version replaced the whole character -> identities are fixed now; change one thing at a time.
+- Effects were judged at thumbnail size only -> every new face is checked at 1000 px with a centre line.
+
+Dark fantasy, the only theme: shadows lean violet (`NIGHT`), a thin lavender moonlight line on the right edge
+(`MOON`, 150 alpha, 3 px), the gold moon brooch, the double (grey-blue skin, glowing red slit eyes, black tears, a
+crack, the grin, darker clothes). Kept from the creator's own requests: the dark-blue lock, the hybrid almond eyes,
+the slicked-back wavy dark brown-black hair, the scar, the tired crescents under the eyes.
+
+`bust5(who, look, brow, mouth_, wide, blink, sway, size)` -> RGBA; `python3 toon5.py out.jpg` writes the sheet in
+about 25 s (toon4 needed 5 min).
