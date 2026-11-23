@@ -295,3 +295,12 @@ while the chin stays narrow (a wide chin read square again), opens the eyes a li
 frown, thins the brows. Shading: wider tone edges, lighter halftone and hatching, a steadier outline on the head;
 warm cheeks on everyone but the double; soft under-eye crescents (tired night workers) on everyone but the double.
 `SOFT = 1` gives back the angular v14 faces.
+
+## v16 (November 23): back to 2D, oval faces
+
+The creator asked for 2D again and oval faces. `FLAT = 0.55` pulls every normal toward the viewer so the relief
+reads as flat colour shapes, not a 3D render; `SPEC = 0.35` keeps little gloss; tone edges are crisp again
+(0.345-0.365 and 0.70-0.72): soft edges on flattened relief looked like smudged make-up, not 2D. Heads are eggs
+(`OVAL[who]` = half-width, top, chin, chin taper): widest at the cheekbones, narrowing to the chin (you 150 wide,
+taper 0.22; Samir broader, 0.16; the mother rounder, 0.14; the double long and pointed, 0.30). With less relief the
+nose needs ink: a thin bridge line on the shadow side.

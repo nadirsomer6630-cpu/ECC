@@ -84,8 +84,9 @@ class Canvas:
     def put(self, im):
         a = np.asarray(im).astype(np.float32) / 255; self.over(a[..., :3] * 255, a[..., 3])
 
-    def shade(self, mask, albedo, h=None, R=40, line=(2.4, 5.5), dots=True, spec=0.0, rim=1.0, gloss=0.86, flat=0.0, noink=None):
-        """Light a shape like a 3D render, then draw it as a comic panel."""
+    def shade(self, mask, albedo, h=None, R=40, line=(2.4, 5.5), dots=True, spec=0.0, rim=1.0, gloss=0.86, flat=None, noink=None):
+        """Light a shape, then draw it as flat 2D: `flat` (default FLAT) pulls the normals toward the viewer."""
+        flat = FLAT if flat is None else flat; spec = spec * SPEC
         ys, xs = np.nonzero(mask)
         if len(ys) == 0: return
         pad = int(10 * S); y0, y1 = max(0, ys.min() - pad), min(H * S, ys.max() + pad); x0, x1 = max(0, xs.min() - pad), min(W * S, xs.max() + pad)
@@ -102,7 +103,7 @@ class Canvas:
         n_, lab, st, _ = cv2.connectedComponentsWithStats(sm, connectivity=8)   # mean anything is a stain, so it goes
         small = st[:, cv2.CC_STAT_AREA] < 7000; small[0] = False
         d = np.where(small[lab], np.maximum(d, 0.45), d)
-        t1, t2 = ss(0.30, 0.40, d), ss(0.66, 0.76, d)                          # three tones with soft edges
+        t1, t2 = ss(0.345, 0.365, d), ss(0.70, 0.72, d)                        # three flat tones, crisp 2D edges
         ramp = RAMP[0][None, None] + (RAMP[1] - RAMP[0])[None, None] * t1[..., None] + (RAMP[2] - RAMP[1])[None, None] * t2[..., None]
         alb = np.broadcast_to(np.array(albedo, np.float32)[:3], hh.shape + (3,)) if isinstance(albedo, tuple) else albedo[y0:y1, x0:x1]
         col = alb * ramp
@@ -169,6 +170,7 @@ FACE = dict(
 CLOTH = dict(toi=((80, 58, 120), (40, 38, 48)), double=((80, 58, 120), (30, 28, 36)), samir=((92, 110, 72), (120, 124, 136)), maman=((104, 58, 86), (238, 226, 206)))
 
 
+FLAT, SPEC = 0.55, 0.35   # 2D look: how much the relief is flattened, how much gloss is kept
 SOFT = 0.62          # softness after the second reference creator: 1 = the angular v14 faces, lower = softer
 
 
@@ -186,7 +188,13 @@ def soften(F, k=SOFT):
     return F
 
 
+OVAL = dict(toi=(150, 130, 632, 0.22), samir=(166, 132, 628, 0.16), maman=(156, 128, 612, 0.14), double=(144, 126, 664, 0.30))
+
+
 def head_pts(cx, F):
+    if "oval" in F:                                                          # an egg: widest at the cheekbones, narrowing to the chin
+        a, top, chin, taper = F["oval"]; cy, b = (top + chin) / 2, (chin - top) / 2
+        return [(cx + a * math.cos(t) * (1 - taper * max(0.0, math.sin(t)) ** 2), cy + b * math.sin(t)) for t in (2 * math.pi * k / 120 for k in range(120))]
     T, C, cby, J, jy, K, chy = F["T"], F["C"], F["cby"], F["J"], F["jy"], F["K"], F["chy"]
     dome_ = bez((cx - T, 330), (cx - T - 8, 120), (cx + T + 8, 120), (cx + T, 330))
     tx, ty = (J - C), (jy - cby)                                         # the cheek's direction as it reaches the jaw
@@ -336,7 +344,7 @@ def mouth4(cv, cx, F, mouth, who, look):
 
 
 def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=False, sway=0.0):
-    F = soften(FACE[who]); cv = Canvas(); cx = 500
+    F = soften(FACE[who]); F["oval"] = OVAL[who]; cv = Canvas(); cx = 500
     top, sec = CLOTH[who]
     # ---------- body and clothes
     sh = [(cx - F["neck"] - 4, 640), (cx - 290, 700), (cx - 410, 800), (cx - 450, 1250), (cx + 450, 1250), (cx + 410, 800), (cx + 290, 700), (cx + F["neck"] + 4, 640)]
@@ -455,6 +463,7 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
     for s in (-1, 1): brow4(cv, cx, F, s, brow, wide, browc)
     for s in (-1, 1): eye4(cv, cx + s * F["esp"], F["ey"], s, F, look, wide, blink, who)
     nb, nw = F["nb"], F["nw"]                                                    # nose ink: only where the light breaks
+    cv.ink(bez((cx - 7, F["ey"] + 14), (cx - 9, nb - 50), (cx - 13, nb - 30), (cx - nw * 0.7, nb - 14), 12), 1.8, (90, 54, 50), 0.6)   # the bridge, on the shadow side
     cv.ink(bez((cx - nw * 0.95, nb - 18), (cx - nw * 1.15, nb - 2), (cx - nw * 0.8, nb + 6), (cx - nw * 0.45, nb + 4), 10), 2.4)
     cv.ink(bez((cx + nw * 0.95, nb - 18), (cx + nw * 1.15, nb - 2), (cx + nw * 0.8, nb + 6), (cx + nw * 0.45, nb + 4), 10), 1.6, (60, 36, 34), 0.8)
     mouth4(cv, cx, F, mouth, who, look)
