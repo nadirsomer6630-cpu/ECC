@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toon5
 from toon5 import Canvas, bez, tone, taper, SS
 
-FONTS = os.environ.get("NVS_FONTS", "/tmp/claude-0/-home-user-ecc/3c5713f1-7bcc-53da-9c7e-6ad539a42789/scratchpad/fonts/dl2/")   # Anton.ttf: SIL OFL, Google Fonts
+FONTS = "/tmp/claude-0/-home-user-ecc/3c5713f1-7bcc-53da-9c7e-6ad539a42789/scratchpad/fonts/dl2/"
 ORANGE = (255, 168, 38)
 PANTS = dict(toi=(38, 36, 52, 255), double=(22, 20, 28, 255), samir=(60, 64, 80, 255), maman=(70, 52, 66, 255))
 
@@ -88,7 +88,6 @@ def back5(who="toi", boil=None):
     cv.inside(h, pts=[(cx - 260, 760), (cx - 260, 120), (cx - 90, 120), (cx - 130, 760)], fill=tone(hair, 0.8))
     for k in range(-3, 4):                                                 # the waves combed back, seen from behind
         cv.stroke(bez((cx + k * 50, 160), (cx + k * 64, 300), (cx + k * 60, 480), (cx + k * 46, 700), 16), 4, tone(hair, 0.6))
-    if who == "toi": cv.stroke(bez((cx - 150, 200), (cx - 196, 260), (cx - 220, 330), (cx - 214, 380), 12), 9, L["lock"])  # the lock's blue shows at the side
     cv.rim(h)
     out = cv.done(1000)
     return toon5.line_boil(out, boil) if boil is not None else out

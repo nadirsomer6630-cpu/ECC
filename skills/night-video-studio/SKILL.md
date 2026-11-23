@@ -90,7 +90,9 @@ Anchor every cut on `wt`/`L_`, never on seconds. Animation rules (from the tutor
 12 drawings a second held two frames, `line_boil` with a new seed per drawing, key poses first, subtle motion
 (blinks, small nods) over big moves, horror timing as a long hold then a brutal pose with no in-between, the shadow
 follows the light (`light=`), characters on their own layer with a blurred foreground for depth, glow only on magic
-objects, a vignette. Test: `scripts/anim_test_v18.py`.
+objects, a vignette. Test: `scripts/anim_test_v18.py`. Acting (`rig5.py acting`): anticipation before a move, overshoot (`back_out`), hands and head
+on springs (`Spring`), blinks in five drawings (`lid`), emotions through several face drawings, fear played by the
+body (shoulders up, a tremor, a step back, a hand to the chest).
 
 ### 6. Look before rendering, then render
 
@@ -105,6 +107,13 @@ the same voices re-renders only those seconds; a changed take or pause needs a f
 Transcribe the final audio passage by passage against the script; loudness about -13 LUFS; duration and frame
 count; a contact sheet of every changed shot. Say plainly that acting and sound balance cannot be judged by
 transcript. Never overwrite a delivered file: write `_vN`.
+
+### 7b. Two posts a day (`references/publishing.md`)
+
+One production per night, two videos: part 1 at midday (the dilemma, the riddle, the A/B choice, 55-62 s) and part
+2 in the evening (the answer, the rule card, the loop, 28-35 s), posted as a video reply to the winning comment.
+Keep the same two hours every day and compare after 7 days. If a night is not ready, post a short riddle (15-20 s)
+cut from existing shots rather than a rushed episode.
 
 ### 8. Description and posting
 

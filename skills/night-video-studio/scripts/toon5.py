@@ -14,6 +14,7 @@ import numpy as np, cv2
 from PIL import Image, ImageDraw, ImageFilter, ImageChops
 
 SS = 2
+EYE_LID = 1.0                              # eyelid opening 0..1, for half blinks and squints
 LINE_K = 1.0                               # outline multiplier: raised for small figures so the line keeps its screen width
 INK = (22, 16, 30, 255)
 NIGHT = (0.80, 0.74, 0.92)                 # shadows lean violet: the night of the series
@@ -107,7 +108,7 @@ def head_pts(cx, L):
 def eye(cv, cx, cy, side, L, look, wide, blink, who, smile):
     """Big expressive almond, slightly slanted: white, a large iris, a pupil, two highlights, a thick upper lid with a
     flick, a thin lower lid, and the soft tired crescent below (night workers)."""
-    w, h, lift = 62, 38 + 26 * max(0.0, wide - 1.0) * 2, 12
+    w, h, lift = 62, (38 + 26 * max(0.0, wide - 1.0) * 2) * EYE_LID, 12
     def top(u): return (cx + side * u * w, cy - lift * (u + 1) / 2 + lift * 0.4 - h * (1 - u * u) ** 0.75)
     def bot(u): return (cx + side * u * w, cy - lift * (u + 1) / 2 + lift * 0.4 + h * (0.55 if smile else 0.8) * (1 - u * u) ** 1.1)
     if blink:
@@ -185,7 +186,7 @@ def mouth(cv, cx, L, kind, who, look):
 
 def hair_toi(cv, cx, L, sway, hm):
     """Slicked back, messy, smooth waves, dark brown-black: one designed silhouette, five combed-back waves, three
-    highlights following them, the blue lock and one loose strand. Drawn by hand, point by point, and symmetric
+    highlights following them and two small wisps at the hairline. Drawn by hand, point by point, and symmetric
     except the waves and the lock."""
     H0, HD, HL = L["hair"], L["hair_d"], L["hair_l"]
     for s in (-1, 1):                                                        # short sideburns in front of the ears
@@ -205,27 +206,17 @@ def hair_toi(cv, cx, L, sway, hm):
         if k < 3:
             cv.inside(top, pts=taper([(x + 18, y - 2) for x, y in path[4:16]], 6, 1.5), fill=HL)            # light on the clump
     cv.inside(top, pts=sil[:30] + [(cx - 150, 300), (cx - 190, 420)], fill=tone(H0, 0.78))                 # the shadow side
-    # the lock: a clump of his own hair that leaves the mass at the parting and falls over the left eye, dyed
-    # dark blue toward the tip (brown at the root, so it grows out of the hair instead of sitting on the forehead)
-    c = [(x + sway * 50 * (k / 23) ** 1.5, y) for k, (x, y) in enumerate(bez((cx - 8, 196), (cx - 30, 300), (cx - 98, 320), (cx - 70, 418), 23))]   # curves round the brow, hooks at the tip
-    shape = taper(c, 17, 2.5); m = ImageChops.subtract(cv.mask(shape), top)   # it starts at the hairline: the root is under the hair
-    r_ = int(4 * SS); kk = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r_ + 1, 2 * r_ + 1))
-    ink = Image.fromarray(cv2.dilate(np.asarray(m), kk)); cut_ = top
-    cv.im.paste(Image.new("RGBA", cv.im.size, INK), (0, 0), ImageChops.subtract(ink, cut_))
-    navy = L["lock"]
-    for i in range(len(c) - 1):                                              # brown root, blue tip
-        t = min(1.0, 0.55 + i / (len(c) - 2) * 1.5)
-        col = tuple(int(a_ + (b_ - a_) * t) for a_, b_ in zip(H0[:3], navy[:3])) + (255,)
-        seg_ = cv.mask([shape[i], shape[i + 1], shape[-i - 2], shape[-i - 1]]) if i < len(c) - 1 else None
-        cv.im.paste(Image.new("RGBA", cv.im.size, col), (0, 0), ImageChops.multiply(seg_.filter(ImageFilter.MaxFilter(3)), m))
-    c3 = [(x + sway * 40 * (k / 15) ** 1.5, y) for k, (x, y) in enumerate(bez((cx - 30, 270), (cx - 56, 318), (cx - 104, 338), (cx - 104, 384), 15))]
-    m3 = cv.put(ImageChops.subtract(cv.mask(taper(c3, 7, 1.2)), top), navy, 3)                       # a thinner strand splitting off the lock
-    if navy[2] > 100: cv.inside(m, pts=taper([(x + 6, y) for x, y in c[8:18]], 3.5, 1.0), fill=L["lock_l"][:3] + (190,))
+    # no lock any more (the creator's request, Nov 23): the fringe stays slicked back, one small brown wisp on each
+    # side of the parting breaks the hairline so it does not read as a helmet
+    for (p0, p1, p2, p3) in (((cx - 48, 240), (cx - 60, 214), (cx - 88, 206), (cx - 108, 222)),):
+        cv.poly(taper(bez(p0, p1, p2, p3, 12), 4, 1), H0, 2.5)
     for (p0, p1, p2, p3) in (((cx + 52, 240), (cx + 64, 214), (cx + 92, 206), (cx + 112, 222)), ((cx + 20, 244), (cx + 24, 222), (cx + 44, 206), (cx + 66, 204))):
         cv.poly(taper(bez(p0, p1, p2, p3, 12), 4, 1), H0, 2.5)              # two wisps lifting at the hairline
 
 
-def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=False, sway=0.0, size=1000, light=1.0, boil=None, turn=0.0):
+def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=False, sway=0.0, size=1000, light=1.0, boil=None, turn=0.0, lid=1.0):
+    global EYE_LID
+    EYE_LID = max(0.08, lid)
     L = LOOK[who]; cvB = Canvas(); cv = cvB; cx = 500                     # layers: body, head, features, hair
     # ---------- body: one bright garment each
     sh = bez((160, 1000), (170, 820), (300, 756), (430, 744)) + bez((570, 744), (700, 756), (830, 820), (840, 1000))
@@ -328,6 +319,7 @@ def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=F
     # ---------- the turn: a 2D cheat for three-quarter views, each layer slides by its depth and the far side narrows
     for layer, depth in ((cvH, 18), (cvF, 60), (cvR, 34)):
         cvB.im.alpha_composite(turn_warp(layer.im, turn, depth, cx))
+    EYE_LID = 1.0
     out = cvB.done(size)
     return line_boil(out, boil) if boil is not None else out
 

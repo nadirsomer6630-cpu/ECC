@@ -12,7 +12,7 @@ shadow shape per form, hair drawn by hand as a few shapes, one bright garment), 
 
 | Character | Fixed identity (change one thing at a time, only when the creator asks) |
 |---|---|
-| Toi (the hero, never speaks) | slicked-back wavy dark brown-black hair; a dark-blue dyed lock leaving the hairline, curving round the left brow, split tip; **hazel eyes: amber-brown round the pupil, a faint green rim** (`iris_in`, `iris`); hybrid almond slightly slanted eyes; scar through the left brow and cheek; tired crescents; open purple track jacket with white stripes, dark hoodie, headphones round the neck, gold moon brooch |
+| Toi (the hero, never speaks) | slicked-back wavy dark brown-black hair, no lock (removed Nov 23 at the creator's request), one small wisp each side of the parting; **hazel eyes: amber-brown round the pupil, a faint green rim** (`iris_in`, `iris`); hybrid almond slightly slanted eyes; scar through the left brow and cheek; tired crescents; open purple track jacket with white stripes, dark hoodie, headphones round the neck, gold moon brooch |
 | Samir (companion, video call) | green beanie with a cream pompom, curls under it, short beard along the jaw and a moustache, brown eyes, thick brows, gold stud in the left ear, green quilted puffer, a thin chain; one or two funny lines per part |
 | Maman (texts, the door) | grey hair, centre parting, bun with a gold pin, round gold glasses, pearl earrings, blush, pink cardigan over a cream turtleneck |
 | Le double (the monster) | the hero's hair and clothes in darker colours, cold grey skin, black eyes with a glowing red slit iris, hollow violet sockets with veins, black tears, a crack, the grin cut into the cheeks with needle teeth and two fangs set along the lip curves |

@@ -98,3 +98,14 @@ kept. The story shape, checked against our episodes:
 Production rules from the same video: a model sheet so the characters never drift between scenes (an inconsistent
 character makes the video read fake); a breakdown per scene (description, narration line, image, motion); subtle
 motion (blinks, small nods) rather than big moves; 60-65 s of voice; an edit that removes every dead second.
+
+## Constraints and riddles (November 23, the creator's condition for season 2)
+
+Every night has a visible constraint and a fair riddle, because a viewer who can solve the episode before the choice
+comments and watches again:
+- **Constraint on screen**: a countdown in the HUD ("FERMETURE DANS 00:60") down to the choice, and the job's rules
+  on screen (the sheet taped under the till). Rules of the job can conflict at the choice (rule 2 vs rule 3).
+- **A riddle with a pause**: a decodable clue (initials of the items on a receipt spell FERME, a number, an object
+  that comes back) with a banner "⏸ METS PAUSE : ...". At most two clues, both lead to the right answer; the answer
+  episode replays them ("TOUT À L'HEURE", the initials lighting up one by one).
+- Ask for the vote AND the riddle during the choice ("Le mot caché, tu l'as trouvé ? Écris-le").

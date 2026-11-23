@@ -45,7 +45,7 @@ written so it would also work in an image or video model if the creator ever use
 
 | Character | Anchors |
 |---|---|
-| Toi | slicked-back wavy dark brown-black hair; the dark-blue dyed lock over the left brow; hazel eyes with a faint green rim; the scar through the left brow; purple track jacket with white stripes and the gold moon brooch |
+| Toi | slicked-back wavy dark brown-black hair, no lock; hazel eyes with a faint green rim; the scar through the left brow; purple track jacket with white stripes and the gold moon brooch |
 | Samir | green beanie with a cream pompom; short beard and moustache; green quilted puffer; gold stud in the left ear |
 | Maman | grey bun with a gold pin; round gold glasses; pink cardigan over a cream turtleneck; pearl earrings |
 | Le double | the hero's hair and clothes, darker; black eyes with a glowing red slit; the grin cut into the cheeks with needle teeth; black tears |

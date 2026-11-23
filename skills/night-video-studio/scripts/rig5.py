@@ -44,7 +44,7 @@ def ease(u): u = max(0.0, min(1.0, u)); return u * u * (3 - 2 * u)
 class Figure:
     def __init__(self, who, height_px, exprs=None):
         self.who = who; self.s = height_px / STATURE
-        toon5.LINE_K = max(1.0, min(3.2, 0.42 / self.s))                 # same outline width on screen at any size
+        self.linek = max(1.0, min(3.2, 0.42 / self.s)); toon5.LINE_K = self.linek  # same outline width on screen at any size
         L = toon5.LOOK[who]; self.L = L
         top = L["top"]; dark = L.get("top_d", top); sleeve = top if who != "maman" else dark
         def part(draw):
@@ -83,6 +83,15 @@ class Figure:
         toon5.LINE_K = 1.0
         self.hip = (CX, 1250); self.neck = (CX, 690); self.sh = {s: (CX + s * 200, 770) for s in (-1, 1)}
         self.rest_el = {s: (CX + s * 200, 1032) for s in (-1, 1)}
+
+    def face(self, key, ex):
+        """Heads are drawn on demand and kept: emotions move through several drawings instead of one switch."""
+        if key not in self.heads:
+            toon5.LINE_K = self.linek
+            h = toon5.bust5(self.who, size=1000, **ex).crop((0, 0, 1000, 740)); toon5.LINE_K = 1.0
+            full = Image.new("RGBA", (W_, H_), (0, 0, 0, 0)); full.paste(h, (CX - 500, -40))
+            self.heads[key] = full.resize((int(W_ * self.s), int(H_ * self.s)), Image.LANCZOS)
+        return key
 
     def frame(self, pose):
         """pose: torso (deg), head (deg), bob (design px), legs (deg, +/-), hands {-1: (x, y), 1: (x, y)} in design px,
@@ -179,5 +188,82 @@ def demo(out_dir, seconds=6.0, fps=30):
     print("ok", n)
 
 
+class Spring:
+    """Follow-through: a part reaches its target a little late and overshoots softly (stiffness k, damping ratio z)."""
+    def __init__(self, x, k=180.0, z=0.62):
+        self.x = np.array(x, float); self.v = np.zeros_like(self.x); self.k = k; self.c = 2 * math.sqrt(k) * z
+    def step(self, target, dt=1 / 30):
+        a = self.k * (np.array(target, float) - self.x) - self.c * self.v; self.v += a * dt; self.x += self.v * dt
+        return tuple(self.x) if self.x.shape else float(self.x)
+
+
+def back_out(u, k=1.6):
+    u = max(0.0, min(1.0, u)); u -= 1; return u * u * ((k + 1) * u + k) + 1
+
+
+def blink_lid(t, t0):
+    """A real blink: open, half, closed, half, open over about 150 ms."""
+    seq = [1.0, 0.55, 0.1, 0.1, 0.55, 1.0]; i = int((t - t0) * 30)
+    return seq[i] if 0 <= i < len(seq) else 1.0
+
+
+def demo2(out_dir, seconds=7.0, fps=30):
+    """Acting test: calm, the phone buzzes (startle with anticipation and overshoot), the phone rises to the ear, he
+    listens with a worried half-lid, sees the double, fear builds in steps, a step back, a hand to the chest, a tremor;
+    the double walks into the warm pool. Hands and head follow on springs; blinks in five drawings."""
+    os.makedirs(out_dir, exist_ok=True)
+    bg = Image.open("s2/aisle.png").convert("RGBA").resize((1080, 1920)); proj = calib("s2/aisle_cal.json")
+    x0, y0 = 0.32, 0.35; hx0, hy0, hh0 = proj(x0, y0)
+    hero = Figure("toi", hh0); dbl = Figure("double", proj(0.0, -12)[2])
+    rest = {-1: (CX - 236, 1290), 1: (CX + 236, 1290)}; ear = (CX + 222, 470); chest = (CX - 40, 930)
+    hand_r, hand_l = Spring(rest[1], 160, 0.55), Spring(rest[-1], 140, 0.6); head_s = Spring(0.0, 90, 0.5); bob_s = Spring(0.0, 220, 0.45)
+    n = int(seconds * fps); rng = np.random.default_rng(1)
+    for f in range(n):
+        t = f / fps; im = bg.copy()
+        yw = -13 + 4.2 * ease((t - 0.2) / (seconds - 0.2)); dx, dy, dh = proj(0.05, yw)
+        if abs(dh - dbl.s * STATURE) > 6: dbl = Figure("double", dh)
+        ph = t * 2 * math.pi / 1.05
+        dp = {"torso": 1.5 * math.sin(ph), "head": -2 * math.sin(ph), "bob": -10 * abs(math.sin(ph)), "legs": 16 * math.sin(ph),
+              "hands": {-1: (CX - 236 + 55 * math.sin(ph), 1280), 1: (CX + 236 - 55 * math.sin(ph), 1280)}, "face": dbl.face("n", {})}
+        warm = min(1.0, max(0.0, (yw + 12) / 3.0))
+        stand_in(im, dbl.frame(dp), dx, dy, tint=(0.45 + 0.55 * warm, 0.42 + 0.40 * warm, 0.58 + 0.04 * warm))
+        # --- the hero's acting
+        fear = ease((t - 3.9) / 0.6); startle = t > 1.2
+        lid = min(blink_lid(t, 0.7), blink_lid(t, 3.1), blink_lid(t, 5.9))
+        if t < 1.2: ex = {"look": (-0.2, 0.25)}; key = "calm"
+        elif t < 2.4: ex = {"look": (0.1, -0.1), "wide": 1.0 + 0.3 * min(1, (t - 1.2) / 0.13), "brow": 0.5 * min(1, (t - 1.2) / 0.13)}; key = "startle"
+        elif t < 3.8: ex = {"look": (0.2, 0.0), "brow": 0.45}; lid = min(lid, 0.82); key = "worry"
+        else:
+            st = min(3, int((t - 3.8) / 0.1)); ex = {"look": (0.15 + 0.12 * st, -0.15), "wide": 1.0 + 0.13 * st, "brow": 0.35 * st, "mouth_": "fear" if st >= 2 else "line"}; key = f"fear{st}"
+        q = round(lid, 2); key = f"{key}_{round(ex.get('wide', 1), 2)}_{q}"; ex = dict(ex, lid=lid)
+        face = hero.face(key, ex)
+        # hands: anticipation (a small dip) then the phone rises with overshoot; later the left hand to the chest
+        if t < 1.55: tr = rest[1]
+        elif t < 1.7: tr = (rest[1][0], rest[1][1] + 30)
+        else:
+            u = back_out((t - 1.7) / 0.5); tr = (rest[1][0] + (ear[0] - rest[1][0]) * u, rest[1][1] + (ear[1] - rest[1][1]) * u)
+        tl = chest if t > 4.45 else rest[-1]
+        trem = fear * (3.0 * math.sin(t * 2 * math.pi * 9.0) + 2.0 * math.sin(t * 2 * math.pi * 11.3))
+        hr = hand_r.step(tr); hl = hand_l.step(tl)
+        head_t = (-6 if 2.0 < t < 3.8 else 0) + 3 * fear + 0.5 * trem
+        bob_t = (-16 if 1.2 < t < 1.45 else 0) - 10 * fear + 3 * math.sin(t * 2 * math.pi / 3.0)   # startle, shoulders up in fear, breathing
+        pose = {"torso": 0.8 * math.sin(t * 2 * math.pi / 3.0) - 1.5 * fear, "head": head_s.step(head_t), "bob": bob_s.step(bob_t),
+                "hands": {-1: (hl[0] + trem, hl[1]), 1: (hr[0] + trem * 0.6, hr[1])}, "face": face, "phone": t > 1.95}
+        img = hero.frame(pose)
+        step = 0.35 * ease((t - 4.4) / 0.7); hx, hy, hh = proj(x0, y0 + step)                   # a step back toward you
+        if abs(hh - hh0) > 1: img = img.resize((int(img.width * hh / hh0), int(img.height * hh / hh0)), Image.LANCZOS)
+        stand_in(im, img, hx, hy, tint=(0.84, 0.88, 1.0))
+        z = 1.0 + 0.06 * ease(t / seconds) + 0.03 * fear; im = camera(im, z, 540 + 4 * math.sin(t * 1.7), 1000 + 3 * math.sin(t * 2.3))
+        scene5.hud(im, "Caissier de nuit", "Nuit 1", "/ 30", "Caisse 3", "02:14" if t < 5 else "02:15")
+        im = scene5.vignette(im, 0.55 + 0.1 * fear)
+        if t < 1.2: scene5.caption(im, ["Tu", "es", "seul"], key="seul")
+        elif t < 3.8: scene5.caption(im, ["Ta", "mère", "t'appelle"], key="mère")
+        else: scene5.caption(im, ["Elle", "est", "là"], key="là")
+        im.save(f"{out_dir}/f{f:04d}.jpg", quality=90)
+    print("ok", n)
+
+
 if __name__ == "__main__":
+    if len(sys.argv) > 2 and sys.argv[2] == "acting":
+        demo2(sys.argv[1]); sys.exit()
     demo(sys.argv[1] if len(sys.argv) > 1 else "rigtest")
