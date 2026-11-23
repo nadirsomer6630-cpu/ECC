@@ -80,5 +80,17 @@ cam.data.sensor_fit = "VERTICAL"
 sc.render.engine = "CYCLES"; sc.cycles.device = "CPU"; sc.cycles.samples = SAMPLES; sc.cycles.use_denoising = True
 sc.render.resolution_x, sc.render.resolution_y = 1080, 1920; sc.render.resolution_percentage = 100
 sc.view_settings.view_transform = "AgX"; sc.view_settings.look = "AgX - Medium High Contrast"; sc.view_settings.exposure = -0.8
-sc.render.filepath = OUT; bpy.ops.render.render(write_still=True)
+import json
+from bpy_extras.object_utils import world_to_camera_view
+bpy.context.view_layer.update()
+cal = []                                                       # where a 1.75 m person stands on screen, for the 2D figures
+for yw in [2.0 - k * 0.5 for k in range(44)]:
+    for xw in (-0.8, -0.4, 0.0, 0.4, 0.8):
+        f = world_to_camera_view(sc, cam, __import__("mathutils").Vector((xw, yw, 0.0)))
+        h = world_to_camera_view(sc, cam, __import__("mathutils").Vector((xw, yw, 1.75)))
+        if f.z > 0 and 0 <= f.y <= 1.2:
+            cal.append(dict(x=xw, y=yw, fx=f.x * 1080, fy=(1 - f.y) * 1920, hx=h.x * 1080, hy=(1 - h.y) * 1920))
+json.dump(cal, open(OUT.rsplit(".", 1)[0] + "_cal.json", "w"))
+if "--calonly" not in sys.argv:
+    sc.render.filepath = OUT; bpy.ops.render.render(write_still=True)
 print("ok", OUT)

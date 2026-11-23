@@ -14,6 +14,7 @@ import numpy as np, cv2
 from PIL import Image, ImageDraw, ImageFilter, ImageChops
 
 SS = 2
+LINE_K = 1.0                               # outline multiplier: raised for small figures so the line keeps its screen width
 INK = (22, 16, 30, 255)
 NIGHT = (0.80, 0.74, 0.92)                 # shadows lean violet: the night of the series
 MOON = (176, 168, 236, 255)                # the thin moonlight rim on the right edge
@@ -55,7 +56,7 @@ class Canvas:
     def put(self, m, fill, line=7):
         """A flat shape with its ink outline (the mask grown by `line`)."""
         if line:
-            r = int(line * SS); k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1))
+            r = int(line * SS * LINE_K); k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * r + 1, 2 * r + 1))
             self.im.paste(Image.new("RGBA", self.im.size, INK), (0, 0), Image.fromarray(cv2.dilate(np.asarray(m), k)))
         self.im.paste(Image.new("RGBA", self.im.size, fill), (0, 0), m)
         return m
@@ -69,7 +70,7 @@ class Canvas:
         if len(fill) == 4 and fill[3] < 255: a = a.point(lambda v: v * fill[3] // 255)
         lay = Image.new("RGBA", self.im.size, fill[:3] + (0,)); lay.putalpha(a); self.im.alpha_composite(lay)   # blended, not pasted
     def stroke(self, pts, w, fill=INK):
-        ImageDraw.Draw(self.im).line(self.P(pts), fill=fill, width=max(1, int(w * SS)), joint="curve")
+        ImageDraw.Draw(self.im).line(self.P(pts), fill=fill, width=max(1, int(w * SS * (LINE_K if w >= 4 else 1))), joint="curve")
     def rim(self, clip, side=1, w=3):
         """Moonlight: a thin lavender line inside the right edge of a shape."""
         a = np.asarray(clip) > 0; k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (int(w * SS) * 2 + 1,) * 2)

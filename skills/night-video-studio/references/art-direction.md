@@ -47,3 +47,22 @@ Fonts: Anton (SIL OFL, from Google Fonts) for the HUD number; Inter Black (syste
 - Their sets have more mid-tones in the blue; ours fall to black faster. Raise the far tubes or the world light a
   little if a shot reads empty.
 - Profile views and walking do not exist yet; use wide, over-the-shoulder and close-up until they do.
+
+## Fluidity and placement (November 23): the cut-out rig (`scripts/rig5.py`)
+
+The creator: "our renders do not look like theirs in fluidity, in how the characters are placed, in design".
+Causes and fixes:
+- **Choppy**: we redrew whole figures on twos with a boiling line. The references animate cut-out puppets: every
+  part is a separate drawing turning on its joint, eased at the full frame rate. `Figure(who, height_px, exprs)`
+  draws the parts once (legs, torso, upper arms, forearms with hands, heads per expression); `frame(pose)` turns them
+  (torso, head, bob, legs, hand targets) at 30 fps. Hands are targets solved by 2-bone IK; a raised hand keeps its
+  elbow low (`ik_low`), otherwise the forearm folds over the upper arm.
+- **Badly placed**: figures were sized by eye. `supermarche.py` now exports `<set>_cal.json`: for points of the
+  floor, where the feet of a 1.75 m person land on screen and how tall they are. `calib(path)` returns `proj(x, y)`
+  -> foot x, foot y, height px; `stand_in` puts the figure there with a contact shadow and the light of that spot.
+- **Thin lines when small**: drawing big then shrinking thinned the outline. `toon5.LINE_K` thickens it for small
+  figures so it keeps the same screen width.
+- **Static camera**: `camera(im, zoom)` pushes in slowly on the whole composed frame, so set and figures move
+  together; HUD and captions are added after, fixed on screen.
+Demo: `python3 rig5.py out_dir` (6 s: you breathe, blink, raise the phone, listen, look down the aisle; the double
+walks from the dark into the warm pool at the right size at every step).
