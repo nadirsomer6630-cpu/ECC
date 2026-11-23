@@ -54,3 +54,12 @@ recap-style clue tags on people (TREMPÉ / SEC), villain name plate (LE DOUBLE),
 part-series mid-video chip, method-page yellow banners and close-ups, red eyes in the dark instead of a black frame,
 end card voting the next night job. Library sound effects added with OpusClip AI Producer (free at the time, no
 watermark): video kept from our render, audio taken from the OpusClip export and renormalised to -13 LUFS.
+
+## New handle (November 23)
+
+The account becomes **@nuit.express** (was @karashiro0), chosen by the creator: Nuit Express is already the night
+service of the stories, so the account and the world share one name. Display name: "Nuit Express · Règles de nuit".
+Profile pictures: `assets/pdp_nuit_express_A.png` (the hero's face, a crescent moon, 02:14) and
+`assets/pdp_nuit_express_B.png` (a crescent moon holding a clock at 2:14, the name). End cards and the "Abonne-toi"
+chip say @nuit.express from season 2 on. Handles can change once every 30 days; old links to @karashiro0 stop
+working. Compare the numbers of the 7 days before and after the change in the test log.
