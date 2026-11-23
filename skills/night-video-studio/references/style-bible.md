@@ -304,3 +304,22 @@ reads as flat colour shapes, not a 3D render; `SPEC = 0.35` keeps little gloss; 
 (`OVAL[who]` = half-width, top, chin, chin taper): widest at the cheekbones, narrowing to the chin (you 150 wide,
 taper 0.22; Samir broader, 0.16; the mother rounder, 0.14; the double long and pointed, 0.30). With less relief the
 nose needs ink: a thin bridge line on the shadow side.
+
+## v17 (November 23): hair and accessories redesigned after research ("too bland")
+
+Sources read: Clip Studio Tips (stylized hair, clumps as ribbons, strands only at clump edges, counter-flow
+strands), AnimeOutline (anime hair shading, highlights as zigzags), cel-shading guides (two shadow levels, crisp
+edges, highlight band in an "H" across the clumps), Arcane style write-ups (strong contrast, sculpted hair with sharp
+highlights, accessories and scars that tell a story), character-design guides (silhouette test, shape language,
+60/30/10 colour with one accent, the 70/30 rule: one odd detail makes a character memorable, story props not random
+ones).
+
+Applied:
+- **Hair (you and the double)**: seven big clumps combed back with volume, sides flicking out past the ears, three
+  spikes breaking the silhouette at the back (triangles: restless); a two-tone gradient from root to tip (dark brown
+  to blue-night for you, to blood red for the double: his signature), a deep shadow between clumps, a zigzag highlight
+  band dipping across the clumps, one fine strand per clump edge, two strands against the flow.
+- **Accent per character**: you electric blue (the lock, the eyes, a glowing ring on each headphone cup, the collar
+  lining) plus a silver hoop in the right ear; Samir gold and orange (a heavy two-row gold chain, an orange stripe on
+  the beanie cuff, a gold tooth when he smiles); the mother gold and rose (a glasses chain hanging to her shoulders,
+  pearl earrings, two crossed hairpins with rose beads); the double red (red rings on the cups, red lining).

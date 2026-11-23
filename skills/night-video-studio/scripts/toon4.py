@@ -360,6 +360,7 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
         cv.shade(mpoly([(cx - 92, 760), (cx + 92, 760), (cx + 120, 1250), (cx - 120, 1250)]), sec, R=40)   # the hoodie between the panels
         for s in (-1, 1):
             cv.shade(mpoly([(cx + s * 92, 700), (cx + s * 150, 690), (cx + s * 160, 640), (cx + s * 100, 655)]), tuple(int(v * 0.8) for v in top), R=10, spec=0.4)   # collar
+            cv.shade(mpoly([(cx + s * 96, 694), (cx + s * 112, 690), (cx + s * 124, 652), (cx + s * 104, 658)]), (40, 70, 190) if who == "toi" else (120, 20, 26), R=4, line=(0, 0), dots=False)   # its lining
             cv.ink(bez((cx + s * 80, 760), (cx + s * 150, 800), (cx + s * 230, 900), (cx + s * 300, 1250)), 4, GOLD)                     # gold piping
         cv.shade(mell((cx - 250, 820, cx - 170, 900)), GOLD, R=12, spec=1.0, gloss=0.8, rim=0.3)                                          # the moon brooch
         cv.shade(mell((cx - 236, 832, cx - 196, 872)), GOLD_D, R=6, line=(0, 0), dots=False)
@@ -389,10 +390,15 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
         for s in (-1, 1):
             cv.shade(mell((cx + s * 180 - 44, 650, cx + s * 180 + 44, 760)), (36, 34, 44), R=20, spec=0.7)
             cv.shade(mell((cx + s * 180 - 22, 676, cx + s * 180 + 22, 734)), top, R=8, line=(0, 0))
-    if who == "samir":                                                           # the gold chain
-        for k in range(18):
-            t = k / 17; x = cx - 90 + 180 * t; y = 700 + 60 * math.sin(t * math.pi)
-            cv.shade(mell((x - 6, y - 4, x + 6, y + 4)), GOLD, R=3, line=(1.0, 1.4), spec=1.0, dots=False)
+            led = (80, 170, 255) if who == "toi" else (255, 50, 40)                 # a glowing ring on each cup
+            gl, gd = cv.layer(); gd.ellipse([(cx + s * 180 - 34) * S, (664) * S, (cx + s * 180 + 34) * S, (746) * S], outline=led + (200,), width=int(9 * S)); cv.put(gl.filter(ImageFilter.GaussianBlur(5 * S)))
+            gl, gd = cv.layer(); gd.ellipse([(cx + s * 180 - 32) * S, (666) * S, (cx + s * 180 + 32) * S, (744) * S], outline=tuple(min(255, v + 90) for v in led) + (255,), width=int(3 * S)); cv.put(gl)
+    if who == "samir":                                                           # a heavy gold chain, two rows of links
+        for row, (n, dy, r) in enumerate(((16, 0, 9), (20, 34, 10))):
+            for k in range(n):
+                t = k / (n - 1); x = cx - 96 - row * 16 + (192 + row * 32) * t; y = 700 + dy + (60 + row * 20) * math.sin(t * math.pi)
+                cv.shade(mell((x - r, y - r * 0.62, x + r, y + r * 0.62)), GOLD, R=4, line=(1.2, 1.6), spec=1.0, dots=False)
+                cv.ink([(x - r * 0.5, y), (x + r * 0.5, y)], 1.4, GOLD_D)
     if who == "maman":                                                           # the rosary
         for k in range(16):
             t = k / 15; x = cx - 60 + 120 * t; y = 790 + 150 * math.sin(t * math.pi)
@@ -410,6 +416,10 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
         e = mpoly(bez((cx + s * (F["T"] - 4), F["ey"] - 30), (cx + s * (F["T"] + 30), F["ey"] - 40), (cx + s * (F["T"] + 30), F["ey"] + 60), (cx + s * (F["T"] - 2), F["ey"] + 80)))
         eh = dome(e, 14) + seg((cx + s * (F["T"] + 12), F["ey"] - 20), (cx + s * (F["T"] + 16), F["ey"] + 50), 4, -6)
         cv.shade(e, F["skin"], h=eh, rim=1.2)
+        if who == "toi" and s > 0:                                              # a silver hoop in the right ear
+            im_, d_ = cv.layer(); d_.ellipse([(cx + F["T"] + 4) * S, (F["ey"] + 58) * S, (cx + F["T"] + 20) * S, (F["ey"] + 78) * S], outline=(214, 220, 232, 255), width=int(3 * S)); cv.put(im_)
+        if who == "maman":                                                       # pearl earrings
+            cv.shade(mell((cx + s * (F["T"] + 10) - 7, F["ey"] + 62, cx + s * (F["T"] + 10) + 7, F["ey"] + 76)), (240, 236, 228), R=5, spec=1.0, gloss=0.8, dots=False, line=(1.0, 1.4))
         if who == "samir" and s < 0: cv.shade(mell((cx - F["T"] - 16, F["ey"] + 60, cx - F["T"] - 4, F["ey"] + 72)), GOLD, R=3, spec=1, dots=False, line=(1, 1.2))
     # ---------- head
     if who in ("toi", "double"): hair_ribbons(cv, cx, F, who, sway, "back")
@@ -467,6 +477,9 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
     cv.ink(bez((cx - nw * 0.95, nb - 18), (cx - nw * 1.15, nb - 2), (cx - nw * 0.8, nb + 6), (cx - nw * 0.45, nb + 4), 10), 2.4)
     cv.ink(bez((cx + nw * 0.95, nb - 18), (cx + nw * 1.15, nb - 2), (cx + nw * 0.8, nb + 6), (cx + nw * 0.45, nb + 4), 10), 1.6, (60, 36, 34), 0.8)
     mouth4(cv, cx, F, mouth, who, look)
+    if who == "samir" and mouth == "smile":                                      # a gold tooth when he smiles
+        mx_, my_ = cx + look[0] * 4, F["my"]
+        cv.shade(mpoly([(mx_ + 8, my_ - 9), (mx_ + 17, my_ - 9), (mx_ + 17, my_ - 2), (mx_ + 8, my_ - 2)]), GOLD, R=2, spec=1.0, dots=False, line=(0.6, 0.8))
     if who == "samir":                                                           # the moustache falls over the upper lip
         mx, my, mw = cx + look[0] * 4, F["my"], F["mw"]
         mo = mpoly(bez((mx - mw - 10, my + 6), (mx - mw * 0.8, my - 22), (mx - 14, nb + 10), (mx, nb + 16), 12) + bez((mx, nb + 16), (mx + 14, nb + 10), (mx + mw * 0.8, my - 22), (mx + mw + 10, my + 6), 12)
@@ -486,6 +499,11 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
             d.line([((ex + 18) * S, (F["ey"] - 30) * S), ((ex + 38) * S, (F["ey"] - 10) * S)], fill=(255, 255, 255, 120), width=int(3 * S))
         d.line([((cx - 14) * S, (F["ey"] - 8) * S), ((cx + 14) * S, (F["ey"] - 8) * S)], fill=GOLD + (255,), width=int(3.5 * S))
         cv.put(im)
+        for s in (-1, 1):                                                        # the glasses chain, hanging to the shoulders
+            x0, y0 = cx + s * (F["esp"] + 52), F["ey"]
+            for k in range(22):
+                t = k / 21; x = x0 + s * 30 * t; y = y0 + 300 * t + 40 * math.sin(t * math.pi)
+                cv.shade(mell((x - 3, y - 3, x + 3, y + 3)), GOLD, R=2, spec=1.0, dots=False, line=(0.6, 0.8))
     # ---------- hair
     hair(cv, cx, F, who, sway, hm)
     return cv.done()
@@ -528,33 +546,49 @@ def hair_ribbons(cv, cx, F, who, sway, part="back"):
     highlight per clump lining up into a band, two thick strands falling in front of each ear, the blue lock."""
     T, ey = F["T"], F["ey"]
     H0 = np.array((46, 32, 27) if who == "toi" else (32, 26, 28), np.float32)
-    HI, HI2 = ((150, 118, 94), (214, 184, 156)) if who == "toi" else ((96, 90, 100), (150, 146, 160))
+    HI, HI2 = ((150, 128, 120), (210, 200, 214)) if who == "toi" else ((120, 80, 86), (180, 130, 130))
     hl = hairline(cx, F)
     if part == "front":
         hair_front(cv, cx, F, who, sway, H0, hl); return
     hl_mass = [(x, y + 16) for x, y in hl]                                       # the hair runs on under the skin of the forehead
-    outer = [(cx + (T + 30) * math.cos(a), 334 - 280 * math.sin(a)) for a in (math.pi * (1 - k / 48) for k in range(49))]
-    cv.shade(mpoly([(cx - T - 8, ey - 16)] + outer + [(cx + T + 8, ey - 16)] + hl_mass), tuple(int(v * 0.8) for v in H0), R=50, rim=0.8)   # the under-mass
+    ROOT = np.array(H0, np.float32)
+    TIP = np.array((40, 52, 110) if who == "toi" else (110, 20, 26), np.float32)  # two-tone: blue-night tips, blood-red on the double
+    DEEP = tuple(int(v * 0.42) for v in H0)
+    def grad(mask_, y_root, y_tip):                                              # root colour fading into the tip colour
+        t = np.clip((y_root - YY) / max(1.0, y_root - y_tip), 0, 1) ** 1.5
+        return ROOT + (TIP - ROOT) * t[..., None]
+    # spikes at the back: they break the silhouette (triangles: a restless character)
+    for (bx, by, tx, ty, w) in ((-90, 150, -150, 52, 46), (40, 120, 84, 30, 50), (110, 160, 172, 70, 40)):
+        pts = bez((cx + bx - w, by + 60), (cx + bx - w * 0.6, by), (cx + tx - 12, ty + 30), (cx + tx, ty), 10) + bez((cx + tx, ty), (cx + tx + 18, ty + 34), (cx + bx + w * 0.7, by + 10), (cx + bx + w, by + 60), 10)
+        cv.shade(mpoly(pts), grad(None, by + 60, ty), R=18, line=(1.2, 2.4), rim=1.0)
+    outer = [(cx + (T + 30) * math.cos(a), 334 - 270 * math.sin(a)) for a in (math.pi * (1 - k / 48) for k in range(49))]
+    cv.shade(mpoly([(cx - T - 8, ey - 16)] + outer + [(cx + T + 8, ey - 16)] + hl_mass), DEEP, R=40, rim=0.6, dots=False)   # the deep shadow between clumps
     xs = [p[0] for p in reversed(hl)]; ys = [p[1] for p in reversed(hl)]
     clumps = []
-    for s_ in (-1, 1):                                                           # the sides, swept back over the temples
-        for k in range(3):
-            y0 = 322 + k * 26
-            c = bez((cx + s_ * (T - 4), y0), (cx + s_ * (T + 20), y0 - 50), (cx + s_ * (T + 26), y0 - 140), (cx + s_ * (T - 16), 130 + k * 18), 24)
-            clumps.append((3, [(x + s_ * wave(y, 4), y) for x, y in c], 15, k))
-    for i in range(-8, 9):                                                       # the top, combed back
-        u = i / 8; rx = cx + u * (T - 8); ry = float(np.interp(rx, xs, ys))
-        c = bez((rx, ry + 16), (rx + u * 30, ry - 80), (cx + u * T * 0.95, 110 + 30 * u * u), (cx + u * T * 0.82, 50 + 70 * u * u), 28)
-        clumps.append((2 - abs(u), [(x + wave(y) * (1 - abs(u) * 0.3), y) for x, y in c], 24 if i % 2 == 0 else 19, i))
-    clumps.sort(key=lambda q: q[0])                                              # outer clumps first, the centre on top
-    for depth, c, w, i in clumps:
-        tint = 1.0 + 0.08 * ((i * 7) % 3 - 1)
-        cv.shade(mpoly(ribbon(c, w)), tuple(int(min(255, v * tint)) for v in H0), R=w * 0.8, line=(0.8, 1.3), rim=0.9)
-        band = [q for q in c if 92 < q[1] < 196]
-        if len(band) > 3:
-            im, d = cv.layer(); d.polygon(P(streak(band, w * 0.32)), fill=HI + (235,)); d.polygon(P(streak(band[1:-1], w * 0.12)), fill=HI2 + (240,)); cv.put(im)
-        mid = c[len(c) // 5: len(c) * 3 // 4]
-        cv.ink([(x - w * 0.35, y) for x, y in mid], 1.1, (14, 9, 9), 0.55)      # one strand line, no more
+    for s_ in (-1, 1):                                                           # the sides, swept back, flicking out past the ears
+        for k in range(2):
+            y0 = 330 + k * 34
+            c = bez((cx + s_ * (T - 6), y0), (cx + s_ * (T + 22), y0 - 60), (cx + s_ * (T + 40), y0 - 140), (cx + s_ * (T + 54), 150 + k * 40), 22)
+            clumps.append((2.0, [(x + s_ * wave(y, 5), y) for x, y in c], 24, y0, 150 + k * 40))
+    for u in (-0.92, -0.62, -0.31, 0.31, 0.62, 0.92, 0.0):                        # seven big clumps combed back, the centre last
+        rx = cx + u * (T - 10); ry = float(np.interp(rx, xs, ys)); ty = 62 + 92 * u * u
+        c = bez((rx, ry + 16), (rx + u * 26, ry - 90), (cx + u * (T + 14) + 30 * (1 - abs(u)), 86 + 40 * u * u), (cx + u * (T + 34) + 40 * (1 - abs(u)), ty), 28)
+        clumps.append((1.5 - abs(u), [(x + wave(y, 9) * (1 - abs(u) * 0.4), y) for x, y in c], 56 - 12 * abs(u), ry + 16, ty))
+    clumps.sort(key=lambda q: q[0])
+    for depth, c, w, yr, yt in clumps:
+        m_ = mpoly(ribbon(c, w))
+        cv.shade(m_, grad(m_, yr, yt), R=w * 0.7, line=(1.0, 2.0), rim=1.0)
+        yb = 116 + 46 * ((c[-1][0] - cx) / (T + 44)) ** 2                          # the highlight band dips across the clumps (an H)
+        zig = 7 * np.abs(((XX / 13.0) % 2) - 1)
+        band = m_ & (YY > yb + zig) & (YY < yb + 32 + zig) & (XX > np.interp(YY, [q[1] for q in reversed(c)], [q[0] for q in reversed(c)]) - w * 0.2)
+        core = band & (YY > yb + 10 + zig) & (YY < yb + 20 + zig)
+        for msk, col, al in ((band, HI, 0.9), (core, HI2, 0.95)):
+            ys_, xs_ = np.nonzero(msk)
+            if len(ys_): y0_, y1_, x0_, x1_ = ys_.min(), ys_.max() + 1, xs_.min(), xs_.max() + 1; cv.over(np.broadcast_to(np.array(col, np.float32), (y1_ - y0_, x1_ - x0_, 3)), msk[y0_:y1_, x0_:x1_].astype(np.float32) * al, (y0_, y1_, x0_, x1_))
+        edge = [(x + w * 0.55 * (1 - j / len(c)), y) for j, (x, y) in enumerate(c)][4:len(c) * 2 // 3]
+        cv.ink(edge, 1.0, (14, 9, 9), 0.5)                                       # one fine strand at the clump's edge
+    for (p0, p1, p2, p3) in (((cx - 40, 200), (cx - 10, 170), (cx + 30, 180), (cx + 60, 150)), ((cx + 70, 230), (cx + 100, 200), (cx + 90, 160), (cx + 120, 130))):
+        cv.ink(bez(p0, p1, p2, p3, 12), 1.8, tuple(int(v) for v in HI), 0.8)    # two strands against the flow
 
 
 def hair_front(cv, cx, F, who, sway, H0, hl):
@@ -592,6 +626,7 @@ def hair(cv, cx, F, who, sway, hm):
         rh = dome(rm, 20)
         for k in range(-16, 17): rh = rh + seg((cx + k * 12, 214), (cx + k * 12, 272), 2.4, -3)
         cv.shade(rm, (56, 86, 54), h=rh)
+        cv.shade(mpoly([(cx - 192, 232), (cx + 192, 232), (cx + 191, 248), (cx - 191, 248)]), (214, 120, 44), R=4, line=(0.8, 1.2), dots=False)   # an orange stripe on the cuff
         cv.shade(mell((cx - 40, 20, cx + 40, 100)), (232, 228, 214), R=30)          # pompom
     elif who == "maman":
         Hc = (150, 140, 138)
@@ -615,7 +650,9 @@ def hair(cv, cx, F, who, sway, hm):
         for i, p in enumerate(paths): d.line(P(p), fill=((222, 218, 214, 200) if i % 3 == 0 else (96, 88, 88, 160)), width=S)
         a = np.asarray(im).copy(); a[..., 3] = (a[..., 3] * mask).astype(np.uint8); cv.put(Image.fromarray(a))
         cv.ink(bez((cx + 86, 244), (cx + 110, 266), (cx + 118, 300), (cx + 108 + sway * 14, 334), 12), 1.6, (226, 222, 218))   # a loose white strand
-        cv.ink([(cx + 20, 86), (cx + 86, 128)], 4, GOLD_D); cv.ink([(cx + 20, 86), (cx + 86, 128)], 2, GOLD)                      # hairpin
+        for (p, q) in (((cx - 40, 92), (cx + 66, 150)), ((cx + 56, 84), (cx - 30, 154))):                                        # two crossed hairpins
+            cv.ink([p, q], 4.5, GOLD_D); cv.ink([p, q], 2.2, GOLD)
+            cv.shade(mell((q[0] - 7, q[1] - 7, q[0] + 7, q[1] + 7)), (200, 70, 90), R=4, spec=1.0, dots=False, line=(1, 1.4))  # a rose bead
 
 
 if __name__ == "__main__":
