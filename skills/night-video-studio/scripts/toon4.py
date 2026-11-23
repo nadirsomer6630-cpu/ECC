@@ -329,6 +329,14 @@ def bust4(who="toi", look=(0.0, 0.0), brow=0.0, mouth="line", wide=1.0, blink=Fa
         for k in range(16):
             t = k / 15; x = cx - 60 + 120 * t; y = 790 + 150 * math.sin(t * math.pi)
             cv.shade(mell((x - 6, y - 6, x + 6, y + 6)), (130, 60, 52), R=4, line=(1.0, 1.4), spec=0.8, dots=False)
+    if who in ("toi", "double"):                                                # the hair at the back, down the nape
+        H0 = (44, 30, 26) if who == "toi" else (30, 24, 26)
+        for s in (-1, 1):
+            pts = [(cx + s * (F["T"] - 30), 300)]                                # one mass behind the ears, ending in a few points
+            for k, (dx, y1) in enumerate(((-6, 520), (12, 500), (26, 530), (40, 470), (46, 400))):
+                pts += [(cx + s * (F["T"] + dx - 8), y1 - 40), (cx + s * (F["T"] + dx + 4), y1)]
+            pts += [(cx + s * (F["T"] + 40), 300)]
+            cv.shade(mpoly(pts), H0, R=14, spec=0.3, line=(1.6, 2.8))
     # ---------- ears
     for s in (-1, 1):
         e = mpoly(bez((cx + s * (F["T"] - 4), F["ey"] - 30), (cx + s * (F["T"] + 30), F["ey"] - 40), (cx + s * (F["T"] + 30), F["ey"] + 60), (cx + s * (F["T"] - 2), F["ey"] + 80)))
@@ -400,44 +408,49 @@ def hair(cv, cx, F, who, sway, hm):
     T, ey = F["T"], F["ey"]
     if who in ("toi", "double"):
         H0 = (44, 30, 26) if who == "toi" else (30, 24, 26)
-        hl = [(cx + T - 2, ey - 40), (cx + T - 10, 312), (cx + 118, 262), (cx + 70, 242), (cx + 26, 236), (cx, 242),
-              (cx - 26, 236), (cx - 70, 242), (cx - 118, 262), (cx - T + 10, 312), (cx - T + 2, ey - 40)]
-        n = 40; outer = []
-        for k in range(n + 1):
-            a = math.pi * (1 - k / n); b = 7 * math.sin(k * math.pi / 4) ** 2
-            outer.append((cx + (T + 26 + b) * math.cos(a), 340 - (260 + b) * math.sin(a)))
-        mask = mpoly([(cx - T - 6, ey - 20)] + outer + [(cx + T + 6, ey - 20)] + hl)
-        hh = dome(mask, 50)
+        # an M hairline with a small widow's peak
+        hl = [(cx + T - 2, ey - 44), (cx + T - 8, 300), (cx + 122, 252), (cx + 72, 234), (cx + 30, 236), (cx, 250),
+              (cx - 30, 236), (cx - 72, 234), (cx - 122, 252), (cx - T + 8, 300), (cx - T + 2, ey - 44)]
+        n = 56; outer = []
+        for k in range(n + 1):                                                # a tall, dense crown with wavy clump tips
+            a = math.pi * (1 - k / n); b = 12 * math.sin(k * math.pi / 3.5) ** 2
+            outer.append((cx + (T + 36 + b) * math.cos(a), 330 - (300 + b) * math.sin(a)))
+        mask = mpoly([(cx - T - 10, ey - 16)] + outer + [(cx + T + 10, ey - 16)] + hl)
+        hh = dome(mask, 60)
         xs = [p[0] for p in reversed(hl)]; ys = [p[1] for p in reversed(hl)]
         paths = []
-        for i in range(-7, 8):                                                    # clumps combed back in waves
-            u = i / 7; rx = cx + u * (T - 16); ry = float(np.interp(rx, xs, ys))
-            base = bez((rx, ry + 4), (rx + u * 20, ry - 60), (cx + u * T * 0.85, 120 + 26 * u * u), (cx + u * 60, 84 + 8 * u * u), 20)
-            paths.append([(x + (7 + 4 * (i % 3)) * math.sin(j / 20 * 2.6 * math.pi + i * 0.7) * (1 - abs(u) * 0.4), y) for j, (x, y) in enumerate(base)])
+        for i in range(-10, 11):                                              # 21 clumps swept back, strong waves
+            u = i / 10; rx = cx + u * (T - 8); ry = float(np.interp(rx, xs, ys))
+            base = bez((rx, ry + 4), (rx + u * 34, ry - 90), (cx + u * T * 0.98, 96 + 40 * u * u), (cx + u * 86, 40 + 22 * u * u), 24)
+            amp = 7 + 3 * (i % 3); ph = i * 0.9
+            paths.append([(x + amp * math.sin(j / 24 * 2.4 * math.pi + ph) * (1 - abs(u) * 0.35) * min(1, j / 4), y) for j, (x, y) in enumerate(base)])
+        for s_ in (-1, 1):                                                    # the sides combed back over the temples
+            for k in range(4):
+                y0 = 300 + k * 22
+                paths.append(bez((cx + s_ * (T - 4), y0), (cx + s_ * (T + 14), y0 - 40), (cx + s_ * (T + 20), y0 - 120), (cx + s_ * (T - 20), 120 + k * 20), 20))
         rid = np.zeros_like(XX)
-        for p in paths:
+        for i, p in enumerate(paths):
             m_ = Image.new("L", (W * S, H * S), 0); ImageDraw.Draw(m_).line(P(p), fill=255, width=S)
             dist = cv2.distanceTransform((np.asarray(m_) == 0).astype(np.uint8), cv2.DIST_L2, 5) / S
-            rid = np.maximum(rid, np.exp(-(dist / (8 + 2 * (int(p[0][0]) % 3))) ** 2) * (8 + (int(p[0][0] * 7) % 5)))
-        cv.shade(mask, H0, h=hh + rid, spec=0.35, gloss=0.9, rim=1.0)
-        im, d = cv.layer()                                                        # strands and the sheen band
-        for p in paths:
-            for off in (-6, 0, 6):
-                d.line(P([(x + off * (1 - j / 22), y) for j, (x, y) in enumerate(p)]), fill=(16, 10, 10, 150), width=S)
-            sg = [q for q in p if 120 < q[1] < 200]
-            if len(sg) > 1: d.line(P([(x + 3, y) for x, y in sg]), fill=(150, 118, 96, 200), width=int(2 * S))
-        for s in (-1, 1):                                                         # faded sides
-            for k in range(9):
-                y = 300 + k * 10; x = cx + s * (T - 2 + (k % 3) * 3)
-                d.line(P([(x, y), (x + s * 8, y - 10)]), fill=(80, 62, 54, 220), width=S)
+            rid = np.maximum(rid, np.exp(-(dist / (6 + 3 * (i % 3))) ** 2) * (9 + 4 * (i % 2)))
+        cv.shade(mask, H0, h=hh + rid, spec=0.4, gloss=0.9, rim=1.0)
+        im, d = cv.layer()                                                    # dense strands, the sheen band
+        for i, p in enumerate(paths):
+            for off in (-7, -3.5, 0, 3.5, 7):
+                d.line(P([(x + off * (1 - j / 30), y) for j, (x, y) in enumerate(p)]), fill=(14, 9, 9, 150 if off else 190), width=S)
+            sg = [q for q in p if 96 < q[1] < 186]
+            if len(sg) > 1: d.line(P([(x + 3, y) for x, y in sg]), fill=(156, 124, 100, 210), width=int(2 * S)); d.line(P([(x - 2, y) for x, y in sg[1:-1]]), fill=(110, 86, 70, 180), width=S)
         a = np.asarray(im).copy(); a[..., 3] = (a[..., 3] * mask).astype(np.uint8); cv.put(Image.fromarray(a))
-        lockc = (40, 70, 190) if who == "toi" else (14, 14, 22)                   # the lock over the left eye
-        c = [(cx - 44 + (30 + sway * 60) * u + 12 * math.sin(u * 5.2), 240 + (ey - 34 - 240) * u) for u in (k / 15 for k in range(16))]
-        lm = mpoly(taper(c, 13, 2)); cv.shade(lm, lockc, R=6, spec=1.0, gloss=0.8, line=(1.8, 3.2), dots=False)
-        c2 = [(cx - 22 + (24 + sway * 40) * u + 8 * math.sin(u * 4.6 + 1), 242 + (ey - 80 - 242) * u) for u in (k / 11 for k in range(12))]
-        cv.shade(mpoly(taper(c2, 6, 1.5)), H0, R=4, spec=0.6, line=(1.4, 2.4), dots=False)
-        for (p0, p1, p2, p3) in (((cx + 44, 240), (cx + 70, 222), (cx + 100, 230), (cx + 114 + sway * 16, 262)), ((cx + 62, 244), (cx + 92, 236), (cx + 116, 250), (cx + 124 + sway * 16, 288))):
-            cv.ink(bez(p0, p1, p2, p3, 12), 2.6, H0)
+        for s_ in (-1, 1):                                                    # long wavy strands falling in front of the ears
+            for (x0, y0, y1, w0, ph) in ((T - 14, 280, ey + 46, 13, 0.0), (T - 30, 268, ey + 6, 9, 1.6)):
+                c = [(cx + s_ * (x0 + 12 * u + 6 * math.sin(u * 5 + ph)) + sway * 20 * u, y0 + (y1 - y0) * u) for u in (k / 15 for k in range(16))]
+                cv.shade(mpoly(taper(c, w0, 2)), H0, R=5, spec=0.5, gloss=0.88, line=(1.4, 2.4), dots=False)
+        lockc = (40, 70, 190) if who == "toi" else (14, 14, 22)               # the lock over the left eye
+        c = [(cx - 44 + (30 + sway * 60) * u + 11 * math.sin(u * 5.0), 236 + (ey - 26 - 236) * u) for u in (k / 17 for k in range(18))]
+        cv.shade(mpoly(taper(c, 13, 2)), lockc, R=6, spec=1.0, gloss=0.8, line=(1.8, 3.2), dots=False)
+        for (x0, w0, ph) in ((-18, 8, 1.0),):     # a few more strands falling on the forehead
+            c2 = [(cx + x0 + (24 + sway * 40) * u + 10 * math.sin(u * 5.4 + ph), 240 + (ey - 92 - 240 + (x0 % 3) * 8) * u) for u in (k / 13 for k in range(14))]
+            cv.shade(mpoly(taper(c2, w0, 1.4)), H0, R=4, spec=0.6, line=(1.3, 2.2), dots=False)
     elif who == "samir":
         for k in range(-6, 7):                                                    # curls under the beanie
             x = cx + k * 26; y = 262 + abs(k) * 4

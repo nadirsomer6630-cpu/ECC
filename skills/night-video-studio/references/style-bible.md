@@ -239,3 +239,12 @@ frames (on twos) and use drawn speed lines, as in the reference.
 The creator found the v10 jaws too square. `head_pts` now continues the cheek's direction into the jaw (no corner)
 and curves round to a narrow chin; `round` (0 to 1) sets how soft the turn is: you 0.7 (an oval to a defined chin),
 Samir 0.6 (solid, under the beard), the mother 0.9 (round and soft), the double 0.55 (long and pointed).
+
+## v12 (November 23): the hero's haircut after the creator's reference, denser and wavier
+
+The cut of the reference portrait (only the cut: our colours stay dark brown-black with the blue lock): slicked
+back with tall volume, an M hairline with a small widow's peak, 21 thick clumps swept back with clear waves (amplitude
+7 to 13, 2.4 periods), the sides combed back over the temples, five strand lines per clump and a sheen band, two
+heavier wavy strands falling in front of each ear, the blue lock and one more strand on the forehead, and the back
+of the hair as one mass behind the ears ending in a few points on the nape. Too many thin strands read as worms and
+long nape points read as pigtails: keep the loose strands few and thick.
