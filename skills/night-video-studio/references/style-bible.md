@@ -1,5 +1,28 @@
 # Style bible: the series' own DNA (from season 2 on)
 
+## CURRENT CHARACTERS (v19, November 23): read this first
+
+Engine: `scripts/toon5.py` (`bust5`), sheets `assets/persos_v19.jpg`, `persos_v19_gros_plan.jpg`,
+`persos_v19_fiche_modele.jpg`. Everything below this section is the history of how we got here (v1 to v19): keep it
+for its lessons, do not draw from it.
+
+Style: the creators' flat 2D (big heads, big expressive eyes, thick brows, thick black outline, flat colours, ONE
+shadow shape per form, hair drawn by hand as a few shapes, one bright garment), with dark fantasy as the only theme
+(shadows lean violet, a thin lavender moonlight line on the lit edge, the gold moon brooch, the double).
+
+| Character | Fixed identity (change one thing at a time, only when the creator asks) |
+|---|---|
+| Toi (the hero, never speaks) | slicked-back wavy dark brown-black hair; a dark-blue dyed lock leaving the hairline, curving round the left brow, split tip; **hazel eyes: amber-brown round the pupil, a faint green rim** (`iris_in`, `iris`); hybrid almond slightly slanted eyes; scar through the left brow and cheek; tired crescents; open purple track jacket with white stripes, dark hoodie, headphones round the neck, gold moon brooch |
+| Samir (companion, video call) | green beanie with a cream pompom, curls under it, short beard along the jaw and a moustache, brown eyes, thick brows, gold stud in the left ear, green quilted puffer, a thin chain; one or two funny lines per part |
+| Maman (texts, the door) | grey hair, centre parting, bun with a gold pin, round gold glasses, pearl earrings, blush, pink cardigan over a cream turtleneck |
+| Le double (the monster) | the hero's hair and clothes in darker colours, cold grey skin, black eyes with a glowing red slit iris, hollow violet sockets with veins, black tears, a crack, the grin cut into the cheeks with needle teeth and two fangs set along the lip curves |
+
+Expressions: `mouth_` line / smile / o / fear, `brow`, `wide`, `look`, `blink`. Views: `turn` -0.5..0.5 (three-quarter
+cheat), no profile yet. Light: `light` -1..1 moves the shadow shape. Animation: `boil=seed` per drawing, on twos.
+Checks before delivering a face: render at 1000 px with a red centre line; look for stains, asymmetry, teeth or
+strands crossing an outline; compare with the previous version so only the asked change moved.
+
+
 Decided with the creator on November 23, 2026, after a frame-by-frame comparison of the first two seconds of the
 reference videos with ours: they are flat 2D, one readable scene, motion from frame 0, frank colours, little text;
 ours were 2D characters on dark 3D renders with a phone-in-phone frame 0 and five overlays. The look below takes one
@@ -394,3 +417,10 @@ its own drawing and does not exist yet. Look the eyes toward the turn (`look=(tu
   outline each, gums, a black throat.
 - **The double was not frightening**: black sclera with a glowing red slit iris, hollow violet sockets with veins,
   the grin cut up into the cheeks, sharper rising brows, a colder skin. It keeps the hero's hair and clothes.
+
+## v20 (November 23): hazel eyes for the hero
+
+The creator wanted hazel eyes with a faint green. The iris is now an olive outer ring (`iris` 112,108,62) and an
+amber-brown centre round the pupil (`iris_in` 140,94,46, 70 % of the iris, with a lighter lower crescent). A first
+try with a green outer ring at full strength read as green eyes, not hazel: keep the green to the rim. The lock stays
+the only blue on the hero. Close-up: `assets/yeux_noisette.jpg`.

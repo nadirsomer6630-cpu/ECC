@@ -84,7 +84,7 @@ class Canvas:
 
 LOOK = dict(
     toi=dict(skin=(238, 198, 164, 255), hair=(44, 30, 26, 255), hair_d=(24, 16, 14, 255), hair_l=(112, 82, 66, 255),
-             lock=(40, 66, 160, 255), lock_l=(110, 146, 226, 255), iris=(46, 80, 186, 255), top=(112, 72, 214, 255),
+             lock=(40, 66, 160, 255), lock_l=(110, 146, 226, 255), iris=(112, 108, 62, 255), iris_in=(140, 94, 46, 255), top=(112, 72, 214, 255),
              top_d=(80, 50, 168, 255), inner=(38, 36, 50, 255), chin=672, jaw=1.0),
     samir=dict(skin=(190, 136, 98, 255), hair=(32, 24, 20, 255), iris=(104, 66, 38, 255), top=(54, 156, 98, 255),
                top_d=(34, 116, 70, 255), inner=(118, 122, 136, 255), chin=676, jaw=1.12),
@@ -118,6 +118,8 @@ def eye(cv, cx, cy, side, L, look, wide, blink, who, smile):
     def E(x, y, r, c): d.ellipse([(x - r) * SS, (y - r) * SS, (x + r) * SS, (y + r) * SS], fill=c)
     E(ix, iy, ir, tuple(int(v * 0.5) for v in L["iris"][:3]) + (255,)); E(ix, iy, ir * 0.84, L["iris"])
     E(ix, iy + ir * 0.32, ir * 0.5, lite(L["iris"], 1.3))
+    if "iris_in" in L and who != "double":                                   # hazel: amber-brown around the pupil
+        E(ix, iy, ir * 0.7, L["iris_in"]); E(ix + ir * 0.1, iy + ir * 0.22, ir * 0.4, lite(L["iris_in"], 1.18))
     if who == "double":
         d.ellipse([(ix - 3) * SS, (iy - ir * 0.7) * SS, (ix + 3) * SS, (iy + ir * 0.7) * SS], fill=(10, 6, 8, 255))   # a slit
     else:

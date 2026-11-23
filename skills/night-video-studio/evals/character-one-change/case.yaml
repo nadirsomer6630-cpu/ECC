@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: character-one-change
+expected_outcome: |
+  A French answer that inspects the double at full size, names what is wrong (teeth not following the mouth curve,
+  a face that reads cute), changes only the double's mouth and frightening features in toon5.py without touching the
+  other characters or the double's identity (the hero's hair and clothes), checks the result at 1000 px, shows it,
+  and records the change in the style bible.
