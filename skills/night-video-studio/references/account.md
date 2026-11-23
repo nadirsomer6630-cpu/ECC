@@ -63,3 +63,18 @@ Profile pictures: `assets/pdp_nuit_express_A.png` (the hero's face, a crescent m
 `assets/pdp_nuit_express_B.png` (a crescent moon holding a clock at 2:14, the name). End cards and the "Abonne-toi"
 chip say @nuit.express from season 2 on. Handles can change once every 30 days; old links to @karashiro0 stop
 working. Compare the numbers of the 7 days before and after the change in the test log.
+
+## Audit of the account (November 23) and the rule it gave: every video stands alone
+
+An audit the creator pasted ("Histoires d'horreur interactives"): strengths are disturbing, concrete hooks (a client
+carries your name, a stranger wears your face) and choices offered to the viewer; brakes are the labels "Nuit 2",
+"Nuit 3", "fin de saison", "partie 1" that present the videos as a sequel, and "Nuit 4, partie 1" at 254 views
+against a median of 780. Numbers re-read with `scripts/veille.py` (`assets/veille_compte_nov23.md`): 906, 781, 780, 703,
+254 views; the best like rate (14.3 %) is the standalone family premise "Ta mère a dîné trois semaines avec quelqu'un
+qui portait ton visage". Small sample: only the 254 gap is clear, and that video also opened its title on a quote and
+was posted on a Saturday at 22:06 UTC.
+
+Rule from now on: no night or part number in the title, the description, frame 0 or the HUD; every video opens on its
+own complete premise and is understood alone; the second video of the day is another story in the same place, not
+"the answer" (`references/s2_caissier_script_v3.md`). The display name already reads "nuit.express"; the handle is still
+@karashiro0, and @nuit.express did not exist on TikTok when checked (looks free).

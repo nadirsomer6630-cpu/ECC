@@ -117,7 +117,7 @@ cut from existing shots rather than a rushed episode.
 
 ### 8. Description and posting
 
-`<Story name>... (partie P) | <the choice as a question> ? #horreur #creepypasta #<test tag>`, or a quoted line the
+`<Story name>... | <the choice as a question> ? #horreur #creepypasta #<test tag>` (no night or part number: every video stands alone, see `references/account.md`), or a quoted line the
 viewer hears as the story name. Three hashtags only (#flippant is the strongest third seen; never
 `#pourtoi`, `#pov`, `#animation` or `#livreur`). A pinned comment with the A/B question or the fair clue. The cover is the opening image, the
 same posting hour, a new part as a video reply to the winning comment, an old version set to "Seulement moi".

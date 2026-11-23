@@ -49,3 +49,10 @@ Seules les vidéos d'au moins une minute comptent pour les récompenses créateu
 parties durent au moins 61 s ; la partie 2 se termine par l'accroche de la nuit suivante (« Demain, gardien de
 piscine. Règle onze... »), ce qui l'allonge et donne une raison de revenir. Chaque vidéo finie part aussi en YouTube
 Shorts et en Reels Instagram le même jour (même fichier, même titre-question), publiée par le créateur.
+
+## Mise à jour (23 novembre) : deux histoires indépendantes, pas une suite
+
+Après l'audit du compte : la vidéo du soir n'est plus « la partie 2 » ni « la réponse ». C'est une histoire complète
+dans le même lieu, qui s'ouvre sur sa propre prémisse (« Imagine. Deux heures quinze. Une femme sans ombre te tend un
+billet mouillé. »), rejoue l'énigme pour les nouveaux spectateurs et montre les deux issues. Aucun numéro de nuit ou de
+partie nulle part ; « Demain soir, même caisse » suffit à donner envie de revenir.
