@@ -62,6 +62,15 @@ redesigns "too radical", so:
 `bust5(who, look, brow, mouth_, wide, blink, sway, size, light, boil, turn)`; the list of what went wrong and why is
 in `references/learned.md`.
 
+### 3b. The whole frame (`references/art-direction.md`)
+
+The gap with the reference creators was never the faces: it was the frame. Every shot is a lit 3D set
+(`scripts/supermarche.py` for the supermarket) with our characters standing in it (`scripts/scene5.py`:
+`figure5` full body with poses, `back5` for over-the-shoulder, `place` tints them with the set's light and adds a
+contact shadow), a fixed HUD (place + "NUIT 1 / 30" on the left, a label + the clock on the right), one caption line
+in heavy white capitals with one orange word, a cold grade and a vignette. `scripts/frames_s2.py` builds three
+test frames; `assets/comparaison_reference_vs_nous.jpg` is the side-by-side to beat.
+
 ### 4. Voices
 
 Copy the newest generator (`scripts/elv11_gen.py`): eleven_v3 with acting tags, every take transcribed with

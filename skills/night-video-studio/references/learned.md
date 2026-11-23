@@ -44,3 +44,9 @@ accent colour; the 70/30 rule (one odd detail makes a character memorable); stor
 - Realistic proportions (small eyes, long necks): expressions lost on a phone.
 - Replacing the whole character at each request: the creator found it "too radical". Change one thing at a time.
 - Judging faces at thumbnail size: stains, asymmetries and teeth errors only show at 1000 px.
+
+## The whole-frame lesson (November 23)
+
+Side by side with lucdgain's "LE SUPERMARCHÉ EP 01" the remaining gap was the frame, not the faces: lit 3D sets,
+full-body figures standing in them, over-the-shoulder and close-up shots, a fixed HUD, heavy captions with one orange
+word. Became `references/art-direction.md`, `scripts/supermarche.py`, `scripts/scene5.py`, `scripts/frames_s2.py`.
