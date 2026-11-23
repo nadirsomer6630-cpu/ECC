@@ -233,3 +233,9 @@ the ink and grain. Eyes, brows (single hairs), mouths, glasses, cracks and stubb
 Use: `bust4(who, look, brow, mouth, wide, blink, sway)` -> RGBA 1000x1250; `python3 toon4.py out.jpg` (sheet) or
 `python3 toon4.py out.jpg big` (four neutral busts). About 18 s per bust. When animating, hold each drawing for two
 frames (on twos) and use drawn speed lines, as in the reference.
+
+## v11 (November 23): jaws in harmony with each face
+
+The creator found the v10 jaws too square. `head_pts` now continues the cheek's direction into the jaw (no corner)
+and curves round to a narrow chin; `round` (0 to 1) sets how soft the turn is: you 0.7 (an oval to a defined chin),
+Samir 0.6 (solid, under the beard), the mother 0.9 (round and soft), the double 0.55 (long and pointed).

@@ -144,16 +144,16 @@ class Canvas:
 
 # ---------------------------------------------------------------- the characters
 FACE = dict(
-    toi=dict(T=150, C=158, cby=440, J=130, jy=548, K=38, chy=620, ey=396, esp=66, ew=34, eh=13, lift=5, ir=13,
+    toi=dict(T=150, C=156, cby=440, J=122, jy=536, K=14, chy=620, round=0.7, ey=396, esp=66, ew=34, eh=13, lift=5, ir=13,
              by=362, bw=9, bs=-0.6, nb=488, nw=23, nh=16, my=540, mw=34, lipf=1.0, brow_r=1.0, cb=1.0, hollow=0.5, socket=1.0, chin=1.0,
              skin=(222, 180, 148), lip=(178, 112, 100), iris=(54, 92, 200), neck=82),
-    samir=dict(T=168, C=178, cby=446, J=160, jy=560, K=74, chy=616, ey=398, esp=70, ew=33, eh=13, lift=1, ir=13,
+    samir=dict(T=168, C=176, cby=446, J=148, jy=548, K=34, chy=616, round=0.6, ey=398, esp=70, ew=33, eh=13, lift=1, ir=13,
                by=364, bw=12, bs=0.0, nb=494, nw=32, nh=14, my=546, mw=38, lipf=1.4, brow_r=1.1, cb=0.8, hollow=0.2, socket=0.9, chin=0.8,
                skin=(176, 122, 88), lip=(128, 74, 64), iris=(104, 66, 38), neck=94),
-    maman=dict(T=158, C=164, cby=446, J=144, jy=540, K=58, chy=604, ey=400, esp=64, ew=31, eh=12, lift=-1, ir=12,
+    maman=dict(T=158, C=162, cby=446, J=136, jy=524, K=24, chy=604, round=0.9, ey=400, esp=64, ew=31, eh=12, lift=-1, ir=12,
                by=358, bw=5, bs=0.6, nb=484, nw=20, nh=11, my=532, mw=30, lipf=0.7, brow_r=0.6, cb=0.7, hollow=0.0, socket=0.8, chin=0.6,
                skin=(232, 196, 170), lip=(184, 120, 116), iris=(104, 74, 48), neck=76),
-    double=dict(T=146, C=152, cby=430, J=116, jy=560, K=26, chy=650, ey=392, esp=66, ew=36, eh=12, lift=10, ir=13,
+    double=dict(T=146, C=150, cby=430, J=106, jy=546, K=8, chy=650, round=0.55, ey=392, esp=66, ew=36, eh=12, lift=10, ir=13,
                 by=352, bw=8, bs=1.2, nb=500, nw=18, nh=20, my=560, mw=34, lipf=0.6, brow_r=1.4, cb=1.4, hollow=1.3, socket=2.0, chin=1.2,
                 skin=(176, 180, 188), lip=(120, 110, 120), iris=(240, 30, 30), neck=70),
 )
@@ -163,7 +163,9 @@ CLOTH = dict(toi=((80, 58, 120), (40, 38, 48)), double=((80, 58, 120), (30, 28, 
 def head_pts(cx, F):
     T, C, cby, J, jy, K, chy = F["T"], F["C"], F["cby"], F["J"], F["jy"], F["K"], F["chy"]
     dome_ = bez((cx - T, 330), (cx - T - 8, 120), (cx + T + 8, 120), (cx + T, 330))
-    right = bez((cx + T, 330), (cx + C + 4, cby - 50), (cx + C, cby + 10), (cx + J, jy), 16) + bez((cx + J, jy), (cx + J - (J - K) * 0.25, jy + (chy - jy) * 0.6), (cx + K + (J - K) * 0.3, chy), (cx + K, chy), 16)
+    tx, ty = (J - C), (jy - cby)                                         # the cheek's direction as it reaches the jaw
+    l = math.hypot(tx, ty) or 1; tx, ty = tx / l, ty / l; r = F.get("round", 0.5) * (chy - jy)
+    right = bez((cx + T, 330), (cx + C + 4, cby - 50), (cx + C - 2, cby + 30), (cx + J, jy), 16) + bez((cx + J, jy), (cx + J + tx * r, jy + ty * r), (cx + K + (J - K) * (0.3 + 0.35 * F.get("round", 0.5)), chy + 2), (cx + K, chy + 4), 16)
     return dome_ + right + [(2 * cx - x, y) for x, y in reversed(right)]
 
 
