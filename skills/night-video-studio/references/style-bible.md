@@ -196,3 +196,20 @@ nose (bridge line, light down the bridge, rounded tip, wings, dark nostrils); re
 lip with a highlight, philtrum); a strong jaw for the hero; form shadows blurred so they read as painted. The hero's
 scar now runs from the forehead through the brow and down the cheek. `FACE[who].update(REAL[who])` switches it on;
 `toon3_v7.py` keeps the cartoon-eyed v7.
+
+## Characters v9 (November 23): our style, "Nuit gravée" (sheet `assets/persos_v9.jpg`)
+
+The house style, stated once: flat cel-shaded 2D with thick ink, semi-realistic faces (v8), a gritty sepia city grade,
+dark-fantasy gold accents and rim light, and engraved hatching inside the form shadows. Added in v9:
+
+- **Hair (`hair_slick`)**: one silhouette from ear to ear (no gaps at the temples), a symmetric hairline with the
+  hair's soft shadow on the forehead, 13 clumps combed back in waves converging to the crown, strand lines in each
+  clump, a sheen band across the crown, faded sides, the loose locks falling forward, flyaways and two messy tufts.
+  The mother: a centred bun and a centre parting with grey and white strands, one loose white strand. Samir: a
+  shine on each curl under the beanie.
+- **Faces**: brows tapered from head to tail with single hairs combed outwards; iris fibres; lips wider; the
+  philtrum short; nose-to-mouth folds short and faint on the young faces, long only on the mother and the double;
+  soft blurred plane lights (nose bridge, cheekbone, forehead, chin) instead of hard strokes; stubble as a blue-grey
+  shadow with fine hairs; the hairpin in the centred bun.
+- **Symmetry check**: render a bust at 1000 px with a red centre line before delivering a new face; everything
+  mirrors except what is meant not to (the light from the right, the blue lock, the scar, the double's cracks).

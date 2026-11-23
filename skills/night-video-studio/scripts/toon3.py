@@ -71,7 +71,7 @@ def lock_poly(center, w0, w1=2):
 FACE = dict(   # the bone structure of each face: head (temple T, cheekbone C at cby, jaw corner J at jy, chin half-width
                # K at chy), eyes (width, height, slant, spacing, height, iris), brows (thickness, height, slant), nose
                # (tip height, width, kind), mouth (height, width), and how hollow the cheeks and eye sockets are
-    toi=dict(T=214, C=224, cby=468, J=184, jy=612, K=60, chy=716, ew=74, eh=31, lift=22, esp=114, ey=448, ir=30,
+    toi=dict(T=212, C=216, cby=468, J=174, jy=612, K=56, chy=716, ew=74, eh=31, lift=22, esp=114, ey=448, ir=30,
              bw=11, by=366, bs=-0.6, nl=550, nw=25, nose="straight", my=622, mw=40, hollow=0.6, socket=0.5),
     samir=dict(T=230, C=244, cby=490, J=210, jy=644, K=86, chy=706, ew=68, eh=33, lift=6, esp=120, ey=452, ir=29,
                bw=16, by=372, bs=0.0, nl=560, nw=40, nose="broad", my=624, mw=52, hollow=0.25, socket=0.35),
@@ -98,6 +98,55 @@ def head_pts(cx, F):
     return dome + right + [(2 * cx - x, y) for x, y in reversed(right)]
 
 
+def hair_slick(cv, cx, F, L, sway, who, hm):
+    """Messy slicked-back, wavy, dark brown-black: a full silhouette from ear to ear (no gaps at the temples), clumps
+    combed back from a symmetric hairline, strand lines, a sheen band across the crown, a faded side, the hair's soft
+    shadow on the forehead, the loose locks falling forward (the dark-blue one for you) and a few flyaways."""
+    H0, HI, LO = L["hair"], L["hair_hi"], L["hair_lo"]
+    MID = tuple((a + b) // 2 for a, b in zip(H0[:3], HI[:3])) + (255,)
+    T, ey = F["T"], F["ey"]
+    hl = [(cx + T - 2, ey - 52), (cx + T - 12, 352), (cx + 168, 296), (cx + 100, 268), (cx + 36, 258), (cx, 266),
+          (cx - 36, 258), (cx - 100, 268), (cx - 168, 296), (cx - T + 12, 352), (cx - T + 2, ey - 52)]
+    sh = Image.new("RGBA", cv.im.size, (0, 0, 0, 0)); dk = tuple(int(v * 0.7) for v in L["skin_d"][:3])
+    ImageDraw.Draw(sh).polygon(cv.P(hl + [(x, y + 30) for x, y in reversed(hl)]), fill=dk + (170,))
+    sh = sh.filter(ImageFilter.GaussianBlur(6 * SS)); sh.putalpha(ImageChops.multiply(sh.getchannel("A"), hm)); cv.im.alpha_composite(sh)
+    n = 40; outer = []
+    for k in range(n + 1):                                                    # the crown: a smooth dome with soft waves, symmetric
+        a = math.pi * (1 - k / n); bump = 9 * math.sin(k * math.pi / 4) ** 2
+        outer.append((cx + (T + 34 + bump) * math.cos(a), 392 - (330 + bump) * math.sin(a)))
+    top = cv.poly([(cx - T - 8, ey - 28)] + outer + [(cx + T + 8, ey - 28)] + hl, LO, 7)
+    lay = Image.new("RGBA", cv.im.size, (0, 0, 0, 0)); ld = ImageDraw.Draw(lay)
+    xs = [p[0] for p in reversed(hl)]; ys = [p[1] for p in reversed(hl)]
+    shine = tuple(min(255, int(v * 1.5)) for v in HI[:3]) + (255,)
+    for i in range(-6, 7):                                                    # clumps combed back, hairline to crown
+        u = i / 6; rx = cx + u * (T - 24); ry = float(np.interp(rx, xs, ys))
+        base = bez((rx, ry + 6), (rx + u * 26, ry - 80), (cx + u * T * 0.85, 100 + 30 * u * u), (cx + u * 70, 70 + 10 * u * u), 18)
+        path = [(x + 9 * math.sin(j / 18 * 2.6 * math.pi) * (1 - abs(u) * 0.4), y) for j, (x, y) in enumerate(base)]   # combed back in waves
+        poly = lock_poly(path, 26, 10)
+        ld.polygon(cv.P(poly), fill=H0 if i % 2 == 0 else MID); ld.line(cv.P(poly + [poly[0]]), fill=LO, width=2 * SS)
+        for off in (-9, 9):                                                   # strand lines
+            ld.line(cv.P([(x + off * (1 - j / 18), y) for j, (x, y) in enumerate(path)]), fill=LO[:3] + (170,), width=SS)
+        seg = [p for p in path if 100 < p[1] < 210]                           # the sheen band across the crown
+        if len(seg) > 1: ld.line(cv.P(seg), fill=HI, width=6 * SS); ld.line(cv.P(seg[1:-1]), fill=shine, width=2 * SS)
+    for s_ in (-1, 1):                                                        # the faded sides
+        for k in range(10):
+            y = 340 + k * 12; x = cx + s_ * (T - 6 + (k % 3) * 4)
+            ld.line(cv.P([(x, y), (x + s_ * 10, y - 14)]), fill=MID, width=2 * SS)
+    lay.putalpha(ImageChops.multiply(lay.getchannel("A"), top)); cv.im.alpha_composite(lay)
+    lock = L["lock"]
+    c = [(cx - 60 + (36 + sway * 70) * u + 16 * math.sin(u * 5.2), 262 + (ey - 36 - 262) * u) for u in (k / 15 for k in range(16))]
+    cv.poly(lock_poly(c, 19, 3), lock, 5)                                     # the loose lock over the left eye
+    if who == "toi": cv.stroke([(x + 5, y) for x, y in c[2:9]], 4, L["shine"]); cv.stroke([(x - 5, y) for x, y in c[3:7]], 2, L["shine"])
+    c2 = [(cx - 34 + (30 + sway * 40) * u + 10 * math.sin(u * 4.6 + 1), 264 + (ey - 92 - 264) * u) for u in (k / 11 for k in range(12))]
+    cv.poly(lock_poly(c2, 9, 2), H0, 4)
+    for (p0, p1, p2, p3) in (((cx + 60, 262), (cx + 92, 238), (cx + 132, 248), (cx + 150 + sway * 20, 290)),
+                             ((cx + 84, 266), (cx + 120, 256), (cx + 150, 272), (cx + 160 + sway * 20, 318))):
+        cv.stroke(bez(p0, p1, p2, p3, 12), 4, H0)                             # flyaways
+    for s_ in (-1, 1):                                                        # two messy tufts lifting off the crown
+        cv.poly(lock_poly(bez((cx + s_ * 40, 90), (cx + s_ * 60, 50), (cx + s_ * 90, 40), (cx + s_ * 120, 52), 10), 12, 2), H0, 4)
+    return top
+
+
 def eye(cv, cx, cy, side, L, look, wide, blink, who, F=None):
     """Hybrid eye: an almond whose outer corner lifts (slanted), big enough for cartoon acting, a coloured iris with a
     dark ring, a pupil, two highlights, a heavy upper lid with a flick at the outer corner and a thin lower lid.
@@ -116,6 +165,9 @@ def eye(cv, cx, cy, side, L, look, wide, blink, who, F=None):
     def E(x, y, r, col): ld.ellipse(((x - r) * SS, (y - r) * SS, (x + r) * SS, (y + r) * SS), fill=col)
     E(ix, iy, ir, tuple(int(v * 0.55) for v in L["iris"][:3]) + (255,)); E(ix, iy, ir * 0.82, L["iris"])
     E(ix, iy + ir * 0.25, ir * 0.55, tuple(min(255, int(v * 1.35)) for v in L["iris"][:3]) + (255,))       # lighter lower iris
+    for a_ in range(0, 360, 24):                                                                 # iris fibres
+        ca, sa = math.cos(math.radians(a_)), math.sin(math.radians(a_))
+        ld.line([((ix + ca * ir * 0.45) * SS, (iy + sa * ir * 0.45) * SS), ((ix + ca * ir * 0.85) * SS, (iy + sa * ir * 0.85) * SS)], fill=tuple(int(v * 0.7) for v in L["iris"][:3]) + (255,), width=SS)
     E(ix, iy, ir * (0.42 if who != "double" else 0.16), (14, 12, 22, 255))
     if who != "double" and real: E(ix + ir * 0.3, iy - ir * 0.3, ir * 0.2, (255, 255, 255, 235))
     elif who != "double": E(ix - ir * 0.38, iy - ir * 0.4, ir * 0.24, (255, 255, 255, 255)); E(ix + ir * 0.35, iy + ir * 0.3, ir * 0.11, (255, 255, 255, 230))
@@ -212,41 +264,30 @@ def _draw(cv, who, L, cx, look, brow, mouth, wide, blink, sway, size, grim):
     if F.get("real"): sh = sh.filter(ImageFilter.GaussianBlur(5 * SS))                                    # painted, not cut out
     sh.putalpha(ImageChops.multiply(sh.getchannel("A"), hm)); cv.im.alpha_composite(sh)
     cv.shade = ImageChops.multiply(cv.shade, hm)
-    lite = tuple(min(255, int(v * 1.1) + 8) for v in L["skin"][:3]) + (255,)                             # plane lights on the right
-    cv.stroke(bez((cx + 4, ey - 6), (cx + 8, nl - 50), (cx + 10, nl - 30), (cx + 8, nl - 14), 10), 7, lite)    # the nose bridge
-    cv.stroke(bez((cx + F["C"] - 40, F["cby"] - 30), (cx + F["C"] - 30, F["cby"]), (cx + F["C"] - 40, F["cby"] + 30), (cx + F["C"] - 60, F["cby"] + 50), 10), 9, lite)   # the cheekbone
+    lite = tuple(min(255, int(v * 1.1) + 8) for v in L["skin"][:3])                                     # soft plane lights on the right
+    glow = Image.new("RGBA", cv.im.size, (0, 0, 0, 0)); gd = ImageDraw.Draw(glow)
+    gd.line(cv.P(bez((cx + 4, ey - 6), (cx + 6, nl - 50), (cx + 8, nl - 30), (cx + 6, nl - 18), 10)), fill=lite + (210,), width=8 * SS)   # the nose bridge
+    gd.ellipse([(cx + F["C"] - 120) * SS, (F["cby"] - 44) * SS, (cx + F["C"] - 34) * SS, (F["cby"] + 8) * SS], fill=lite + (150,))      # the cheekbone
+    gd.ellipse([(cx + 10) * SS, (F["by"] - 100) * SS, (cx + 130) * SS, (F["by"] - 50) * SS], fill=lite + (55,))                         # the forehead
+    gd.ellipse([(cx - 18) * SS, (F["chy"] - 52) * SS, (cx + 34) * SS, (F["chy"] - 24) * SS], fill=lite + (60,))                         # the chin
+    glow = glow.filter(ImageFilter.GaussianBlur(12 * SS)); glow.putalpha(ImageChops.multiply(glow.getchannel("A"), hm)); cv.im.alpha_composite(glow)
     fold = tuple(int(v * 0.7) for v in L["skin_d"][:3]) + (255,)
-    if who in ("maman", "samir", "double", "toi"):                                                         # lines that age and mark the face
-        depth = dict(toi=3, samir=4, maman=4, double=5)[who]
-        for s_ in (-1, 1): cv.stroke(bez((cx + s_ * (nwd + 10), nl - 4), (cx + s_ * (nwd + 34), nl + 30), (cx + s_ * (F["mw"] + 18), F["my"] - 20), (cx + s_ * (F["mw"] + 12), F["my"] + 4), 10), depth, fold)
+    fl = Image.new("RGBA", cv.im.size, (0, 0, 0, 0)); fd = ImageDraw.Draw(fl)                                # lines that age and mark the face,
+    depth, long_ = dict(toi=(4, False), samir=(4, False), maman=(4, True), double=(5, True))[who]              # short and faint on the young ones
+    for s_ in (-1, 1):
+        end = (cx + s_ * (F["mw"] + 12), F["my"] + 4) if long_ else (cx + s_ * (nwd + 30), nl + 40)
+        fd.line(cv.P(bez((cx + s_ * (nwd + 12), nl - 2), (cx + s_ * (nwd + 26), nl + 16), (end[0] + s_ * 4, end[1] - 24), end, 10)), fill=fold[:3] + (150,), width=int(depth * SS), joint="curve")
+    fl = fl.filter(ImageFilter.GaussianBlur(0.8 * SS)); cv.im.alpha_composite(fl)
     if who == "maman":
         for y in (296, 318): cv.stroke(bez((cx - 110, y + 6), (cx - 40, y - 4), (cx + 40, y - 4), (cx + 110, y + 6), 12), 3, fold)   # forehead lines
     if not grim or who == "maman":
         for s_ in (-1, 1): cv.ell((cx + s_ * 125 - 34, F["cby"] + 40, cx + s_ * 125 + 34, F["cby"] + 66), (246, 160, 150, 255) if not grim else (214, 150, 140, 255), 0)  # blush
     # hair, by character
     if who in ("toi", "double"):
-        H0, HI, LO = L["hair"], L["hair_hi"], L["hair_lo"]
-        for s_ in (-1, 1):                                                                                   # short sides at the temples only
-            cv.poly([(cx + s_ * 238, 300), (cx + s_ * 244, 450), (cx + s_ * 214, 440), (cx + s_ * 200, 330)], LO, 6)
-        hl = [(cx - 232, 320), (cx - 206, 270), (cx - 160, 244), (cx - 104, 232), (cx - 46, 226), (cx + 12, 232), (cx + 70, 224), (cx + 128, 236), (cx + 184, 256), (cx + 232, 310)]
-        crown = []
-        for k, (x, y) in enumerate(bez((cx + 240, 318), (cx + 320, 20), (cx - 320, 20), (cx - 240, 322), 30)):
-            crown.append((x, y - 10 * math.sin(k * 0.9) ** 2))                                                 # wavy outline, swept back
-        top = cv.poly(hl + crown, H0)
-        lay = Image.new("RGBA", cv.im.size, (0, 0, 0, 0)); ld = ImageDraw.Draw(lay)
-        for k in range(9):                                                                                     # waves combed back
-            x0 = cx - 200 + k * 50; y0 = 262 - 26 * math.sin(k / 8 * math.pi)
-            path = bez((x0, y0), (x0 - 30 + 10 * (k % 2), y0 - 70), (x0 + 40, y0 - 130), (x0 + (k - 4) * 22, 110), 16)
-            ld.line(cv.P(path), fill=HI if k % 2 == 0 else LO, width=int((9 if k % 2 == 0 else 6) * SS), joint="curve")
-        lay.putalpha(ImageChops.multiply(lay.getchannel("A"), top)); cv.im.alpha_composite(lay)
-        for (x0, y0, x1, y1, w0, col, sw) in ((cx - 70, 232, cx - 20 + sway * 70, 440, 26, L["lock"], 1.0), (cx + 90, 230, cx + 140 + sway * 30, 330, 16, H0, 0.5)):
-            c = []
-            for k in range(14):                                                                                # loose wavy strands falling forward
-                u = k / 13; c.append((x0 + (x1 - x0) * u + 18 * math.sin(u * 5.5) * sw, y0 + (y1 - y0) * u))
-            cv.poly(lock_poly(c, w0, 3), col, 6)
-        if who == "toi": cv.stroke([(cx - 66 + 18 * math.sin(k / 13 * 5.5), 246 + 12 * k) for k in range(8)], 6, L["shine"])
+        hair_slick(cv, cx, F, L, sway, who, hm)
     elif who == "samir":
         for k in range(-5, 6): cv.ell((cx + k * 40 - 30, 262 + abs(k) * 6, cx + k * 40 + 30, 306 + abs(k) * 6), L["hair"], 4)       # curls under the beanie
+        for k in range(-5, 6): cv.stroke(bez((cx + k * 40 - 18, 276 + abs(k) * 6), (cx + k * 40 - 6, 268 + abs(k) * 6), (cx + k * 40 + 8, 268 + abs(k) * 6), (cx + k * 40 + 18, 278 + abs(k) * 6), 6), 3, (84, 64, 54, 255))   # a shine on each curl
         cv.poly(bez((cx - 250, 290), (cx - 260, 60), (cx + 260, 60), (cx + 250, 290)), L["top"])            # the green beanie
         for k in range(-6, 7): cv.stroke([(cx + k * 34, 120 + abs(k) * 9), (cx + k * 36, 260)], 5, L["top_d"])
         cv.poly([(cx - 262, 240), (cx + 262, 240), (cx + 258, 300), (cx - 258, 300)], L["top_d"])
@@ -262,14 +303,29 @@ def _draw(cv, who, L, cx, look, brow, mouth, wide, blink, sway, size, grim):
             ld.line([(x * SS, y * SS), ((x + 4) * SS, (y + 12) * SS)], fill=(88, 66, 54, 255), width=2 * SS)
         lay.putalpha(ImageChops.multiply(lay.getchannel("A"), bm)); cv.im.alpha_composite(lay)
     elif who == "maman":
-        cv.ell((cx + 40, 95, cx + 210, 235), L["hair"])                                                   # the bun, resting on the crown
-        cv.poly(bez((cx - 250, 480), (cx - 300, 140), (cx + 300, 140), (cx + 250, 480)) + [(cx + 212, 430), (cx + 170, 300), (cx + 40, 262), (cx - 80, 300), (cx - 150, 290), (cx - 212, 430)], L["hair"])
+        H = L["hair"]; HL = tuple(min(255, v + 46) for v in H[:3]) + (255,); HD = tuple(int(v * 0.68) for v in H[:3]) + (255,)
+        bun = cv.ell((cx - 78, 66, cx + 78, 204), H)                                                      # the bun, on top, centred
+        for k in range(4): cv.stroke(bez((cx - 60 + k * 10, 100 + k * 6), (cx - 20, 80 + k * 8), (cx + 30, 90 + k * 10), (cx + 62 - k * 8, 130 + k * 12), 10), 3, HL if k % 2 == 0 else HD)
+        hl = [(cx + 216, F["ey"] - 16), (cx + 204, 344), (cx + 146, 282), (cx + 64, 256), (cx, 266), (cx - 64, 256), (cx - 146, 282), (cx - 204, 344), (cx - 216, F["ey"] - 16)]
+        top = cv.poly([(cx - 238, F["ey"] + 6)] + bez((cx - 244, 400), (cx - 276, 120), (cx + 276, 120), (cx + 244, 400), 24) + [(cx + 238, F["ey"] + 6)] + hl, H)
+        lay = Image.new("RGBA", cv.im.size, (0, 0, 0, 0)); ld = ImageDraw.Draw(lay)                     # strands from the parting
+        for s_ in (-1, 1):
+            for k in range(7):
+                path = bez((cx + s_ * 4, 262 - k * 2), (cx + s_ * (60 + k * 8), 200 - k * 6), (cx + s_ * (170 + k * 8), 210 + k * 18), (cx + s_ * (226 + k * 2), 330 + k * 22), 16)
+                ld.line(cv.P(path), fill=HL if k % 2 == 0 else HD, width=int((4 if k % 2 == 0 else 3) * SS), joint="curve")
+        lay.putalpha(ImageChops.multiply(lay.getchannel("A"), top)); cv.im.alpha_composite(lay)
+        cv.stroke(bez((cx + 120, 268), (cx + 150, 290), (cx + 160, 330), (cx + 150 + sway * 20, 372), 12), 3, HL)   # one loose white strand
     # brows
     for s_ in (-1, 1):                                        # brows: thick and straight (Samir), thin and arched (the mother),
         x0 = cx + s_ * esp; y0 = F["by"] - (10 if wide > 1.15 else 0); bs = F["bs"]   # low and brooding (you), sharp and rising (the double)
         arch = (12 if who == "maman" else 2) if F.get("real") else (16 if who == "maman" else 6)
         c = [(x0 - s_ * 56, y0 + 8 - brow * 26 + bs * 6), (x0 - s_ * 12, y0 - arch - brow * 12), (x0 + s_ * 30, y0 - arch - 2 - brow * 4 - bs * 6), (x0 + s_ * 62, y0 + 4 + brow * 14 - bs * 16)]
-        cv.poly(lock_poly(bez(c[0], c[1], c[2], c[3], 10), F["bw"], 3), L.get("hair_lo", INK) if who in ("toi", "double") else ((90, 80, 78, 255) if who == "maman" else (30, 20, 16, 255)), 2)
+        bcol = L.get("hair_lo", INK) if who in ("toi", "double") else ((90, 80, 78, 255) if who == "maman" else (30, 20, 16, 255))
+        bp = bez(c[0], c[1], c[2], c[3], 16); cv.poly(lock_poly(bp, F["bw"], max(2, F["bw"] * 0.25)), bcol, 0)
+        bhi = tuple(min(255, v + 44) for v in bcol[:3]) + (255,)
+        for j in range(1, 15, 2):                                                                       # single hairs, combed outwards
+            (x, y), wj = bp[j], F["bw"] * (1 - j / 18)
+            cv.stroke([(x - s_ * 4, y + wj * 0.6), (x + s_ * 8, y - wj * 0.7)], 1.6, bhi if j % 4 == 1 else bcol)
     for s_ in (-1, 1): eye(cv, cx + s_ * esp, ey, s_, L, look, wide, blink, who, F)
     if who == "maman":                                                                                    # thin round glasses
         for s_ in (-1, 1): ImageDraw.Draw(cv.im).ellipse([(cx + s_ * esp - 90) * SS, (ey - 66) * SS, (cx + s_ * esp + 90) * SS, (ey + 60) * SS], outline=GOLD_D, width=5 * SS)
@@ -306,10 +362,10 @@ def _draw(cv, who, L, cx, look, brow, mouth, wide, blink, sway, size, grim):
     elif mouth == "smile": cv.stroke(bez((mx - 50 * k_, my - 12), (mx - 20 * k_, my + 22), (mx + 20 * k_, my + 22), (mx + 50 * k_, my - 12)), 9)
     elif mouth == "fear": cv.stroke([(mx - 44 * k_, my + 4), (mx - 22 * k_, my - 8), (mx, my + 4), (mx + 22 * k_, my - 8), (mx + 44 * k_, my + 4)], 8)
     elif F.get("real"):                                       # real lips: a cupid's bow, a fuller lower lip with a highlight
-        W = 36 * k_; lip = tuple(int(a * 0.62 + b * 0.38) for a, b in zip(L["skin_d"][:3], (150, 70, 70))) + (255,)
+        W = 42 * k_; lip = tuple(int(a * 0.62 + b * 0.38) for a, b in zip(L["skin_d"][:3], (150, 70, 70))) + (255,)
         lip_l = tuple(min(255, int(v * 1.12)) for v in lip[:3]) + (255,)
         if who != "samir":
-            for s_ in (-1, 1): cv.stroke([(mx + s_ * 7, my - 14), (mx + s_ * 5, nl + 18)], 3, L["skin_d"])
+            for s_ in (-1, 1): cv.stroke([(mx + s_ * 7, my - 15), (mx + s_ * 6, my - 32)], 3, L["skin_d"])
         cv.poly([(mx - W, my), (mx - W * 0.5, my - 9), (mx - 8, my - 14), (mx, my - 9), (mx + 8, my - 14), (mx + W * 0.5, my - 9), (mx + W, my), (mx + W * 0.5, my + 2), (mx - W * 0.5, my + 2)], lip, 0)
         cv.poly(bez((mx - W * 0.8, my + 1), (mx - W * 0.5, my + 24), (mx + W * 0.5, my + 24), (mx + W * 0.8, my + 1)), lip_l, 0)
         cv.stroke(bez((mx - W, my), (mx - W * 0.4, my + 4), (mx + W * 0.4, my + 4), (mx + W, my), 12), 5, (60, 34, 34, 255))
@@ -335,10 +391,13 @@ def grim_bust(who, L, look, brow, mouth, wide, blink, sway, tilt, size):
         cv.stroke(bez((160, 1000), (170, 815), (300, 755), (420, 742)), 9, GOLD); cv.stroke(bez((580, 742), (700, 755), (830, 815), (840, 1000)), 9, GOLD)   # gold piping
         cv.ell((300, 770, 380, 850), GOLD, 6); cv.ell((318, 788, 362, 832), GOLD_D, 0); cv.ell((328, 784, 370, 826), GOLD, 0)   # the moon brooch on the cloak
         if who == "toi":
-            for k in range(60):                                   # stubble
-                rx = (k * 37) % 300 - 150; ry = (k * 53) % 120
-                x = cx + rx * 0.9; y = 590 + ry * 0.7 - abs(rx) * 0.15
-                if 430 < y < 690: d.ellipse(((x - 2) * SS, (y - 2) * SS, (x + 2) * SS, (y + 2) * SS), fill=(110, 84, 70, 200))
+            F_ = FACE["toi"]; st = Image.new("RGBA", cv.im.size, (0, 0, 0, 0)); sd_ = ImageDraw.Draw(st)   # stubble: a blue-grey shadow
+            sd_.polygon(cv.P([(cx - F_["J"] + 6, F_["jy"] - 50)] + bez((cx - F_["J"], F_["jy"]), (cx - F_["J"] + 30, F_["chy"] - 10), (cx + F_["J"] - 30, F_["chy"] - 10), (cx + F_["J"], F_["jy"]), 16) + [(cx + F_["J"] - 6, F_["jy"] - 50), (cx + 40, F_["my"] - 34), (cx - 40, F_["my"] - 34)]), fill=(70, 66, 74, 70))
+            st = st.filter(ImageFilter.GaussianBlur(6 * SS)); sd_ = ImageDraw.Draw(st)
+            for k in range(160):                                                                       # and fine hairs on it
+                x = cx + ((k * 37) % (2 * F_["J"] - 20)) - F_["J"] + 10; y = F_["my"] - 30 + ((k * 53) % (F_["chy"] - F_["my"] + 20))
+                sd_.line([(x * SS, y * SS), ((x + 2) * SS, (y + 5) * SS)], fill=(60, 52, 56, 120), width=SS)
+            st.putalpha(ImageChops.multiply(st.getchannel("A"), Image.fromarray((np.asarray(cv.im.getchannel("A")) > 0).astype(np.uint8) * 255))); cv.im.alpha_composite(st)
             cv.stroke([(cx - 150, 340), (cx - 134, 384), (cx - 128, 420)], 5, (150, 70, 66, 255))     # the scar through the left eyebrow
             cv.stroke([(cx - 112, 482), (cx - 104, 520)], 4, (150, 70, 66, 255))                       # and on down the cheek
             F = FACE["toi"]; e_, y_ = F["esp"], F["ey"] + 36
@@ -353,7 +412,7 @@ def grim_bust(who, L, look, brow, mouth, wide, blink, sway, tilt, size):
     elif who == "maman":                                          # gold embroidery on the shawl, a rosary, a hairpin
         for k in range(10): x = 230 + k * 58; cv.stroke([(x, 820 + 18 * math.sin(k)), (x + 28, 840)], 4, GOLD)
         for k in range(14): t_ = k / 13; x = 460 + 80 * t_; y = 800 + 160 * math.sin(t_ * math.pi) ; d.ellipse(((x - 5) * SS, (y - 5) * SS, (x + 5) * SS, (y + 5) * SS), fill=(120, 60, 50, 255))
-        cv.stroke([(cx + 90, 120), (cx + 190, 190)], 6, GOLD)
+        cv.stroke([(cx + 20, 96), (cx + 110, 150)], 6, GOLD)
     return engrave(cv.done(size), shade=cv.shade.resize((size, size), Image.BILINEAR))
 
 
