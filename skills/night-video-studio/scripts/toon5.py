@@ -214,10 +214,13 @@ def hair_toi(cv, cx, L, sway, hm):
         cv.poly(taper(bez(p0, p1, p2, p3, 12), 4, 1), H0, 2.5)              # two wisps lifting at the hairline
 
 
-def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=False, sway=0.0, size=1000, light=1.0, boil=None, turn=0.0, lid=1.0):
+def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=False, sway=0.0, size=1000, light=1.0, boil=None, turn=0.0, lid=1.0, fiend=False):
+    """fiend=True: the double wearing this character's face (grey skin, black eyes with the red slit, the grin, the
+    sockets and black tears); hair, clothes and accessories stay the character's own."""
     global EYE_LID
     EYE_LID = max(0.08, lid)
-    L = LOOK[who]; cvB = Canvas(); cv = cvB; cx = 500                     # layers: body, head, features, hair
+    fx = "double" if (who == "double" or fiend) else who
+    L = LOOK[who] if not fiend else dict(LOOK[who], skin=(176, 180, 186, 255), iris=(230, 30, 34, 255)); cvB = Canvas(); cv = cvB; cx = 500                     # layers: body, head, features, hair
     # ---------- body: one bright garment each
     sh = bez((160, 1000), (170, 820), (300, 756), (430, 744)) + bez((570, 744), (700, 756), (830, 820), (840, 1000))
     if who in ("toi", "double"):
@@ -270,7 +273,7 @@ def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=F
     edge = [p for p in hpts if (p[0] - cx) * side > 30]                                                           # away from the light; it widens
     cv.inside(hm, pts=edge + [(x - side * (depth + 14 * math.sin((y - 150) / 520 * math.pi)), y) for x, y in reversed(edge)], fill=tone(L["skin"]))   # as the light turns
     cv.rim(hm, side=-side)
-    if who != "double":
+    if fx != "double":
         for s in (-1, 1): cv.inside(hm, ell=(cx + s * 128 - 34, 506, cx + s * 128 + 34, 534), fill=(244, 150, 146, 120) if who != "samir" else (200, 100, 80, 90), blur=4)   # blush
     # ---------- character marks
     cvF = Canvas(); cv = cvF
@@ -282,22 +285,22 @@ def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=F
         hole = cvH.mask(ell=(cx - 52, 560, cx + 52, 618))
         cvH.im.paste(Image.new("RGBA", cv.im.size, (40, 30, 26, 255)), (0, 0), ImageChops.subtract(ImageChops.multiply(bm, hm), hole))
         cv.poly([(cx - 56, 578), (cx - 40, 552), (cx, 546), (cx + 40, 552), (cx + 56, 578), (cx + 30, 566), (cx, 564), (cx - 30, 566)], (40, 30, 26, 255), 0)
-    if who == "double":                                                                          # hollow sockets, veins
+    if fx == "double":                                                                          # hollow sockets, veins
         for s in (-1, 1):
             cv.inside(hm, ell=(cx + s * 94 - 86, 380, cx + s * 94 + 86, 510), fill=(46, 22, 56, 170), blur=10)
             for (dx, dy, ex_, ey_) in ((70, -20, 110, -60), (60, 30, 100, 70), (-60, 40, -90, 90)):
                 cv.stroke(bez((cx + s * (94 + dx * 0.6), 440 + dy * 0.6), (cx + s * (94 + dx), 440 + dy), (cx + s * (94 + ex_ * 0.8), 440 + ey_ * 0.9), (cx + s * (94 + ex_), 440 + ey_), 8), 2, (88, 50, 96, 255))
-    if who == "double":                                                                          # black tears, a crack
+    if fx == "double":                                                                          # black tears, a crack
         for s in (-1, 1): cv.stroke([(cx + s * 92, 470), (cx + s * 96, 530), (cx + s * 90, 590)], 6, (10, 8, 12, 255))
         cv.stroke([(cx + 120, 260), (cx + 104, 300), (cx + 124, 334), (cx + 110, 372)], 3, (60, 50, 70, 255))
     # ---------- face
-    brows(cv, cx, L, who, brow, wide)
-    for s in (-1, 1): eye(cv, cx + s * 94, 440, s, L, look, wide, blink, who, mouth_ == "smile")
+    brows(cv, cx, L, who if not fiend else "maman", brow, wide)
+    for s in (-1, 1): eye(cv, cx + s * 94, 440, s, L, look, wide, blink, fx, mouth_ == "smile")
     if who == "maman":                                                                           # round glasses
         for s in (-1, 1): ImageDraw.Draw(cv.im).ellipse([(cx + s * 94 - 82) * SS, 376 * SS, (cx + s * 94 + 82) * SS, 506 * SS], outline=(150, 118, 70, 255), width=5 * SS)
         cv.stroke([(cx - 14, 432), (cx + 14, 432)], 5, (150, 118, 70, 255))
     cv.stroke(bez((cx + 6, 486), (cx + 22, 510), (cx + 18, 528), (cx - 6, 530), 12), 5, tone(L["skin"], 0.75))   # a small nose
-    mouth(cv, cx, L, mouth_, who, look)
+    mouth(cv, cx, L, mouth_, fx, look)
     # ---------- hair, on top
     cvR = Canvas(); cv = cvR
     if who in ("toi", "double"):
