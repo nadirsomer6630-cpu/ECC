@@ -89,3 +89,9 @@ for the characters (their look is locked in `toon5.py`), and check the licence o
 - v4 (hand sizes, the creator's note "trop gros"): a palm is about as wide as a finger is long; a finger is about a
   fifth of the palm's width; a thumb on a phone is about a ninth of the phone's width. Hands drawn bigger read as
   mittens. A hand that closes on another must reach it: its fingers end below the other palm, not beside it.
+- v5 (compared frame by frame with lucdgain's supermarket, chapkasurvie, ilfautsurvivre): 8 of our 12 sampled frames
+  were flat inserts, theirs show a character in the place almost every time. Fixes: a two-shot (your back and
+  shoulder in front, her across the belt) for the hook, the choice, the lights-off and the end card; story objects
+  held on the right with you still visible on the left, head down; one light source per shot (a cone with dust, the
+  rest falling to black); the phone held smaller and lower with the place visible behind it; the end card over the
+  scene, not over black.

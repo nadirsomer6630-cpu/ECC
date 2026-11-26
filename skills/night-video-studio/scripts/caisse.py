@@ -336,6 +336,9 @@ def front_scene(t, pose="idle", lights=1.0, scan=0.0, monitor=True, t_pick=None)
     if pose == "phone":                                                # reading the phone, lit by it; the hands drift as you read
         hands = read; phone = True; ex = dict(look=(0.1, 0.75), lid=min(lid, 0.82), brow=0.7, mouth_="line")
         head = -4 + 1.5 * math.sin(t * 0.7)
+    elif pose == "read":                                               # head down over the sheet or the ticket in your hands
+        hands = {-1: (CX - 120 + 3 * math.sin(t * 0.9), 960), 1: (CX + 110 + 3 * math.sin(t * 1.1 + 1), 955)}
+        ex = dict(look=(0.0, 0.8), lid=min(lid, 0.82), brow=0.6, mouth_="line"); head = -6 + 1.5 * math.sin(t * 0.6)
     elif pose == "pickup":                                             # the buzz: a flinch, the right hand leads, the left follows
         dt = t - t_pick
         if dt < 0:
@@ -408,6 +411,62 @@ def aisle_shoulder(t, t0, t1):
     fr = view(im, 1.05 + 0.6 * u, fx, fy - hh * 0.6 + 200 * (1 - u), t, shake=1.0, seed=4).convert("RGBA")
     fr.alpha_composite(back, (int(-760 + 6 * wob(t, 9)), int(1060 + 30 * u)))
     return fr.convert("RGB")
+
+
+# ---------------------------------------------------------------- light and the two-shot (what the reference creators do)
+def pool(im, cx, cy, rx, ry, k=0.35):
+    """One light source: everything outside an oval around the subject falls toward black, as under a single lamp."""
+    m = Image.new("L", (W, H), 0); ImageDraw.Draw(m).ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=255)
+    m = np.asarray(m.filter(ImageFilter.GaussianBlur(min(rx, ry) * 0.6))).astype(np.float32)[..., None] / 255
+    a = np.asarray(im.convert("RGB")).astype(np.float32); return Image.fromarray((a * (k + (1 - k) * m)).astype(np.uint8))
+
+
+def beam(im, x0, y0, x1a, x1b, y1, col=(200, 215, 255), a=0.16, t=0.0):
+    """A cone of light from a tube or a lamp, with dust turning in it."""
+    lay = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(lay)
+    d.polygon([(x0 - 30, y0), (x0 + 30, y0), (x1b, y1), (x1a, y1)], fill=col + (int(255 * a),))
+    lay = lay.filter(ImageFilter.GaussianBlur(28)); d = ImageDraw.Draw(lay); rg = np.random.default_rng(9)
+    for k in range(26):                                                # dust motes drifting in the beam
+        u = rg.uniform(0.1, 0.95); v = rg.uniform(0, 1); y = y0 + (y1 - y0) * ((u + t * rg.uniform(0.01, 0.03)) % 1)
+        xa = x0 + (x1a - x0) * (y - y0) / (y1 - y0); xb = x0 + (x1b - x0) * (y - y0) / (y1 - y0); x = xa + (xb - xa) * v + 6 * math.sin(t * 0.7 + k)
+        d.ellipse((x - 2, y - 2, x + 2, y + 2), fill=col + (110,))
+    im = im.convert("RGBA"); im.alpha_composite(lay); return im.convert("RGB")
+
+
+_BACK = {}
+def two_shot(t, mum=True, lights=1.0, reach=1.0, mum_look=(0.7, -0.15), z=1.18, breath=1.0):
+    """You and her in one frame: your back and shoulder in the foreground, her across the belt in the light of the
+    till, the dark shop behind. Lit by one lamp above her."""
+    fx, fy, hh = comptoir_xy()
+    sc = comptoir_scene(t, mum=mum, lights=1.0, hand_out=reach if mum else False, mum_look=mum_look)
+    cx, cy = fx + 170, fy - hh * 0.52
+    im = view(sc, z, cx, cy, t, seed=6)
+    k_ = W / (SW / z); mx, my = W / 2 + (fx - cx) * k_, H / 2 + (fy - hh * 0.6 - cy) * k_
+    im = beam(im, mx + 40, 0, mx - 260, mx + 300, my + 520, (210, 220, 255), 0.13 * lights, t)
+    im = pool(im, mx + 60, my + 40, 520, 760, 0.42)
+    if "b" not in _BACK: _BACK["b"] = tinted(scene5.back5("toi"), (0.62, 0.66, 0.84)).resize((1400, 1400), Image.LANCZOS).filter(ImageFilter.GaussianBlur(1.5))
+    im = im.convert("RGBA"); bb = 6 * math.sin(t * 2 * math.pi / 3.2) * breath
+    im.alpha_composite(_BACK["b"], (int(300 + 6 * wob(t, 12, 0.5)), int(920 + bb)))                # your shoulder and the back of your head
+    out = im.convert("RGB")
+    return dim(out, lights) if lights < 1 else out
+
+
+def on_scene(layer, t, scene, y=1000, s0=0.7, s1=0.76, t0=0.0, t1=3.0, rot=-2.0, x=540):
+    """A story object held up in front of the scene, the scene still visible behind it (dimmed, a touch soft)."""
+    bg = dim(scene.filter(ImageFilter.GaussianBlur(2.5)), 0.55, (0.9, 0.95, 1.1)).convert("RGBA")
+    s = s0 + (s1 - s0) * ease((t - t0) / max(0.1, t1 - t0))
+    ob = layer.resize((int(layer.width * s), int(layer.height * s)), Image.LANCZOS).rotate(rot + 0.4 * wob(t, 7, 0.5), expand=True, resample=Image.BICUBIC)
+    sh = Image.new("RGBA", ob.size, (0, 0, 0, 0)); sh.putalpha(ob.getchannel("A").point(lambda v: int(v * 0.65)))
+    bg.alpha_composite(sh.filter(ImageFilter.GaussianBlur(20)), (int(x - ob.width / 2 + 14), int(y - ob.height / 2 + 22)))
+    bg.alpha_composite(ob, (int(x - ob.width / 2 + 4 * wob(t, 8, 0.4)), int(y - ob.height / 2)))
+    return bg.convert("RGB")
+
+
+def hero_reading(t, z=1.5):
+    """You behind the till, head down over what you hold, on the left of the frame: the object goes on the right."""
+    fx, fy, hh = CAL["front"](0.0, 1.0)
+    im = view(front_scene(t, "read"), z, fx + 230, fy - hh * 0.5, t, seed=2)
+    return pool(im, 330, 760, 480, 620, 0.45)
 
 
 # ---------------------------------------------------------------- phone: Samir's video call
@@ -568,12 +627,13 @@ def call_screen(t, key, mood="laugh", flip_at=None, rear=None):
     return sc
 
 
-def pov_phone(t, screen, bg="front", tilt=-2.0, z0=1.0, trem=0.0, grips=(), raise_at=None):
+def pov_phone(t, screen, bg="front", tilt=-2.0, z0=1.0, trem=0.0, grips=(), raise_at=None, scene=None):
     """Your hands hold the phone at the till. Hands and phone are one rig: they turn, breathe and shake together.
     The thumbs live: they drift, re-grip (grips: times when you tighten your hold, the thumbs slide in, overshoot
     and settle), and the whole rig trembles when you are scared (trem, in px). raise_at: the phone comes up into
     view from below with a small overshoot."""
-    bgi = blurred("comptoir" if bg == "comptoir" else "front", 18, 0.42).resize((W, H), Image.BICUBIC).convert("RGBA")
+    if scene is not None: bgi = dim(scene.filter(ImageFilter.GaussianBlur(1.5)), 0.72, (0.9, 0.95, 1.1)).convert("RGBA")
+    else: bgi = blurred("comptoir" if bg == "comptoir" else "front", 18, 0.42).resize((W, H), Image.BICUBIC).convert("RGBA")
     S_ = 0.9; FW, FH = int((PW + 36) * S_), int((PH + 36) * S_)
     ph = Image.new("RGBA", (PW + 56, PH + 36), (0, 0, 0, 0)); d = ImageDraw.Draw(ph)
     d.rounded_rectangle((4, 260, 14, 360), 4, fill=(40, 40, 48)); d.rounded_rectangle((PW + 42, 300, PW + 52, 440), 4, fill=(40, 40, 48))
@@ -614,6 +674,9 @@ def pov_phone(t, screen, bg="front", tilt=-2.0, z0=1.0, trem=0.0, grips=(), rais
     sh_x = 8 * wob(t, 1, 0.6) + trem * (math.sin(t * 2 * math.pi * 9.1) + 0.6 * math.sin(t * 2 * math.pi * 12.7))
     sh_y = 10 * wob(t, 6, 0.5) + 6 * br + 0.6 * trem * math.sin(t * 2 * math.pi * 8.3) + 900 * up
     rig = rig.rotate(ang, resample=Image.BICUBIC, center=(540, py0 + ph.height / 2), translate=(sh_x, sh_y))
+    if scene is not None:                                              # held lower and smaller: the place stays in view above it
+        rs = 0.74; big = rig.resize((int(rig.width * rs), int(rig.height * rs)), Image.LANCZOS)
+        rig = Image.new("RGBA", (W, H + 400), (0, 0, 0, 0)); rig.alpha_composite(big, (int(540 - big.width / 2 + 60), 330))
     bgi = glow(bgi, 540, 1000 + sh_y, 560, (140, 170, 255), 0.30 * (1 - up)).convert("RGBA")
     sh = Image.new("RGBA", bgi.size, (0, 0, 0, 0)); sh.paste((0, 0, 0, 150), (20, 30), rig.getchannel("A").crop((0, 0, W, H))); bgi.alpha_composite(sh.filter(ImageFilter.GaussianBlur(22)))
     bgi.alpha_composite(rig.crop((0, 0, W, H)))
@@ -885,7 +948,7 @@ def choice_card(im, t, ta, tb, t_end, hint):
 
 
 def end_card(im, t, t0, prompt, costs):
-    u = ease((t - t0) / 0.35); im = Image.blend(im, Image.new("RGB", (W, H), (8, 6, 12)), 0.78 * u)
+    u = ease((t - t0) / 0.35); im = Image.blend(im, Image.new("RGB", (W, H), (8, 6, 12)), 0.6 * u)     # the scene stays visible behind the question
     if u <= 0: return im
     d = ImageDraw.Draw(im)
     d.text((540, 470), "TU FERAIS QUOI ?", font=font("anton", 120), fill=(255, 255, 255), anchor="mm", stroke_width=5, stroke_fill=INK)
@@ -1027,24 +1090,24 @@ def shots_B(t):
             im = cctv_till(t, z=1.25 + 0.15 * ease(t / tc), cy=SH * 0.56, callout=t - (wt("p1v3", "ombre") - 0.2))
         else:
             fx, fy, hh = comptoir_xy(); reach = rig5.back_out((t - tc - 0.05) / 0.6, 1.2) if t > tc + 0.05 else 0.0
-            im = view(comptoir_scene(t, hand_out=reach, mum_look=(0.7, -0.15)), 1.3 + 0.1 * ease((t - tc) / 2), fx + 120, fy - hh * 0.6, t, seed=1)
+            im = two_shot(t, reach=reach, z=1.18 + 0.08 * ease((t - tc) / 2))
         lab = [lambda im, t: banner(im, t, -1, "ELLE N'A PAS D'OMBRE.", y=1110),
                lambda im, t: plate(im, t, tc + 0.1, "TA MÈRE ?", PINK)]
     elif t < L_("n8"):
         hi = {1: wt("n4", "quitte") - 0.15, 2: wt("n4", "chacun") - 0.15, 3: wt("n4", "ticket") - 0.15}
-        im = on_dark(rules_sheet(t, hi), t, "front", y=820, rot=-1.5, z0=0.9, z1=0.98, t0=L_("n3"), t1=L_("n8"), red=0.6)
+        im = on_scene(rules_sheet(t, hi), t, hero_reading(t), y=1120, s0=0.6, s1=0.64, t0=L_("n3"), t1=L_("n8"), rot=3.0, x=660)
         lab = [lambda im, t: tag(im, t, L_("n3") + 0.2, "SOUS TA CAISSE", (540, 460), PURPLE, -3, 40)]
     elif t < L_("p2"):
         st_ = [wt("n8", w_) - 0.06 for w_ in ("farine", "eau", "riz", "miel", "epinards")]; k = sum(1 for x in st_ if t >= x)
-        im = on_dark_t(ticket_img(max(1, k), fade=(t - st_[max(0, k - 1)]) / 0.18 if k else 0.0), t, "comptoir", y=900, rot=-2, z0=1.0, z1=1.06, t0=L_("n8"), t1=L_("p2"))
+        im = on_scene(ticket_img(max(1, k), fade=(t - st_[max(0, k - 1)]) / 0.18 if k else 0.0), t, hero_reading(t), y=1120, s0=0.6, s1=0.64, t0=L_("n8"), t1=L_("p2"), rot=3.0, x=700)
         lab = [lambda im, t: tag(im, t, L_("n8") + 0.2, "LE TICKET SORT TOUT SEUL", (540, 460), RED, -3, 40)]
     elif t < L_("n13"):
         ts = [wt("p2", "f"), wt("p2", "e", 0), wt("p2", "r"), wt("p2", "m"), wt("p2", "e", 1)]
         ts = [line_t["p2"] + 1.9 + 0.42 * k if (k > 0 and ts[k] <= ts[k - 1]) else ts[k] for k in range(5)]
         lt = sum(cl((t - x + 0.1) / 0.3) for x in ts); wd = t - (ts[-1] + 0.35)
-        im = on_dark_t(ticket_img(5, letters=lt, word=wd), t, "comptoir", y=900, rot=-2, z0=1.06, z1=1.16, t0=L_("p2"), t1=L_("n13"))
+        im = on_scene(ticket_img(5, letters=lt, word=wd), t, hero_reading(t, 1.6), y=1040, s0=0.74, s1=0.8, t0=L_("p2"), t1=L_("n13"), rot=2.0, x=660)
     elif t < L_("a1"):
-        fx, fy, hh = comptoir_xy(); base = view(comptoir_scene(t, hand_out=True, mum_look=(0.7, -0.15)), 1.15, fx + 120, fy - hh * 0.5, t, seed=6)
+        base = two_shot(t)
         im = choice_card(base, t, wt("n13", "a") - 0.05, wt("n13", "b") - 0.05, L_("a1"), "Indice : FERME.")
     elif t < T_SHOCK:
         im = hands_shot(t, L_("a1")); lab = [lambda im, t: banner(im, t, L_("a1") + 0.05, "SI TU CHOISIS A", y=420)]
@@ -1059,7 +1122,7 @@ def shots_B(t):
     elif t < L_("a3"):
         im = cctv(t - 20, z=1.5, replay=True, callout=t - (wt("a2", "ombre") - 0.25))
     elif t < L_("r10"):
-        im = on_dark_t(ticket_img(5, letters=5, word=9), t, "comptoir", y=900, rot=-2, z0=1.1, z1=1.16, t0=L_("a3"), t1=L_("r10"))
+        im = on_scene(ticket_img(5, letters=5, word=9), t, hero_reading(t, 1.6), y=830, s0=0.7, s1=0.74, t0=L_("a3"), t1=L_("r10"), rot=2.0, x=660)
     elif t < t_rew: im = rule_card(t, L_("r10")); hd = False
     elif t < L_("b1"):
         u = ease((t - t_rew) / 0.9); tb = L_("r10") - 0.2 - u * (L_("r10") - 0.2 - (L_("n13") + 0.6))   # the tape runs back over what you just saw
@@ -1069,7 +1132,7 @@ def shots_B(t):
         off = t > wt("b1", "eteins") + 0.1
         dt_ = t - wt("b1", "eteins") - 0.05
         k = 1.0 if dt_ < 0 else (0.16 if dt_ > 0.42 else (0.3, 1.0, 0.2, 0.75, 0.18, 0.45, 0.16)[min(6, int(dt_ / 0.06))])   # the tubes stutter, then die
-        fx, fy, hh = comptoir_xy(); im = view(comptoir_scene(t, mum_look=(0.7, -0.1), lights=k), 1.2, fx + 260, fy - hh * 0.5, t, seed=8)
+        im = two_shot(t, lights=k, reach=0.0, mum_look=(0.0, 0.0))
         lab = [lambda im, t: banner(im, t, L_("b1") + 0.05, "SI TU CHOISIS B", y=420)]
         if wt("b1", "fermee") - 0.1 < t: lab.append(lambda im, t: tag(im, t, wt("b1", "fermee"), "CAISSE FERMÉE", (540, 640), RED, -3))
     elif t < L_("n14"):
@@ -1083,24 +1146,25 @@ def shots_B(t):
             im = Image.fromarray(a_)
     elif t < L_("s3"):
         tr = wt("n14", "reviennent") - 0.1; fl = 1.0 if t > tr + 0.6 else (0.16 if t < tr else (1.0 if int((t - tr) * 20) % 3 else 0.3))
-        fx, fy, hh = comptoir_xy(); im = view(comptoir_scene(t, mum=False, lights=fl), 1.2, fx + 260, fy - hh * 0.5, t, seed=8)
+        im = two_shot(t, mum=False, lights=fl)
         if t > tr + 0.7: lab = [lambda im, t: tag(im, t, wt("n14", "plus") - 0.1, "PARTIE.", (540, 640), RED, -3)]
     elif t < L_("n15"):
         rear = "empty" if t > wt("s3", "demande") - 0.3 else None
-        im = pov_phone(t, call_screen(t, "s3", "panic", flip_at=wt("s3", "demande") - 0.3, rear="empty"), tilt=-3, raise_at=L_("s3") - 0.05,
+        im = pov_phone(t, call_screen(t, "s3", "panic", flip_at=wt("s3", "demande") - 0.3, rear="empty"), tilt=-3, raise_at=L_("s3") - 0.05, scene=two_shot(t, mum=False),
                        trem=2.5 + 5.5 * ease((t - wt("s3", "demande")) / 0.5), grips=(wt("s3", "reveiller") - 0.1, wt("s3", "demande") + 0.1))
         lab = []
         if rear: lab.append(lambda im, t: tag(im, t, wt("s3", "demande") + 0.1, "LE CANAPÉ EST VIDE", (540, 1130), RED, -3, 44))
     elif t < L_("t1"):
         fx, fy, hh = CAL["front"](0.0, 1.0); tv = wt("n15", "vibre") - 0.1
-        im = view(front_scene(t, "pickup", t_pick=tv), 1.7 + 0.08 * ease((t - tv) / 0.8), fx - 60, fy - hh * 0.6, t, seed=1)
+        im = pool(view(front_scene(t, "pickup", t_pick=tv), 1.7 + 0.08 * ease((t - tv) / 0.8), fx - 60, fy - hh * 0.6, t, seed=1), 540, 760, 560, 700, 0.45)
         im = notif(im, t, tv + 0.35, "Maman", "J'arrive à ta caisse.")
     elif t < L_("t2"):
-        fx, fy, hh = CAL["front"](0.0, 1.0); im = view(front_scene(t, "alone", lights=0.85), 1.12, fx, fy - hh * 0.55, t, seed=2)
+        fx, fy, hh = CAL["front"](0.0, 1.0); im = pool(view(front_scene(t, "alone", lights=0.85), 1.25, fx, fy - hh * 0.6, t, seed=2), 540, 820, 520, 640, 0.4)
+        im = beam(im, 540, 0, 300, 780, 1250, (210, 220, 255), 0.12, t)
         lab = [lambda im, t: tag(im, t, L_("t1") + 0.1, "DEMAIN SOIR", (540, 640), PURPLE, -3)]
     elif t < T_END: im = terminal(t, L_("t2"))
     else:
-        im = end_card(grade(terminal(t, L_("t2")), int(t * 30)), t, T_END, ["Tu lui rends la monnaie, toi ?", "Écris A ou B."],
+        im = end_card(grade(two_shot(t), int(t * 30)), t, T_END, ["Tu lui rends la monnaie, toi ?", "Écris A ou B."],
                       [("Tu rends la monnaie", "Règle 2 : chacun paie."), ("Tu fermes ta caisse", "Elle a déjà ta carte.")])
         hd = False; gr = False
     return im, lab, hd, gr
