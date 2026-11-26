@@ -86,3 +86,6 @@ for the characters (their look is locked in `toon5.py`), and check the licence o
   back_out. Her arm reaches out on the word, the wrist floats, the note drips. Your hand offers the change and the
   coins jingle when it stops; hers comes down too slowly, drifts, folds finger by finger, holds you when you pull.
   A phone buzz is a flinch, the leading hand, the following hand 0.12 s later, then the head and the eyes.
+- v4 (hand sizes, the creator's note "trop gros"): a palm is about as wide as a finger is long; a finger is about a
+  fifth of the palm's width; a thumb on a phone is about a ninth of the phone's width. Hands drawn bigger read as
+  mittens. A hand that closes on another must reach it: its fingers end below the other palm, not beside it.

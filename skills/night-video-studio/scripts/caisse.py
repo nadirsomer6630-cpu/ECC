@@ -594,20 +594,20 @@ def pov_phone(t, screen, bg="front", tilt=-2.0, z0=1.0, trem=0.0, grips=(), rais
     ey = py0 + ph.height - 120
     for sd in (-1, 1):
         ex_ = 540 + sd * (ph.width / 2 - 26 - 10 * g)
-        hd.polygon([(ex_ - sd * 40, ey + 330), (ex_ + sd * 150, ey + 210), (ex_ + sd * 330, H + 400), (ex_ - sd * 190, H + 400)], fill=PURPLE, outline=INK, width=8)
-        hd.line((ex_ + sd * 70, ey + 290, ex_ + sd * 190, H + 400), fill=(240, 240, 248), width=14)
-        hd.rounded_rectangle((ex_ - 90, ey - 60, ex_ + 90, ey + 300), 80, fill=skin, outline=INK, width=8)
-        for k in range(2):                                             # fingertips round the back edge; they press in on a re-grip
-            fy_ = ey - 250 + k * 96 + 4 * math.sin(t * 1.7 + k + sd)
-            fx_ = ex_ + sd * (6 - 8 * g * (1 + k * 0.4))
-            hd.rounded_rectangle((fx_ - 34, fy_, fx_ + 34, fy_ + 84), 32, fill=skin_d if k else skin, outline=INK, width=7)
+        hd.polygon([(ex_ - sd * 30, ey + 280), (ex_ + sd * 110, ey + 200), (ex_ + sd * 280, H + 400), (ex_ - sd * 150, H + 400)], fill=PURPLE, outline=INK, width=8)
+        hd.line((ex_ + sd * 55, ey + 250, ex_ + sd * 160, H + 400), fill=(240, 240, 248), width=12)
+        hd.rounded_rectangle((ex_ - 62, ey - 30, ex_ + 62, ey + 260), 56, fill=skin, outline=INK, width=7)
+        for k in range(3):                                             # fingertips round the back edge; they press in on a re-grip
+            fy_ = ey - 190 + k * 66 + 3 * math.sin(t * 1.7 + k + sd)
+            fx_ = ex_ + sd * (4 - 6 * g * (1 + k * 0.4))
+            hd.rounded_rectangle((fx_ - 23, fy_, fx_ + 23, fy_ + 58), 22, fill=skin_d if k else skin, outline=INK, width=6)
     rig.alpha_composite(ph, (px0, py0))
     for sd in (-1, 1):                                                 # the thumbs rest on the glass, alive
         th_ang = sd * (38 + 10 * g) + 3 * wob(t, 30 + sd, 0.6)
-        cap = Image.new("RGBA", (120, 300), (0, 0, 0, 0)); cd = ImageDraw.Draw(cap)
-        cd.rounded_rectangle((8, 8, 112, 292), 52, fill=skin, outline=INK, width=8); cd.rounded_rectangle((30, 24, 90, 92), 26, fill=(246, 216, 196))
+        cap = Image.new("RGBA", (84, 220), (0, 0, 0, 0)); cd = ImageDraw.Draw(cap)
+        cd.rounded_rectangle((6, 6, 78, 214), 36, fill=skin, outline=INK, width=7); cd.rounded_rectangle((22, 18, 62, 64), 18, fill=(246, 216, 196))
         cap = cap.rotate(th_ang, expand=True, resample=Image.BICUBIC)
-        tx = 540 + sd * (ph.width / 2 - 70 - 26 * g); tdy = ey - 30 - 30 * g + 6 * math.sin(t * 2.3 + sd)
+        tx = 540 + sd * (ph.width / 2 - 50 - 22 * g); tdy = ey + 10 - 24 * g + 5 * math.sin(t * 2.3 + sd)
         rig.alpha_composite(cap, (int(tx - cap.width / 2), int(tdy)))
     up = 0.0 if raise_at is None else 1 - rig5.back_out((t - raise_at) / 0.45, 1.4)
     ang = tilt + 1.2 * wob(t, 3, 0.5) + 0.3 * trem * math.sin(t * 2 * math.pi * 7.3)
@@ -751,40 +751,44 @@ def hands_shot(t, t0):
     tc = wt("a1", "referme") - 0.15; tf = wt("a1", "froide") - 0.1
     tr = 4 * math.sin(t * 2 * math.pi * 11) * cl((t - tf) / 0.15)
     lay = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(lay); skin, skin_d = (236, 196, 162), (208, 164, 132)
-    # your arm and open palm, from the bottom right
-    d.polygon([(620, 1920), (1080, 1440), (1080, 1920)], fill=PURPLE, outline=INK, width=10); d.line((820, 1920, 1080, 1660), fill=(240, 240, 248), width=16)
+    # your arm and open palm, from the bottom right, in real proportions: a palm a little wider than a finger is long
     tt_ = wt("a1", "tends") - 0.15                                     # your hand comes in to offer the change, overshoots, settles
     reach = rig5.back_out((t - tt_) / 0.5, 1.3) if t > tt_ else 0.0
-    pull = (8 * math.sin(t * 2 * math.pi * 3) - 26 * ease((t - tc - 0.5) / 0.3)) if t > tc + 0.5 else 0.0     # you try to pull back; she holds
-    px, py = 600 + tr + 0.4 * pull, 1250 + 700 * (1 - reach) - pull
-    _cap(d, (px + 200, py + 210), (900, 1560), 190, skin)                                              # the wrist
-    d.ellipse((px - 190, py - 130, px + 230, py + 220), fill=INK); d.ellipse((px - 182, py - 122, px + 222, py + 212), fill=skin)
-    for k, (dx, dy, ln) in enumerate(((-150, -40, 150), (-120, -110, 170), (-50, -150, 175), (40, -160, 160))):   # open fingers
-        _cap(d, (px + dx * 0.4, py + dy * 0.4), (px + dx * 0.4 + dx / math.hypot(dx, dy) * ln, py + dy * 0.4 + dy / math.hypot(dx, dy) * ln), 62, skin)
-    _cap(d, (px + 150, py - 20), (px + 250, py - 150), 70, skin)                                          # thumb
-    d.ellipse((px - 182, py - 122, px + 222, py + 212), fill=skin); d.chord((px - 182, py - 40, px + 222, py + 212), 0, 180, fill=skin_d)
-    for k, (dx, dy) in enumerate(((-60, 30), (30, 0), (100, 60), (-10, 100))):                            # the coins, they jingle as the hand stops
-        jig = 6 * math.exp(-max(0.0, t - tt_ - 0.35) * 8) * math.sin((t - tt_) * 60 + k * 2) if t > tt_ + 0.35 else 0.0; dx += jig; dy -= abs(jig)
+    pull = (6 * math.sin(t * 2 * math.pi * 3) - 22 * ease((t - tc - 0.5) / 0.3)) if t > tc + 0.5 else 0.0     # you try to pull back; she holds
+    px, py = 590 + tr + 0.4 * pull, 1260 + 700 * (1 - reach) - pull
+    d.polygon([(px + 60, py + 150), (px + 170, py + 70), (1080, py + 420), (1080, H), (px + 240, H)], fill=PURPLE, outline=INK, width=9)   # the sleeve
+    d.line((px + 230, py + 250, 1080, py + 560), fill=(240, 240, 248), width=12)
+    _cap(d, (px + 40, py + 60), (px + 130, py + 130), 120, skin)                                       # the wrist
+    for k, (ang, ln) in enumerate(((-150, 105), (-128, 128), (-106, 134), (-84, 122))):                 # four open fingers, spread
+        a_ = math.radians(ang); bx_, by_ = px - 20 + 70 * math.cos(a_), py - 10 + 62 * math.sin(a_)
+        _cap(d, (bx_, by_), (bx_ + math.cos(a_) * ln, by_ + math.sin(a_) * ln), 44, skin, 7)
+    _cap(d, (px + 70, py + 10), (px + 140, py - 70), 50, skin, 7)                                       # the thumb, out to the side
+    d.ellipse((px - 132, py - 108, px + 112, py + 104), fill=INK); d.ellipse((px - 125, py - 101, px + 105, py + 97), fill=skin)
+    d.chord((px - 125, py - 10, px + 105, py + 97), 0, 180, fill=skin_d)
+    for k, (dx, dy) in enumerate(((-55, -20), (10, -40), (40, 20), (-25, 40))):                          # the coins, they jingle as the hand stops
+        jig = 4 * math.exp(-max(0.0, t - tt_ - 0.35) * 8) * math.sin((t - tt_) * 60 + k * 2) if t > tt_ + 0.35 else 0.0; dx += jig; dy -= abs(jig)
         col = (214, 176, 84) if k % 2 == 0 else (196, 200, 210)
-        d.ellipse((px + dx - 50, py + dy - 50, px + dx + 50, py + dy + 50), fill=col, outline=INK, width=6); d.ellipse((px + dx - 30, py + dy - 30, px + dx + 30, py + dy + 30), outline=tuple(int(v * 0.8) for v in col), width=4)
-    # her hand: down from the top, slow, then the fingers fold one by one
+        d.ellipse((px + dx - 31, py + dy - 31, px + dx + 31, py + dy + 31), fill=col, outline=INK, width=5); d.ellipse((px + dx - 19, py + dy - 19, px + dx + 19, py + dy + 19), outline=tuple(int(v * 0.8) for v in col), width=3)
+    # her hand: down from the top, slow, then the long fingers fold one by one
     u = 0.35 * ease((t - t0) / max(0.1, tc - t0)) + (0.65 * ease((t - tc) / 0.7) if t > tc else 0.0)
-    hx, hy = 560 + 14 * math.sin(t * 0.9), -380 + 1460 * u - (0 if t < tc + 0.5 else pull * 0.9); sk = (176, 180, 186); sk_d = (146, 150, 160)
-    ox_ = hx - 560
-    d.polygon([(400 + ox_ * 0.4, hy - 900), (760 + ox_ * 0.4, hy - 900), (730 + ox_, hy - 230), (430 + ox_, hy - 230)], fill=PINK, outline=INK, width=10)
-    for k in range(4): d.line((440 + k * 90 + ox_ * 0.4, hy - 880, 450 + k * 86 + ox_, hy - 250), fill=(186, 92, 124), width=5)
-    d.rounded_rectangle((420 + ox_, hy - 300, 740 + ox_, hy + 60), 120, fill=sk, outline=INK, width=10)
+    hx, hy = 560 + 12 * math.sin(t * 0.9) + 20 * u, -420 + 1500 * u + 50 * ease((t - tc - 0.1) / 0.5) - (0 if t < tc + 0.5 else pull * 0.9); sk = (176, 180, 186); sk_d = (146, 150, 160)
+    d.polygon([(hx - 150, hy - 900), (hx + 150, hy - 900), (hx + 110, hy - 200), (hx - 110, hy - 200)], fill=PINK, outline=INK, width=9)   # the cardigan sleeve
+    for k in range(3): d.line((hx - 80 + k * 80, hy - 880, hx - 60 + k * 60, hy - 215), fill=(186, 92, 124), width=5)
+    d.rounded_rectangle((hx - 78, hy - 230, hx + 78, hy - 120), 40, fill=sk, outline=INK, width=8)          # the wrist
+    d.rounded_rectangle((hx - 112, hy - 160, hx + 112, hy + 40), 70, fill=sk, outline=INK, width=8)         # the back of the hand
+    _cap(d, (hx - 100, hy - 60), (hx - 150, hy + 40), 42, sk_d, 7)                                      # her thumb
     for k in range(4):
         fold = ease((t - tc - 0.12 * k) / 0.35) if t > tc else 0.0                                     # each finger folds a little after the last
-        x0 = 460 + k * 76 + ox_; ln = 190 - 18 * abs(k - 1.5)
-        ang = math.radians(90 + (k - 1.5) * 6 - 70 * fold); x1, y1 = x0 + math.cos(ang) * ln * (1 - 0.35 * fold), hy + 30 + math.sin(ang) * ln * (1 - 0.35 * fold)
-        _cap(d, (x0, hy + 10), (x1, y1), 60, sk if k % 2 else sk_d)
-        d.line((x1 - 14, y1 - 30, x1 + 14, y1 - 30), fill=(120, 124, 134), width=4)
+        x0 = hx - 78 + k * 52; ln = 168 - 16 * abs(k - 1.5)
+        ang = math.radians(90 + (k - 1.5) * 5 - 18 * fold); x1, y1 = x0 + math.cos(ang) * ln * (1 - 0.45 * fold), hy + 30 + math.sin(ang) * ln * (1 - 0.45 * fold)   # the fingers curl round under your hand
+        _cap(d, (x0, hy + 10), (x1, y1), 40, sk if k % 2 else sk_d, 7)
+        d.line((x1 - 10, y1 - 26, x1 + 10, y1 - 26), fill=(120, 124, 134), width=3)
+        d.line((x0 - 10, hy + 40, x0 + 10, hy + 40), fill=(120, 124, 134), width=3)                    # a knuckle crease
     lay = lay.rotate(0.6 * wob(t, 4, 0.5), resample=Image.BICUBIC, center=(540, 1200)); bg.alpha_composite(lay)
     if t > tf:                                                         # the frost
         f_ = ease((t - tf) / 0.8); fr = Image.new("RGBA", (W, H), (0, 0, 0, 0)); fd = ImageDraw.Draw(fr); rg = np.random.default_rng(3)
         for k in range(46):
-            a0 = rg.uniform(0, 2 * math.pi); r = rg.uniform(60, 460) * f_; x0, y0 = 600, 1230
+            a0 = rg.uniform(0, 2 * math.pi); r = rg.uniform(60, 420) * f_; x0, y0 = 580, 1250
             x1, y1 = x0 + r * math.cos(a0), y0 + r * math.sin(a0) * 0.7
             fd.line((x0, y0, x1, y1), fill=(225, 242, 255, 190), width=3)
             for q in (0.5, 0.8): fd.line((x0 + (x1 - x0) * q, y0 + (y1 - y0) * q, x0 + (x1 - x0) * q + 20 * math.cos(a0 + 0.8), y0 + (y1 - y0) * q + 20 * math.sin(a0 + 0.8)), fill=(225, 242, 255, 160), width=2)
