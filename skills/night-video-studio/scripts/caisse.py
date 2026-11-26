@@ -227,11 +227,28 @@ def basket(im, x, y, s, shadow=True, sdir=-1):
 
 
 def mum_far(im, proj, xw, yw, t, look=(0.0, -0.3), warm=1.0, fiend=False, hand_out=False):
-    fx, fy, hh = proj(xw, yw); f = fig("maman", hh)
-    hands = {-1: (CX - 236, 1290), 1: (CX + 236, 1290)} if not hand_out else {-1: (CX - 236, 1290), 1: (CX + 330, 900)}
+    """She stands too still: a slow breath, the head barely turning. hand_out: 0..1 (or True), her right arm reaches
+    out with the wet fifty; the wrist floats a little, as if the arm weighed nothing, and the note drips."""
+    fx, fy, hh = proj(xw, yw); f = fig("maman", hh); k = hh / rig5.STATURE
+    r = 1.0 if hand_out is True else float(hand_out or 0.0)
+    br = math.sin(t * 2 * math.pi / 3.6)
+    rest = (CX + 236, 1290); out = (CX + 360 + 10 * math.sin(t * 1.3), 880 + 12 * math.sin(t * 0.9 + 1) + 6 * br)
+    hr = (rest[0] + (out[0] - rest[0]) * r, rest[1] + (out[1] - rest[1]) * r)
+    hands = {-1: (CX - 236 + 4 * br, 1290), 1: hr}
     img = body(f, hands, dict(look=look, lid=lid_at(t, 1.3), mouth_="line", fiend=False) if not fiend else dict(look=look, mouth_="line"),
-               torso=0.6 * math.sin(t * 2 * math.pi / 3.6), bob=3 * math.sin(t * 2 * math.pi / 3.6))
+               torso=0.6 * br + 1.5 * r, head=-2 * r + 1.2 * math.sin(t * 0.7), bob=3 * br)
     rig5.stand_in(im, img, fx, fy, tint=(0.62 + 0.38 * warm, 0.55 + 0.33 * warm, 0.62 + 0.0 * warm), shadow=False)   # no shadow: the clue
+    if r > 0.3:                                                        # the fifty, pinched between her fingers, dripping
+        nx, ny = fx + (hr[0] - CX) * k, fy - (rig5.FOOT - hr[1]) * k; s_ = k * 2.2
+        note = Image.new("RGBA", (int(150 * s_) + 4, int(80 * s_) + 4), (0, 0, 0, 0)); nd = ImageDraw.Draw(note)
+        nd.rounded_rectangle((2, 2, note.width - 3, note.height - 3), max(2, int(6 * s_)), fill=(196, 128, 76, 255), outline=INK + (255,), width=max(2, int(5 * s_)))
+        nd.text((note.width * 0.25, note.height * 0.5), "50", font=font("anton", max(8, int(40 * s_))), fill=(120, 66, 34), anchor="mm")
+        note = note.rotate(-20 + 6 * math.sin(t * 1.3), expand=True, resample=Image.BICUBIC)
+        im.alpha_composite(note, (int(nx + 10 * s_), int(ny - note.height * 0.4)))
+        d = ImageDraw.Draw(im, "RGBA")
+        for q in range(3):
+            u = ((t * 0.9 + q / 3) % 1); dx_ = nx + (40 + q * 30) * s_; dy_ = ny + note.height * 0.5 + u * u * 260 * s_
+            d.ellipse((dx_ - 4 * s_, dy_ - 6 * s_, dx_ + 4 * s_, dy_ + 6 * s_), fill=(200, 226, 255, int(220 * (1 - u))))
     return fx, fy, hh
 
 
@@ -306,7 +323,7 @@ def monitor_into(im, name, t):
 
 
 # ---------------------------------------------------------------- the two views with people in them
-def front_scene(t, pose="idle", lights=1.0, scan=0.0, monitor=True):
+def front_scene(t, pose="idle", lights=1.0, scan=0.0, monitor=True, t_pick=None):
     """The customer's side: you behind caisse 3, the wall of cigarettes, the door to the night, the monitor."""
     im = ST["front"].copy().convert("RGBA")
     fx, fy, hh = CAL["front"](0.0, 1.0); f = fig("toi", hh)
@@ -315,9 +332,23 @@ def front_scene(t, pose="idle", lights=1.0, scan=0.0, monitor=True):
     ex = dict(look=(0.0, 0.1), lid=lid, brow=0.3)
     torso, head, bob = 0.8 * br, 0.0, 3 * br
     hands = on_counter; phone = False
-    if pose == "phone":                                                # reading the phone, lit by it
-        hands = {-1: (CX - 60, 900), 1: (CX + 80, 820)}; phone = True; ex = dict(look=(0.1, 0.75), lid=min(lid, 0.82), brow=0.7, mouth_="line")
-        head = -4
+    read = {-1: (CX - 60 + 3 * math.sin(t * 1.1), 900 + 4 * math.sin(t * 0.8)), 1: (CX + 80 + 4 * math.sin(t * 0.9 + 1), 820 + 5 * math.sin(t * 1.3))}
+    if pose == "phone":                                                # reading the phone, lit by it; the hands drift as you read
+        hands = read; phone = True; ex = dict(look=(0.1, 0.75), lid=min(lid, 0.82), brow=0.7, mouth_="line")
+        head = -4 + 1.5 * math.sin(t * 0.7)
+    elif pose == "pickup":                                             # the buzz: a flinch, the right hand leads, the left follows
+        dt = t - t_pick
+        if dt < 0:
+            hands = on_counter
+        else:
+            ur = rig5.back_out(dt / 0.45, 1.3); ul = rig5.back_out((dt - 0.12) / 0.45, 1.3)
+            hands = {sd: (on_counter[sd][0] + (read[sd][0] - on_counter[sd][0]) * (ur if sd == 1 else ul),
+                          on_counter[sd][1] + (read[sd][1] - on_counter[sd][1]) * (ur if sd == 1 else ul) + (14 if dt < 0.08 else 0)) for sd in (-1, 1)}
+            phone = ur > 0.35
+        fl = settle(dt, 18, 0.35) - settle(dt - 0.15, 10, 0.5) if dt > 0 else 0.0
+        bob = 3 * br - 14 * fl; head = -5 * ease((dt - 0.2) / 0.4) if dt > 0 else 0.0
+        look_d = ease((dt - 0.15) / 0.3) if dt > 0 else 0.0
+        ex = dict(look=(0.1, 0.1 + 0.65 * look_d), lid=lid if dt < 0 or dt > 0.5 else 1.0, brow=0.3 + 0.5 * look_d, wide=1.0 + 0.2 * cl(dt / 0.1) * (1 - cl((dt - 0.6) / 0.3)), mouth_="line")
     elif pose == "startle":                                            # the bip: anticipation, a jolt, the head snaps to the scanner
         t0 = wt("n6", "bip") - 0.05; dt = t - t0
         jolt = settle(dt, 18, 0.35) if dt > 0 else -0.15 * ease((dt + 0.12) / 0.12)
@@ -328,13 +359,15 @@ def front_scene(t, pose="idle", lights=1.0, scan=0.0, monitor=True):
         tr = 2.5 * math.sin(t * 2 * math.pi * 9) + 1.5 * math.sin(t * 2 * math.pi * 11.3)
         hands = {-1: (CX - 40 + tr, 900), 1: (CX + 170, 940)}; bob = -12 + 2 * br; ex = dict(look=(-0.35, 0.1), wide=1.25, brow=1.0, mouth_="fear", lid=lid)
         head = 2 + 0.6 * tr
-    elif pose == "alone":
+    elif pose == "alone":                                              # waiting: the fingers drum on the counter, the eyes check the door
         ex = dict(look=(-0.4 * ease((t % 6) / 1.0) + 0.4 * ease((t % 6 - 3) / 1.0), 0.15), lid=lid, brow=0.2)
+        drum = abs(math.sin(t * 2 * math.pi * 2.2)) * (1 if (t % 3) < 1.6 else 0)
+        hands = {-1: on_counter[-1], 1: (on_counter[1][0], on_counter[1][1] - 18 * drum)}
     img = body(f, hands, ex, torso=torso, head=head, bob=bob, phone=phone)
     rig5.stand_in(im, img, fx, fy, tint=(0.88, 0.9, 1.0), shadow=False)
     im.alpha_composite(FG["front"])
     if phone:
-        hx = fx + (CX + 80 - CX) * hh / rig5.STATURE; hy = fy - (rig5.FOOT - 820) * hh / rig5.STATURE
+        hx = fx + (hands[1][0] - CX) * hh / rig5.STATURE; hy = fy - (rig5.FOOT - hands[1][1]) * hh / rig5.STATURE
         im = glow(im, hx, hy - 40, 260, (150, 190, 255), 0.22)
     if scan > 0:
         p = PTS["front"]["scanner"]; im = glow(im, p[0], p[1], 170, (255, 30, 20), 0.7 * scan)
@@ -535,47 +568,56 @@ def call_screen(t, key, mood="laugh", flip_at=None, rear=None):
     return sc
 
 
-def pov_phone(t, screen, bg="front", tilt=-2.0, z0=1.0):
-    """Your hands hold the phone at the till: the screen lights your fingers and the counter; a soft reflection runs
-    across the glass; the phone breathes with you."""
+def pov_phone(t, screen, bg="front", tilt=-2.0, z0=1.0, trem=0.0, grips=(), raise_at=None):
+    """Your hands hold the phone at the till. Hands and phone are one rig: they turn, breathe and shake together.
+    The thumbs live: they drift, re-grip (grips: times when you tighten your hold, the thumbs slide in, overshoot
+    and settle), and the whole rig trembles when you are scared (trem, in px). raise_at: the phone comes up into
+    view from below with a small overshoot."""
     bgi = blurred("comptoir" if bg == "comptoir" else "front", 18, 0.42).resize((W, H), Image.BICUBIC).convert("RGBA")
-    FW, FH = PW + 36, PH + 36
-    ph = Image.new("RGBA", (FW + 20, FH), (0, 0, 0, 0)); d = ImageDraw.Draw(ph)
-    d.rounded_rectangle((4, 260, 14, 360), 4, fill=(40, 40, 48)); d.rounded_rectangle((FW + 6, 300, FW + 16, 440), 4, fill=(40, 40, 48))   # side buttons
-    d.rounded_rectangle((10, 0, FW + 9, FH - 1), 78, fill=(20, 20, 26, 255), outline=INK + (255,), width=6)
+    S_ = 0.9; FW, FH = int((PW + 36) * S_), int((PH + 36) * S_)
+    ph = Image.new("RGBA", (PW + 56, PH + 36), (0, 0, 0, 0)); d = ImageDraw.Draw(ph)
+    d.rounded_rectangle((4, 260, 14, 360), 4, fill=(40, 40, 48)); d.rounded_rectangle((PW + 42, 300, PW + 52, 440), 4, fill=(40, 40, 48))
+    d.rounded_rectangle((10, 0, PW + 45, PH + 35), 78, fill=(20, 20, 26, 255), outline=INK + (255,), width=6)
     m = Image.new("L", (PW, PH), 0); ImageDraw.Draw(m).rounded_rectangle((0, 0, PW - 1, PH - 1), 62, fill=255)
     ph.paste(screen.convert("RGB"), (28, 18), m); d = ImageDraw.Draw(ph)
-    d.rounded_rectangle((10 + FW / 2 - 70, 34, 10 + FW / 2 + 70, 72), 19, fill=(4, 4, 6))                         # the camera island
-    gl = Image.new("RGBA", ph.size, (0, 0, 0, 0)); gd = ImageDraw.Draw(gl); gx = 200 + 90 * wob(t, 21, 0.3)          # the glass reflection
-    gd.polygon([(gx, 0), (gx + 160, 0), (gx - 300, FH), (gx - 460, FH)], fill=(255, 255, 255, 18))
+    d.rounded_rectangle((10 + (PW + 36) / 2 - 70, 34, 10 + (PW + 36) / 2 + 70, 72), 19, fill=(4, 4, 6))
+    gl = Image.new("RGBA", ph.size, (0, 0, 0, 0)); gd = ImageDraw.Draw(gl); gx = 200 + 90 * wob(t, 21, 0.3)
+    gd.polygon([(gx, 0), (gx + 160, 0), (gx - 300, PH + 36), (gx - 460, PH + 36)], fill=(255, 255, 255, 18))
     gm = Image.new("L", ph.size, 0); ImageDraw.Draw(gm).rounded_rectangle((28, 18, 28 + PW, 18 + PH), 62, fill=255)
     gl.putalpha(Image.fromarray(np.minimum(np.asarray(gl.getchannel("A")), np.asarray(gm)))); ph.alpha_composite(gl)
-    ang = tilt + 1.2 * wob(t, 3, 0.5); br = math.sin(t * 2 * math.pi / 3.4)
-    ph = ph.resize((int(ph.width * 0.9), int(ph.height * 0.9)), Image.LANCZOS)
-    phr = ph.rotate(ang, expand=True, resample=Image.BICUBIC)
-    x = int(540 - phr.width / 2 + 8 * wob(t, 1, 0.6)); y = int(350 + 10 * wob(t, 6, 0.5) + 6 * br)
-    bgi = glow(bgi, 540, 1000, 560, (140, 170, 255), 0.30).convert("RGBA")
-    sh = Image.new("RGBA", bgi.size, (0, 0, 0, 0)); sh.paste((0, 0, 0, 150), (x + 20, y + 30), phr.getchannel("A")); bgi.alpha_composite(sh.filter(ImageFilter.GaussianBlur(22)))
-    # the hands, under the phone: palms and the fingers that wrap round its back
-    hl = Image.new("RGBA", (W, H), (0, 0, 0, 0)); hd = ImageDraw.Draw(hl); skin, skin_d = (236, 196, 162), (204, 160, 128)
-    ey = y + phr.height - 120
+    ph = ph.resize((int(ph.width * S_), int(ph.height * S_)), Image.LANCZOS)
+    # --- one rig: the hands behind, the phone, the thumbs on top, drawn upright, then turned together
+    rig = Image.new("RGBA", (W, H + 400), (0, 0, 0, 0)); px0 = 540 - ph.width // 2; py0 = 330
+    br = math.sin(t * 2 * math.pi / 3.4)
+    g = sum(settle(t - g0, 13, 0.45) - settle(t - g0 - 0.5, 10, 0.5) for g0 in grips)   # tighten, then relax
+    hd = ImageDraw.Draw(rig); skin, skin_d = (236, 196, 162), (204, 160, 128)
+    ey = py0 + ph.height - 120
     for sd in (-1, 1):
-        ex_ = 540 + sd * (phr.width / 2 - 26)
-        hd.polygon([(ex_ - sd * 40, ey + 330), (ex_ + sd * 150, ey + 210), (ex_ + sd * 330, H + 40), (ex_ - sd * 190, H + 40)], fill=PURPLE, outline=INK, width=8)
-        hd.line((ex_ + sd * 70, ey + 290, ex_ + sd * 190, H), fill=(240, 240, 248), width=14)
+        ex_ = 540 + sd * (ph.width / 2 - 26 - 10 * g)
+        hd.polygon([(ex_ - sd * 40, ey + 330), (ex_ + sd * 150, ey + 210), (ex_ + sd * 330, H + 400), (ex_ - sd * 190, H + 400)], fill=PURPLE, outline=INK, width=8)
+        hd.line((ex_ + sd * 70, ey + 290, ex_ + sd * 190, H + 400), fill=(240, 240, 248), width=14)
         hd.rounded_rectangle((ex_ - 90, ey - 60, ex_ + 90, ey + 300), 80, fill=skin, outline=INK, width=8)
-        for k in range(2):                                             # fingertips curling over the far edge
-            fy_ = ey - 250 + k * 96
-            hd.rounded_rectangle((ex_ + sd * 6 - 34, fy_, ex_ + sd * 6 + 34, fy_ + 84), 32, fill=skin_d if k else skin, outline=INK, width=7)
-    bgi.alpha_composite(hl)
-    bgi.alpha_composite(phr, (x, y))
-    for sd in (-1, 1):                                                 # the thumbs rest on the glass, angled in
+        for k in range(2):                                             # fingertips round the back edge; they press in on a re-grip
+            fy_ = ey - 250 + k * 96 + 4 * math.sin(t * 1.7 + k + sd)
+            fx_ = ex_ + sd * (6 - 8 * g * (1 + k * 0.4))
+            hd.rounded_rectangle((fx_ - 34, fy_, fx_ + 34, fy_ + 84), 32, fill=skin_d if k else skin, outline=INK, width=7)
+    rig.alpha_composite(ph, (px0, py0))
+    for sd in (-1, 1):                                                 # the thumbs rest on the glass, alive
+        th_ang = sd * (38 + 10 * g) + 3 * wob(t, 30 + sd, 0.6)
         cap = Image.new("RGBA", (120, 300), (0, 0, 0, 0)); cd = ImageDraw.Draw(cap)
-        cd.rounded_rectangle((8, 8, 112, 292), 52, fill=(236, 196, 162), outline=INK, width=8); cd.rounded_rectangle((30, 24, 90, 92), 26, fill=(246, 216, 196))
-        cap = cap.rotate(sd * 38 + 2 * math.sin(t * 3 + sd), expand=True, resample=Image.BICUBIC)
-        tx = 540 + sd * (phr.width / 2 - 70); tdy = ey - 30 + 6 * math.sin(t * 2.3 + sd)
-        bgi.alpha_composite(cap, (int(tx - cap.width / 2), int(tdy)))
-    lit = Image.new("RGBA", (W, H), (0, 0, 0, 0)); ImageDraw.Draw(lit).ellipse((60, ey - 200, 1020, H), fill=(150, 180, 255, 36)); bgi.alpha_composite(lit.filter(ImageFilter.GaussianBlur(60)))
+        cd.rounded_rectangle((8, 8, 112, 292), 52, fill=skin, outline=INK, width=8); cd.rounded_rectangle((30, 24, 90, 92), 26, fill=(246, 216, 196))
+        cap = cap.rotate(th_ang, expand=True, resample=Image.BICUBIC)
+        tx = 540 + sd * (ph.width / 2 - 70 - 26 * g); tdy = ey - 30 - 30 * g + 6 * math.sin(t * 2.3 + sd)
+        rig.alpha_composite(cap, (int(tx - cap.width / 2), int(tdy)))
+    up = 0.0 if raise_at is None else 1 - rig5.back_out((t - raise_at) / 0.45, 1.4)
+    ang = tilt + 1.2 * wob(t, 3, 0.5) + 0.3 * trem * math.sin(t * 2 * math.pi * 7.3)
+    sh_x = 8 * wob(t, 1, 0.6) + trem * (math.sin(t * 2 * math.pi * 9.1) + 0.6 * math.sin(t * 2 * math.pi * 12.7))
+    sh_y = 10 * wob(t, 6, 0.5) + 6 * br + 0.6 * trem * math.sin(t * 2 * math.pi * 8.3) + 900 * up
+    rig = rig.rotate(ang, resample=Image.BICUBIC, center=(540, py0 + ph.height / 2), translate=(sh_x, sh_y))
+    bgi = glow(bgi, 540, 1000 + sh_y, 560, (140, 170, 255), 0.30 * (1 - up)).convert("RGBA")
+    sh = Image.new("RGBA", bgi.size, (0, 0, 0, 0)); sh.paste((0, 0, 0, 150), (20, 30), rig.getchannel("A").crop((0, 0, W, H))); bgi.alpha_composite(sh.filter(ImageFilter.GaussianBlur(22)))
+    bgi.alpha_composite(rig.crop((0, 0, W, H)))
+    lit = Image.new("RGBA", (W, H), (0, 0, 0, 0)); ImageDraw.Draw(lit).ellipse((60, ey - 200 + sh_y, 1020, H + sh_y), fill=(150, 180, 255, 36)); bgi.alpha_composite(lit.filter(ImageFilter.GaussianBlur(60)))
     return bgi.convert("RGB")
 
 
@@ -711,25 +753,30 @@ def hands_shot(t, t0):
     lay = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(lay); skin, skin_d = (236, 196, 162), (208, 164, 132)
     # your arm and open palm, from the bottom right
     d.polygon([(620, 1920), (1080, 1440), (1080, 1920)], fill=PURPLE, outline=INK, width=10); d.line((820, 1920, 1080, 1660), fill=(240, 240, 248), width=16)
-    px, py = 600 + tr, 1250
+    tt_ = wt("a1", "tends") - 0.15                                     # your hand comes in to offer the change, overshoots, settles
+    reach = rig5.back_out((t - tt_) / 0.5, 1.3) if t > tt_ else 0.0
+    pull = (8 * math.sin(t * 2 * math.pi * 3) - 26 * ease((t - tc - 0.5) / 0.3)) if t > tc + 0.5 else 0.0     # you try to pull back; she holds
+    px, py = 600 + tr + 0.4 * pull, 1250 + 700 * (1 - reach) - pull
     _cap(d, (px + 200, py + 210), (900, 1560), 190, skin)                                              # the wrist
     d.ellipse((px - 190, py - 130, px + 230, py + 220), fill=INK); d.ellipse((px - 182, py - 122, px + 222, py + 212), fill=skin)
     for k, (dx, dy, ln) in enumerate(((-150, -40, 150), (-120, -110, 170), (-50, -150, 175), (40, -160, 160))):   # open fingers
         _cap(d, (px + dx * 0.4, py + dy * 0.4), (px + dx * 0.4 + dx / math.hypot(dx, dy) * ln, py + dy * 0.4 + dy / math.hypot(dx, dy) * ln), 62, skin)
     _cap(d, (px + 150, py - 20), (px + 250, py - 150), 70, skin)                                          # thumb
     d.ellipse((px - 182, py - 122, px + 222, py + 212), fill=skin); d.chord((px - 182, py - 40, px + 222, py + 212), 0, 180, fill=skin_d)
-    for k, (dx, dy) in enumerate(((-60, 30), (30, 0), (100, 60), (-10, 100))):                            # the coins
+    for k, (dx, dy) in enumerate(((-60, 30), (30, 0), (100, 60), (-10, 100))):                            # the coins, they jingle as the hand stops
+        jig = 6 * math.exp(-max(0.0, t - tt_ - 0.35) * 8) * math.sin((t - tt_) * 60 + k * 2) if t > tt_ + 0.35 else 0.0; dx += jig; dy -= abs(jig)
         col = (214, 176, 84) if k % 2 == 0 else (196, 200, 210)
         d.ellipse((px + dx - 50, py + dy - 50, px + dx + 50, py + dy + 50), fill=col, outline=INK, width=6); d.ellipse((px + dx - 30, py + dy - 30, px + dx + 30, py + dy + 30), outline=tuple(int(v * 0.8) for v in col), width=4)
     # her hand: down from the top, slow, then the fingers fold one by one
     u = 0.35 * ease((t - t0) / max(0.1, tc - t0)) + (0.65 * ease((t - tc) / 0.7) if t > tc else 0.0)
-    hx, hy = 560, -380 + 1460 * u; sk = (176, 180, 186); sk_d = (146, 150, 160)
-    d.polygon([(400, hy - 900), (760, hy - 900), (730, hy - 230), (430, hy - 230)], fill=PINK, outline=INK, width=10)
-    for k in range(4): d.line((440 + k * 90, hy - 880, 450 + k * 86, hy - 250), fill=(186, 92, 124), width=5)
-    d.rounded_rectangle((420, hy - 300, 740, hy + 60), 120, fill=sk, outline=INK, width=10)
+    hx, hy = 560 + 14 * math.sin(t * 0.9), -380 + 1460 * u - (0 if t < tc + 0.5 else pull * 0.9); sk = (176, 180, 186); sk_d = (146, 150, 160)
+    ox_ = hx - 560
+    d.polygon([(400 + ox_ * 0.4, hy - 900), (760 + ox_ * 0.4, hy - 900), (730 + ox_, hy - 230), (430 + ox_, hy - 230)], fill=PINK, outline=INK, width=10)
+    for k in range(4): d.line((440 + k * 90 + ox_ * 0.4, hy - 880, 450 + k * 86 + ox_, hy - 250), fill=(186, 92, 124), width=5)
+    d.rounded_rectangle((420 + ox_, hy - 300, 740 + ox_, hy + 60), 120, fill=sk, outline=INK, width=10)
     for k in range(4):
         fold = ease((t - tc - 0.12 * k) / 0.35) if t > tc else 0.0                                     # each finger folds a little after the last
-        x0 = 460 + k * 76; ln = 190 - 18 * abs(k - 1.5)
+        x0 = 460 + k * 76 + ox_; ln = 190 - 18 * abs(k - 1.5)
         ang = math.radians(90 + (k - 1.5) * 6 - 70 * fold); x1, y1 = x0 + math.cos(ang) * ln * (1 - 0.35 * fold), hy + 30 + math.sin(ang) * ln * (1 - 0.35 * fold)
         _cap(d, (x0, hy + 10), (x1, y1), 60, sk if k % 2 else sk_d)
         d.line((x1 - 14, y1 - 30, x1 + 14, y1 - 30), fill=(120, 124, 134), width=4)
@@ -926,7 +973,7 @@ def shots_A(t):
         im = close_up(blurred("front", 14, 0.6).resize((W, H)), sp, t, 1.0, 1.07, L_("n5"), L_("s1"), tint=(0.86, 0.9, 1.0))
     elif t < L_("n6"):
         rear = "mum" if t > wt("s1", "filme") - 0.2 else None
-        im = pov_phone(t, call_screen(t, "s1", "laugh", flip_at=wt("s1", "filme") - 0.2, rear="mum"))
+        im = pov_phone(t, call_screen(t, "s1", "laugh", flip_at=wt("s1", "filme") - 0.2, rear="mum"), raise_at=L_("s1") - 0.05, grips=(wt("s1", "filme"),))
         lab = [lambda im, t: plate(im, t, L_("s1") + 0.2, "SAMIR", GREEN, xy=(70, 1560))]
         if rear: lab.append(lambda im, t: tag(im, t, wt("s1", "filme"), "CHEZ TOI · EN DIRECT", (540, 470), RED, -3, 40))
     elif t < L_("n7"):
@@ -944,7 +991,7 @@ def shots_A(t):
         im = cctv(t, look_cam=True, z=1.5 + 0.25 * ease((t - T_SHOCK) / 2.5), callout=t - (wt("n10", "ombre") - 0.2))
     elif t < L_("m1"):
         rear = "mum" if t > wt("s2", "video") - 0.2 else None
-        im = pov_phone(t, call_screen(t, "s2", "whisper", flip_at=wt("s2", "video") - 0.2, rear="mum"), tilt=2)
+        im = pov_phone(t, call_screen(t, "s2", "whisper", flip_at=wt("s2", "video") - 0.2, rear="mum"), tilt=2, trem=3.0, grips=(wt("s2", "magasin") - 0.1,))
         if rear: lab = [lambda im, t: tag(im, t, wt("s2", "video"), "ELLE DORT. CHEZ TOI.", (540, 470), RED, -3, 40)]
     elif t < L_("n11"):
         a = amp("m1", tw(t)); sp = bust("maman", 1000, look=(0.0, 0.0), mouth_="o" if a > 0.3 else "smile", lid=min(0.5, lid_at(t, 0.0, (L_("m1") + 1.2,))), brow=-0.3)
@@ -975,7 +1022,8 @@ def shots_B(t):
         if t < tc:
             im = cctv_till(t, z=1.25 + 0.15 * ease(t / tc), cy=SH * 0.56, callout=t - (wt("p1v3", "ombre") - 0.2))
         else:
-            fx, fy, hh = comptoir_xy(); im = view(comptoir_scene(t, hand_out=True, mum_look=(0.7, -0.15)), 1.3 + 0.1 * ease((t - tc) / 2), fx + 120, fy - hh * 0.6, t, seed=1)
+            fx, fy, hh = comptoir_xy(); reach = rig5.back_out((t - tc - 0.05) / 0.6, 1.2) if t > tc + 0.05 else 0.0
+            im = view(comptoir_scene(t, hand_out=reach, mum_look=(0.7, -0.15)), 1.3 + 0.1 * ease((t - tc) / 2), fx + 120, fy - hh * 0.6, t, seed=1)
         lab = [lambda im, t: banner(im, t, -1, "ELLE N'A PAS D'OMBRE.", y=1110),
                lambda im, t: plate(im, t, tc + 0.1, "TA MÈRE ?", PINK)]
     elif t < L_("n8"):
@@ -1035,12 +1083,14 @@ def shots_B(t):
         if t > tr + 0.7: lab = [lambda im, t: tag(im, t, wt("n14", "plus") - 0.1, "PARTIE.", (540, 640), RED, -3)]
     elif t < L_("n15"):
         rear = "empty" if t > wt("s3", "demande") - 0.3 else None
-        im = pov_phone(t, call_screen(t, "s3", "panic", flip_at=wt("s3", "demande") - 0.3, rear="empty"), tilt=-3)
+        im = pov_phone(t, call_screen(t, "s3", "panic", flip_at=wt("s3", "demande") - 0.3, rear="empty"), tilt=-3, raise_at=L_("s3") - 0.05,
+                       trem=2.5 + 5.5 * ease((t - wt("s3", "demande")) / 0.5), grips=(wt("s3", "reveiller") - 0.1, wt("s3", "demande") + 0.1))
         lab = []
         if rear: lab.append(lambda im, t: tag(im, t, wt("s3", "demande") + 0.1, "LE CANAPÉ EST VIDE", (540, 1130), RED, -3, 44))
     elif t < L_("t1"):
-        fx, fy, hh = CAL["front"](0.0, 1.0); im = view(front_scene(t, "phone"), 1.55, fx - 150, fy - hh * 0.68, t, seed=1)
-        im = notif(im, t, wt("n15", "vibre") - 0.1, "Maman", "J'arrive à ta caisse.")
+        fx, fy, hh = CAL["front"](0.0, 1.0); tv = wt("n15", "vibre") - 0.1
+        im = view(front_scene(t, "pickup", t_pick=tv), 1.7 + 0.08 * ease((t - tv) / 0.8), fx - 60, fy - hh * 0.6, t, seed=1)
+        im = notif(im, t, tv + 0.35, "Maman", "J'arrive à ta caisse.")
     elif t < L_("t2"):
         fx, fy, hh = CAL["front"](0.0, 1.0); im = view(front_scene(t, "alone", lights=0.85), 1.12, fx, fy - hh * 0.55, t, seed=2)
         lab = [lambda im, t: tag(im, t, L_("t1") + 0.1, "DEMAIN SOIR", (540, 640), PURPLE, -3)]

@@ -81,3 +81,8 @@ for the characters (their look is locked in `toon5.py`), and check the licence o
 - Motion: every cut lands with a 3.5 % push that settles in 0.4 s; CCTV at 12 fps with a rolling bar; printed lines
   fade in; fingers fold one after another; the reveal gets a jolt, a head tick and a colour split; tubes stutter
   before dying; the rewind replays the real frames backwards.
+- v3 (hands): the phone and the hands are one rig turned together (they used to slip apart); re-grips (fingers press,
+  thumbs slide, overshoot, settle) on story beats; a tremor that grows with the fear; the phone rises into frame with
+  back_out. Her arm reaches out on the word, the wrist floats, the note drips. Your hand offers the change and the
+  coins jingle when it stops; hers comes down too slowly, drifts, folds finger by finger, holds you when you pull.
+  A phone buzz is a flinch, the leading hand, the following hand 0.12 s later, then the head and the eyes.
