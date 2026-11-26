@@ -63,12 +63,26 @@ LINES = {k: re.sub(r"\[[^\]]*\]\s*", "", t).strip() for k, w_, t in json.load(op
 ORDER = {"A": ["n1", "n2", "n3", "n4", "n5", "s1", "n6", "n7", "n8", "n9", "n10", "s2", "m1", "n11", "n12", "n12b", "n13"],
          "B": ["p1v3", "n3", "n4", "n8", "p2", "n13", "a1", "a2", "a3", "r10", "b1", "m2", "n14", "s3", "n15", "t1", "t2"]}[VID]
 VO_A = {k: G.voice(VO + f"{k}.wav", lp=None) for k in ORDER}
-_cache = TMP + "rel.json"; _sig = {k: [LINES[k], len(VO_A[k])] for k in ORDER}
+def word_times(a):
+    """Word timings for one take: whisper small gives the words (its starts run 0.1-0.4 s early), then every start
+    is snapped to the real onset in the waveform (the first sound after a pause), so a caption word lights up on
+    its syllable; words inside a phrase move by the measured average lag."""
+    p = TMP + "_wt.wav"; sf.write(p, a, VSR); ws = G.word_times(p, 0, None)    # whisper small: steady, a little early
+    hop = int(0.01 * VSR); env = np.sqrt(np.convolve(a ** 2, np.ones(hop * 2) / (hop * 2), "same")[::hop])
+    loud = np.convolve(env > 0.14 * env.max(), np.ones(3), "same") > 0
+    onsets = [q * 0.01 for q in range(1, len(loud)) if loud[q] and not loud[q - 1:max(0, q - 6) - 1:-1].any()] if len(loud) > 6 else []
+    onsets = [q * 0.01 for q in range(6, len(loud)) if loud[q] and not loud[q - 6:q].any()] + ([0.0] if len(loud) and loud[0] else [])
+    for w in ws:                                                  # after a pause: the first sound after the silence
+        near = [o for o in onsets if -0.15 <= o - w["s"] <= 0.4 and o < w["e"]]
+        w["s"] = min(near, key=lambda o: abs(o - w["s"] - 0.1)) if near else w["s"] + 0.07
+    for n in range(1, len(ws)): ws[n]["s"] = max(ws[n]["s"], ws[n - 1]["s"] + 0.05)
+    return ws
+
+
+_cache = TMP + "rel5.json"; _sig = {k: [LINES[k], len(VO_A[k])] for k in ORDER}
 if os.path.exists(_cache) and json.load(open(_cache))["sig"] == _sig: REL = json.load(open(_cache))["rel"]
 else:
-    REL = {}
-    for k in ORDER:
-        p = TMP + f"{k}_pre.wav"; sf.write(p, VO_A[k], VSR); REL[k] = align(G.word_times(p, 0, None), LINES[k])
+    REL = {k: align(word_times(VO_A[k]), LINES[k]) for k in ORDER}
     json.dump({"sig": _sig, "rel": REL}, open(_cache, "w"))
 dur = {k: len(v) / VSR for k, v in VO_A.items()}
 T = 0.08; line_t = {}
@@ -230,7 +244,7 @@ def cctv(t, look_cam=False, z=1.55, label="CAM 07 · ALLÉE 7", replay=False, ca
         bx, by, bh = P(-0.25, -9.6); basket(im, bx, by, bh / 900)
         _CC[key] = im
     im = _CC[key].copy()
-    fx, fy, hh = mum_far(im, CAL["aisle"], 0.4, -9.5, tw(t), look=(0.0, -0.9) if look_cam else (0.3, -0.2))
+    fx, fy, hh = mum_far(im, CAL["aisle"], 0.4, -9.5, math.floor(t * 12) / 12, look=(0.0, -0.9) if look_cam else (0.3, -0.2))
     fr = view(im, z, fx, fy - hh * 0.45, t, shake=0.0)
     out = cctv_look(fr, t, label, replay)
     d = ImageDraw.Draw(out)
@@ -244,6 +258,7 @@ def cctv(t, look_cam=False, z=1.55, label="CAM 07 · ALLÉE 7", replay=False, ca
 
 def cctv_look(fr, t, label, replay=False):
     a = np.asarray(fr).astype(np.float32) @ np.array([0.30, 0.59, 0.11], np.float32)
+    yb = int(((t * 0.35) % 1) * (H + 300)) - 150; a[max(0, yb):max(0, yb + 140)] *= 1.12          # the rolling bar of an old camera
     rg = np.random.default_rng(int(t * 30)); a = a * 1.15 + rg.normal(0, 7, a.shape); a[::4] *= 0.82
     rgb = np.stack([a * 0.86, a * 1.0, a * 0.84], -1); out = Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8))
     d = ImageDraw.Draw(out)
@@ -264,7 +279,7 @@ def cctv_till(t, look_up=True, callout=0.0, z=1.0, cx=None, cy=None):
     img = body(f, {-1: (CX - 170, 940), 1: (CX + 170, 940)}, dict(look=(-0.3, 0.2), brow=0.8, wide=1.15, lid=lid_at(t)), torso=0.8 * math.sin(t * 2), bob=2 * math.sin(t * 2))
     rig5.stand_in(im, img, fx, fy, tint=(0.82, 0.86, 1.0), shadow=False)
     im.alpha_composite(FG["cctv3"])
-    mx, my, mh = mum_far(im, P, MUM_C[0], MUM_C[1], tw(t), look=(0.0, -0.95) if look_up else (0.4, -0.2), warm=0.4, hand_out=True)
+    mx, my, mh = mum_far(im, P, MUM_C[0], MUM_C[1], math.floor(t * 12) / 12, look=(0.0, -0.95) if look_up else (0.4, -0.2), warm=0.4, hand_out=True)
     cx = cx if cx is not None else SW / 2; cy = cy if cy is not None else SH * 0.5
     fr = view(im, z, cx, cy, t, shake=0.0)
     out = cctv_look(fr, t, "CAM 03 · CAISSE 3")
@@ -363,58 +378,6 @@ def aisle_shoulder(t, t0, t1):
 
 
 # ---------------------------------------------------------------- phone: Samir's video call
-PW, PH = 640, 1240
-_ROOM = {}
-def room(kind):
-    """Your living room at night, flat 2D, as Samir films it: the couch, the floor lamp, the window. kind: 'mum'
-    (she is asleep under the blanket), 'empty' (the blanket on the floor)."""
-    if kind in _ROOM: return _ROOM[kind]
-    im = Image.new("RGBA", (PW, PH), (28, 26, 44, 255)); d = ImageDraw.Draw(im)
-    d.rectangle((0, 820, PW, PH), fill=(46, 36, 44)); d.line((0, 820, PW, 820), fill=INK, width=6)
-    d.rounded_rectangle((60, 150, 300, 470), 10, fill=(24, 40, 78), outline=INK, width=8); d.line((180, 150, 180, 470), fill=INK, width=6)
-    d.ellipse((210, 200, 262, 252), fill=(236, 232, 210))
-    gl = Image.new("RGBA", im.size, (0, 0, 0, 0)); ImageDraw.Draw(gl).ellipse((380, 160, 660, 440), fill=(255, 190, 110, 120)); im.alpha_composite(gl.filter(ImageFilter.GaussianBlur(40)))
-    d = ImageDraw.Draw(im); d.line((540, 300, 540, 820), fill=INK, width=8); d.polygon([(480, 300), (600, 300), (570, 220), (510, 220)], fill=(250, 210, 140), outline=INK, width=6)
-    d.rounded_rectangle((30, 640, 610, 900), 40, fill=(52, 88, 104), outline=INK, width=8)                       # the couch
-    d.rounded_rectangle((20, 600, 120, 900), 40, fill=(44, 76, 92), outline=INK, width=8); d.rounded_rectangle((520, 600, 620, 900), 40, fill=(44, 76, 92), outline=INK, width=8)
-    d.rounded_rectangle((60, 540, 580, 690), 40, fill=(60, 100, 118), outline=INK, width=8)
-    if kind == "mum":
-        hd = toon5.bust5("maman", blink=True, mouth_="line", size=400).crop((40, 20, 360, 330)).rotate(90, expand=True, resample=Image.BICUBIC)
-        im.alpha_composite(hd, (70, 450))                                      # her head on the armrest, asleep
-        d = ImageDraw.Draw(im)
-        d.polygon([(330, 600), (600, 590), (612, 760), (560, 800), (330, 800), (300, 700)], fill=(150, 96, 170), outline=INK, width=8)       # the blanket
-        for k in range(4): d.line((250 + k * 90, 650, 230 + k * 95, 790), fill=(120, 72, 140), width=5)
-    else:
-        d.polygon([(300, 880), (560, 860), (600, 950), (330, 990)], fill=(150, 96, 170), outline=INK, width=8)
-    _ROOM[kind] = im; return im
-
-
-def call_screen(t, key, mood="laugh", rear=None):
-    """The video call: Samir's face (front camera) or what he films (rear camera), the call UI, your face in the box."""
-    if rear:
-        sc = room(rear).copy(); d = ImageDraw.Draw(sc)
-        if rear == "mum":                                              # she snores
-            for k in range(3):
-                u = ((t * 0.6 + k / 3) % 1); d.text((150 + 40 * u, 560 - 160 * u), "z", font=font("hand", int(50 + 40 * u)), fill=(240, 240, 255, int(255 * (1 - u))))
-        d.rounded_rectangle((24, 190, 300, 240), 25, fill=(0, 0, 0, 170)); d.text((44, 215), "caméra arrière", font=font("SemiBold", 26), fill=(255, 255, 255), anchor="lm")
-    else:
-        sc = room("mum").filter(ImageFilter.GaussianBlur(10)).point(lambda v: int(v * 0.8)).convert("RGBA")
-        a = amp(key, tw(t))
-        ex = {"laugh": dict(brow=-0.2, mouth_="smile" if a > 0.3 else "line"), "whisper": dict(brow=0.9, wide=1.15, mouth_="o" if a > 0.25 else "line"),
-              "panic": dict(brow=1.0, wide=1.25, mouth_="o" if a > 0.3 else "fear")}[mood]
-        sp = bust("samir", 900, look=(0.0, 0.0), lid=lid_at(t, 0.4), **ex)
-        sc.alpha_composite(sp, (int(PW / 2 - 450 + 8 * wob(t, 2)), int(300 + 10 * abs(wob(t, 5, 1.5)))))
-    d = ImageDraw.Draw(sc)
-    sv = bust("toi", 260, look=(0.0, 0.3), brow=0.6, lid=lid_at(t)).crop((30, 0, 230, 230))
-    box_ = Image.new("RGBA", (200, 230), (40, 40, 60, 255)); box_.alpha_composite(sv)
-    m = Image.new("L", box_.size, 0); ImageDraw.Draw(m).rounded_rectangle((0, 0, 199, 229), 22, fill=255)
-    sc.paste(box_, (PW - 230, 290), m); d.rounded_rectangle((PW - 230, 290, PW - 30, 520), 22, outline=(255, 255, 255), width=4)
-    d.rounded_rectangle((24, 120, 230, 172), 26, fill=GREEN); d.ellipse((44, 136, 64, 156), fill=(170, 255, 200)); d.text((76, 146), "SAMIR", font=font("Black", 30), fill=(255, 255, 255), anchor="lm")
-    s_ = int(t) + 47; d.text((250, 146), f"{s_ // 60:02d}:{s_ % 60:02d}", font=font("SemiBold", 28), fill=(255, 255, 255), anchor="lm")
-    for x, col in ((PW * 0.3, (225, 50, 50)), (PW * 0.7, (70, 72, 90))): d.ellipse((x - 46, PH - 150, x + 46, PH - 58), fill=col)
-    return sc
-
-
 def notif(im, t, t0, who, body_, y=360, now=False):
     """A text arriving at the top of the screen (frame 0 can show it already: now=True)."""
     if t < t0 and not now: return im
@@ -427,25 +390,193 @@ def notif(im, t, t0, who, body_, y=360, now=False):
     im = im.convert("RGBA"); im.alpha_composite(lay); return im.convert("RGB")
 
 
+PW, PH = 660, 1400
+_ROOM = {}
+def room(kind):
+    """Your living room at night, flat 2D, as Samir films it: the couch, the floor lamp and its warm pool, the window
+    with the moon, the front door. kind: 'mum' (asleep under the blanket), 'empty' (the blanket on the floor, the
+    front door ajar on the dark landing)."""
+    if kind in _ROOM: return _ROOM[kind]
+    im = Image.new("RGBA", (PW, PH), (30, 27, 46, 255)); d = ImageDraw.Draw(im)
+    for y in range(0, 900, 6): d.line((0, y, PW, y), fill=(30 + y // 60, 27 + y // 70, 46 + y // 50))           # wall, darker at the top
+    d.rectangle((0, 900, PW, PH), fill=(46, 36, 44)); d.line((0, 900, PW, 900), fill=INK, width=6)
+    for x in range(-200, PW, 120): d.line((x, 900, x + 260, PH), fill=(54, 42, 50), width=3)                    # floorboards
+    d.rounded_rectangle((50, 170, 290, 520), 10, fill=(22, 38, 76), outline=INK, width=8); d.line((170, 170, 170, 520), fill=INK, width=6); d.line((50, 345, 290, 345), fill=INK, width=6)
+    d.ellipse((200, 210, 254, 264), fill=(236, 232, 210))
+    for sx_, sy_ in ((80, 220), (120, 420), (240, 470)): d.ellipse((sx_, sy_, sx_ + 5, sy_ + 5), fill=(220, 220, 240))
+    gl = Image.new("RGBA", im.size, (0, 0, 0, 0)); gd = ImageDraw.Draw(gl)
+    gd.ellipse((360, 160, 700, 500), fill=(255, 190, 110, 130)); gd.ellipse((300, 820, 700, 1060), fill=(255, 190, 110, 60))
+    im.alpha_composite(gl.filter(ImageFilter.GaussianBlur(44))); d = ImageDraw.Draw(im)
+    d.line((560, 330, 560, 920), fill=INK, width=8); d.ellipse((520, 905, 600, 935), fill=(40, 34, 40), outline=INK, width=5)
+    d.polygon([(495, 330), (625, 330), (592, 240), (528, 240)], fill=(250, 210, 140), outline=INK, width=6)
+    if kind == "empty":                                                # the front door, ajar on the dark landing
+        d.rectangle((330, 300, 470, 900), fill=(8, 8, 12)); d.polygon([(330, 300), (420, 330), (420, 880), (330, 900)], fill=(70, 50, 44), outline=INK, width=6)
+    sofa = Image.new("RGBA", im.size, (0, 0, 0, 0)); sd = ImageDraw.Draw(sofa)
+    sd.rounded_rectangle((30, 700, 630, 990), 44, fill=(52, 88, 104), outline=INK, width=8)
+    sd.rounded_rectangle((60, 610, 600, 760), 40, fill=(60, 100, 118), outline=INK, width=8)
+    sd.rounded_rectangle((16, 660, 120, 990), 40, fill=(44, 76, 92), outline=INK, width=8); sd.rounded_rectangle((540, 660, 644, 990), 40, fill=(44, 76, 92), outline=INK, width=8)
+    for x0 in (130, 330): sd.line((x0 + 200, 770, x0 + 200, 960), fill=(40, 70, 84), width=5)
+    im.alpha_composite(sofa); d = ImageDraw.Draw(im)
+    if kind == "mum":
+        hd = toon5.bust5("maman", blink=True, mouth_="line", size=420).crop((40, 20, 380, 350)).rotate(90, expand=True, resample=Image.BICUBIC)
+        im.alpha_composite(hd, (40, 560)); d = ImageDraw.Draw(im)
+        d.polygon([(330, 680), (610, 668), (622, 840), (570, 880), (330, 880), (300, 780)], fill=(150, 96, 170), outline=INK, width=8)       # the blanket
+        for k in range(4): d.line((350 + k * 66, 690, 335 + k * 70, 870), fill=(124, 76, 144), width=5)
+    else:
+        d.polygon([(250, 1040), (560, 1010), (610, 1120), (290, 1170)], fill=(150, 96, 170), outline=INK, width=8)
+        for k in range(3): d.line((300 + k * 90, 1040, 320 + k * 90, 1150), fill=(124, 76, 144), width=5)
+    v = Image.new("L", im.size, 0); ImageDraw.Draw(v).ellipse((-200, -100, PW + 200, PH + 100), fill=255)
+    dark = Image.new("RGBA", im.size, (6, 6, 12, 255)); dark.putalpha(Image.eval(v.filter(ImageFilter.GaussianBlur(120)), lambda x: int((255 - x) * 0.75)))
+    im.alpha_composite(dark); _ROOM[kind] = im; return im
+
+
+def _icon(d, kind, cx, cy, col=(255, 255, 255)):
+    """Flat call icons: mic, camera flip, speaker, the red hang-up with its handset."""
+    if kind == "mic":
+        d.rounded_rectangle((cx - 11, cy - 24, cx + 11, cy + 6), 11, fill=col); d.arc((cx - 19, cy - 10, cx + 19, cy + 16), 0, 180, fill=col, width=4); d.line((cx, cy + 16, cx, cy + 24), fill=col, width=4)
+    elif kind == "flip":
+        d.rounded_rectangle((cx - 24, cy - 14, cx + 24, cy + 18), 7, outline=col, width=4); d.rectangle((cx - 9, cy - 20, cx + 9, cy - 14), fill=col)
+        d.arc((cx - 10, cy - 8, cx + 10, cy + 12), 200, 520, fill=col, width=3)
+    elif kind == "spk":
+        d.polygon([(cx - 22, cy - 8), (cx - 10, cy - 8), (cx + 4, cy - 20), (cx + 4, cy + 20), (cx - 10, cy + 8), (cx - 22, cy + 8)], fill=col)
+        for r in (12, 22): d.arc((cx - r + 4, cy - r, cx + r + 4, cy + r), -45, 45, fill=col, width=3)
+    elif kind == "end":
+        d.chord((cx - 26, cy - 14, cx + 26, cy + 30), 180, 360, fill=col); d.rounded_rectangle((cx - 28, cy + 2, cx - 12, cy + 14), 5, fill=col); d.rounded_rectangle((cx + 12, cy + 2, cx + 28, cy + 14), 5, fill=col)
+
+
+def _glitch(sc, t, strength):
+    """A bad connection: the picture breaks into blocks for a frame or two."""
+    rg = np.random.default_rng(int(t * 30) + 7)
+    if rg.random() > strength: return sc
+    a = np.asarray(sc.convert("RGB")).copy(); h_, w_ = a.shape[:2]
+    for _ in range(4):
+        y = int(rg.integers(0, h_ - 120)); hh_ = int(rg.integers(40, 120)); blk = int(rg.integers(16, 40))
+        band_ = a[y:y + hh_]; sm = cv2.resize(band_, (max(1, w_ // blk), max(1, hh_ // blk)), interpolation=cv2.INTER_AREA)
+        a[y:y + hh_] = np.roll(cv2.resize(sm, (w_, hh_), interpolation=cv2.INTER_NEAREST), int(rg.integers(-30, 30)), axis=1)
+    return Image.fromarray(a).convert("RGBA")
+
+
+def speak_mouth(key, t, idle="line"):
+    """Lip sync in three drawings, on twos: closed, round, open, from the voice's loudness."""
+    a = amp(key, tw(t))
+    return idle if a < 0.16 else ("o" if a < 0.42 else "open")
+
+
+def samir_feed(t, key, mood):
+    """His front camera: his face close and a little low, lit by the lamp on one side and his screen on the other;
+    the phone moves in his hand, faster when he is out of breath."""
+    sc = room("mum" if key == "s1" else ("mum" if key == "s2" else "empty")).filter(ImageFilter.GaussianBlur(9)).convert("RGBA")
+    sc = Image.eval(sc, lambda v: int(v * 0.78))
+    ex = {"laugh": dict(brow=-0.3, idle="smile"), "whisper": dict(brow=0.9, wide=1.15, idle="line"), "panic": dict(brow=1.0, wide=1.25, idle="fear")}[mood]
+    mo = speak_mouth(key, t, ex.pop("idle")); fast = 2.4 if mood == "panic" else 1.0
+    sp = bust("samir", 1000, look=(0.12 * wob(t, 3, 0.4), 0.05), lid=lid_at(t, 0.4), mouth_=mo, **ex)
+    s = 1060 + 14 * math.sin(t * 2 * math.pi / (1.4 if mood == "panic" else 3.2))
+    sp = sp.resize((int(s), int(s)), Image.LANCZOS).rotate(3 * wob(t, 11, 0.5 * fast), resample=Image.BICUBIC, center=(s / 2, s * 0.5))
+    x = int(PW / 2 - s / 2 + 22 * wob(t, 2, 0.7 * fast)); y = int(250 + 20 * wob(t, 5, 0.9 * fast) + (14 * abs(math.sin(t * 9)) if mood == "panic" else 0))
+    sc.alpha_composite(sp, (x, y))
+    lt = Image.new("RGBA", (PW, PH), (0, 0, 0, 0)); ld = ImageDraw.Draw(lt)
+    ld.ellipse((-300, 200, 300, 1200), fill=(130, 170, 255, 46)); ld.ellipse((420, 200, 960, 900), fill=(255, 180, 100, 40))
+    sc.alpha_composite(lt.filter(ImageFilter.GaussianBlur(80)))
+    return sc
+
+
+def rear_feed(t, kind):
+    """His back camera: the room, handheld, with a little noise; in the dark the phone's sensor grains."""
+    sc = room(kind).copy(); fast = 1.8 if kind == "empty" else 0.6
+    sc = sc.rotate(1.5 * wob(t, 13, 0.6 * fast), resample=Image.BICUBIC, center=(PW / 2, PH / 2)).resize((int(PW * 1.08), int(PH * 1.08)), Image.BICUBIC)
+    ox = int(PW * 0.04 + 16 * wob(t, 4, 0.8 * fast)); oy = int(PH * 0.04 + 14 * wob(t, 8, 0.7 * fast)); sc = sc.crop((ox, oy, ox + PW, oy + PH))
+    a = np.asarray(sc.convert("RGB")).astype(np.float32); a += np.random.default_rng(int(t * 30)).normal(0, 6, a.shape[:2])[..., None]
+    sc = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)).convert("RGBA")
+    if kind == "mum":                                                  # she snores
+        d = ImageDraw.Draw(sc)
+        for k in range(3):
+            u = ((t * 0.6 + k / 3) % 1); d.text((170 + 40 * u, 600 - 170 * u), "z", font=font("hand", int(52 + 40 * u)), fill=(240, 240, 255, int(255 * (1 - u))))
+    return sc
+
+
+def call_screen(t, key, mood="laugh", flip_at=None, rear=None):
+    """The video call as a real phone shows it: the status bar, his name and the call time, his camera full screen,
+    your face in the corner, the controls in a frosted bar. flip_at: the moment he turns his camera around (a quick
+    flip with a blur), rear: what his back camera then shows."""
+    if flip_at is not None and rear and t >= flip_at:
+        u = (t - flip_at) / 0.28
+        if u < 1:                                                      # the flip: the old picture folds away, the new one unfolds
+            src = samir_feed(t, key, mood) if u < 0.5 else rear_feed(t, rear)
+            w_ = max(2, int(PW * abs(math.cos(u * math.pi)))); src = src.filter(ImageFilter.GaussianBlur(14)).resize((w_, PH))
+            sc = Image.new("RGBA", (PW, PH), (0, 0, 0, 255)); sc.alpha_composite(src, ((PW - w_) // 2, 0))
+        else: sc = rear_feed(t, rear)
+        rear_on = True
+    else: sc = samir_feed(t, key, mood); rear_on = False
+    sc = _glitch(sc, t, 0.06 if mood == "panic" else 0.0)
+    top = Image.new("RGBA", (PW, 260), (0, 0, 0, 0)); td = ImageDraw.Draw(top)
+    for y in range(260): td.line((0, y, PW, y), fill=(0, 0, 0, int(150 * (1 - y / 260))))
+    sc.alpha_composite(top); d = ImageDraw.Draw(sc, "RGBA")
+    d.text((48, 40), "02:17", font=font("SemiBold", 28), fill=(255, 255, 255), anchor="lm")
+    for k in range(4): d.rectangle((PW - 150 + k * 12, 50 - 6 - k * 5, PW - 142 + k * 12, 50), fill=(255, 255, 255))
+    d.text((PW - 84, 40), "4G", font=font("SemiBold", 22), fill=(255, 255, 255), anchor="lm")
+    d.rounded_rectangle((PW - 52, 30, PW - 14, 50), 5, outline=(255, 255, 255), width=2); d.rectangle((PW - 48, 34, PW - 32, 46), fill=(255, 255, 255))
+    d.text((PW / 2, 116), "Samir", font=font("Bold", 42), fill=(255, 255, 255), anchor="mm")
+    s_ = int(t) + 47; d.text((PW / 2, 162), f"● {s_ // 60:02d}:{s_ % 60:02d}", font=font("Medium", 26), fill=(150, 255, 180), anchor="mm")
+    if rear_on: d.rounded_rectangle((PW / 2 - 110, 196, PW / 2 + 110, 236), 20, fill=(0, 0, 0, 150)); d.text((PW / 2, 216), "caméra arrière", font=font("SemiBold", 24), fill=(255, 255, 255), anchor="mm")
+    sv = bust("toi", 300, look=(0.0, 0.35), brow=0.8, wide=1.1, lid=lid_at(t), mouth_="line").crop((40, 10, 260, 320))
+    box_ = Image.new("RGBA", sv.size, (34, 30, 46, 255)); ImageDraw.Draw(box_).ellipse((-60, 120, 280, 420), fill=(90, 110, 200, 70)); box_.alpha_composite(sv)
+    m = Image.new("L", box_.size, 0); ImageDraw.Draw(m).rounded_rectangle((0, 0, box_.width - 1, box_.height - 1), 26, fill=255)
+    bx = PW - box_.width - 26; by = 250
+    sh = Image.new("RGBA", sc.size, (0, 0, 0, 0)); ImageDraw.Draw(sh).rounded_rectangle((bx + 6, by + 10, bx + box_.width + 6, by + box_.height + 10), 26, fill=(0, 0, 0, 140))
+    sc.alpha_composite(sh.filter(ImageFilter.GaussianBlur(10))); sc.paste(box_, (bx, by), m)
+    d = ImageDraw.Draw(sc, "RGBA"); d.rounded_rectangle((bx, by, bx + box_.width, by + box_.height), 26, outline=(255, 255, 255, 200), width=3)
+    bar = sc.crop((30, PH - 200, PW - 30, PH - 60)).filter(ImageFilter.GaussianBlur(18)); bar = Image.blend(bar.convert("RGB"), Image.new("RGB", bar.size, (40, 40, 50)), 0.45).convert("RGBA")
+    bm = Image.new("L", bar.size, 0); ImageDraw.Draw(bm).rounded_rectangle((0, 0, bar.width - 1, bar.height - 1), 70, fill=255); sc.paste(bar, (30, PH - 200), bm)
+    d = ImageDraw.Draw(sc, "RGBA")
+    for n_, kind in enumerate(("flip", "mic", "spk", "end")):
+        cx = 30 + (PW - 60) * (n_ + 0.5) / 4; cy = PH - 130
+        d.ellipse((cx - 50, cy - 50, cx + 50, cy + 50), fill=(225, 45, 52, 255) if kind == "end" else (70, 70, 84, 230)); _icon(d, kind, cx, cy)
+    d.rounded_rectangle((PW / 2 - 80, PH - 30, PW / 2 + 80, PH - 22), 4, fill=(255, 255, 255, 200))                 # the home bar
+    return sc
+
+
 def pov_phone(t, screen, bg="front", tilt=-2.0, z0=1.0):
-    """Your hands hold the phone in front of the till; the screen lights them."""
-    im = blurred("comptoir" if bg == "comptoir" else "front", 18, 0.5).resize((W, H), Image.BICUBIC).convert("RGBA")
-    ph = Image.new("RGBA", (PW + 40, PH + 40), (0, 0, 0, 0)); d = ImageDraw.Draw(ph)
-    d.rounded_rectangle((0, 0, PW + 39, PH + 39), 70, fill=(16, 16, 22, 255), outline=INK + (255,), width=6)
-    m = Image.new("L", (PW, PH), 0); ImageDraw.Draw(m).rounded_rectangle((0, 0, PW - 1, PH - 1), 54, fill=255)
-    ph.paste(screen.convert("RGB"), (20, 20), m); ImageDraw.Draw(ph).rounded_rectangle((PW / 2 - 70, 34, PW / 2 + 90, 70), 18, fill=(8, 8, 10))
-    ph = ph.rotate(tilt + 1.2 * wob(t, 3, 0.5), expand=True, resample=Image.BICUBIC)
-    s = z0; ph = ph.resize((int(ph.width * s), int(ph.height * s)), Image.LANCZOS)
-    x = int(540 - ph.width / 2 + 8 * wob(t, 1, 0.6)); y = int(300 + 10 * wob(t, 6, 0.5))
-    im = glow(im, 540, 980, 520, (150, 180, 255), 0.25)
-    im.alpha_composite(ph, (x, y))
-    d = ImageDraw.Draw(im)                                             # your thumbs and sleeves, flat, outlined
-    for s_ in (-1, 1):
-        hx = 540 + s_ * (PW / 2 + 10); hy = 1500 + 10 * wob(t, 2 + s_, 0.5)
-        d.polygon([(hx - s_ * 40, hy - 40), (hx + s_ * 150, hy + 10), (hx + s_ * 230, H), (hx - s_ * 120, H)], fill=PURPLE, outline=INK, width=8)
-        d.line((hx + s_ * 40, hy + 40, hx + s_ * 120, H), fill=(240, 240, 248), width=12)
-        d.ellipse((hx - 70, hy - 110, hx + 70, hy + 40), fill=(236, 196, 162), outline=INK, width=8)
-    return im.convert("RGB")
+    """Your hands hold the phone at the till: the screen lights your fingers and the counter; a soft reflection runs
+    across the glass; the phone breathes with you."""
+    bgi = blurred("comptoir" if bg == "comptoir" else "front", 18, 0.42).resize((W, H), Image.BICUBIC).convert("RGBA")
+    FW, FH = PW + 36, PH + 36
+    ph = Image.new("RGBA", (FW + 20, FH), (0, 0, 0, 0)); d = ImageDraw.Draw(ph)
+    d.rounded_rectangle((4, 260, 14, 360), 4, fill=(40, 40, 48)); d.rounded_rectangle((FW + 6, 300, FW + 16, 440), 4, fill=(40, 40, 48))   # side buttons
+    d.rounded_rectangle((10, 0, FW + 9, FH - 1), 78, fill=(20, 20, 26, 255), outline=INK + (255,), width=6)
+    m = Image.new("L", (PW, PH), 0); ImageDraw.Draw(m).rounded_rectangle((0, 0, PW - 1, PH - 1), 62, fill=255)
+    ph.paste(screen.convert("RGB"), (28, 18), m); d = ImageDraw.Draw(ph)
+    d.rounded_rectangle((10 + FW / 2 - 70, 34, 10 + FW / 2 + 70, 72), 19, fill=(4, 4, 6))                         # the camera island
+    gl = Image.new("RGBA", ph.size, (0, 0, 0, 0)); gd = ImageDraw.Draw(gl); gx = 200 + 90 * wob(t, 21, 0.3)          # the glass reflection
+    gd.polygon([(gx, 0), (gx + 160, 0), (gx - 300, FH), (gx - 460, FH)], fill=(255, 255, 255, 18))
+    gm = Image.new("L", ph.size, 0); ImageDraw.Draw(gm).rounded_rectangle((28, 18, 28 + PW, 18 + PH), 62, fill=255)
+    gl.putalpha(Image.fromarray(np.minimum(np.asarray(gl.getchannel("A")), np.asarray(gm)))); ph.alpha_composite(gl)
+    ang = tilt + 1.2 * wob(t, 3, 0.5); br = math.sin(t * 2 * math.pi / 3.4)
+    ph = ph.resize((int(ph.width * 0.9), int(ph.height * 0.9)), Image.LANCZOS)
+    phr = ph.rotate(ang, expand=True, resample=Image.BICUBIC)
+    x = int(540 - phr.width / 2 + 8 * wob(t, 1, 0.6)); y = int(350 + 10 * wob(t, 6, 0.5) + 6 * br)
+    bgi = glow(bgi, 540, 1000, 560, (140, 170, 255), 0.30).convert("RGBA")
+    sh = Image.new("RGBA", bgi.size, (0, 0, 0, 0)); sh.paste((0, 0, 0, 150), (x + 20, y + 30), phr.getchannel("A")); bgi.alpha_composite(sh.filter(ImageFilter.GaussianBlur(22)))
+    # the hands, under the phone: palms and the fingers that wrap round its back
+    hl = Image.new("RGBA", (W, H), (0, 0, 0, 0)); hd = ImageDraw.Draw(hl); skin, skin_d = (236, 196, 162), (204, 160, 128)
+    ey = y + phr.height - 120
+    for sd in (-1, 1):
+        ex_ = 540 + sd * (phr.width / 2 - 26)
+        hd.polygon([(ex_ - sd * 40, ey + 330), (ex_ + sd * 150, ey + 210), (ex_ + sd * 330, H + 40), (ex_ - sd * 190, H + 40)], fill=PURPLE, outline=INK, width=8)
+        hd.line((ex_ + sd * 70, ey + 290, ex_ + sd * 190, H), fill=(240, 240, 248), width=14)
+        hd.rounded_rectangle((ex_ - 90, ey - 60, ex_ + 90, ey + 300), 80, fill=skin, outline=INK, width=8)
+        for k in range(2):                                             # fingertips curling over the far edge
+            fy_ = ey - 250 + k * 96
+            hd.rounded_rectangle((ex_ + sd * 6 - 34, fy_, ex_ + sd * 6 + 34, fy_ + 84), 32, fill=skin_d if k else skin, outline=INK, width=7)
+    bgi.alpha_composite(hl)
+    bgi.alpha_composite(phr, (x, y))
+    for sd in (-1, 1):                                                 # the thumbs rest on the glass, angled in
+        cap = Image.new("RGBA", (120, 300), (0, 0, 0, 0)); cd = ImageDraw.Draw(cap)
+        cd.rounded_rectangle((8, 8, 112, 292), 52, fill=(236, 196, 162), outline=INK, width=8); cd.rounded_rectangle((30, 24, 90, 92), 26, fill=(246, 216, 196))
+        cap = cap.rotate(sd * 38 + 2 * math.sin(t * 3 + sd), expand=True, resample=Image.BICUBIC)
+        tx = 540 + sd * (phr.width / 2 - 70); tdy = ey - 30 + 6 * math.sin(t * 2.3 + sd)
+        bgi.alpha_composite(cap, (int(tx - cap.width / 2), int(tdy)))
+    lit = Image.new("RGBA", (W, H), (0, 0, 0, 0)); ImageDraw.Draw(lit).ellipse((60, ey - 200, 1020, H), fill=(150, 180, 255, 36)); bgi.alpha_composite(lit.filter(ImageFilter.GaussianBlur(60)))
+    return bgi.convert("RGB")
 
 
 # ---------------------------------------------------------------- inserts (flat 2D, like the references' story objects)
@@ -496,17 +627,18 @@ def rules_sheet(t, hi, conflict=0.0):
 
 ITEMS = [("FARINE", "1,09"), ("EAU", "0,45"), ("RIZ", "1,89"), ("MIEL", "4,90"), ("EPINARDS", "2,30")]
 _TK = {}
-def ticket_img(n_items, letters=0.0, word=0.0, hidden_total=False):
+def ticket_img(n_items, letters=0.0, word=0.0, hidden_total=False, fade=1.0):
     """The receipt that prints itself: five items. letters: 0..5, the first letters circled one by one; word: FERME written under."""
-    key = (n_items, round(letters, 1), round(word, 1))
+    fade = round(cl(fade), 1); key = (n_items, round(letters, 1), round(word, 1), fade)
     if key in _TK: return _TK[key]
-    w, h = 600, 1120; p = paper(w, h, 21, (246, 246, 240)); d = ImageDraw.Draw(p)
+    w, h = 600, 1120; p = paper(w, h, 21, (246, 246, 240)); d = ImageDraw.Draw(p, "RGBA")
     f = font("mono", 40); fs = font("mono", 30)
     d.text((w / 2, 70), "SUPER NUIT 24/24", font=font("mono", 46), fill=(30, 30, 34), anchor="mm")
     d.text((w / 2, 124), "CAISSE 3       02:15", font=fs, fill=(30, 30, 34), anchor="mm"); d.text((w / 2, 166), "CLIENT : ---", font=fs, fill=(30, 30, 34), anchor="mm")
     d.text((40, 200), "-" * 26, font=f, fill=(30, 30, 34))
     for k, (it, pr) in enumerate(ITEMS[:n_items]):
-        y = 270 + k * 84; d.text((50, y), it, font=f, fill=(30, 30, 34)); d.text((w - 50, y), pr + " €", font=f, fill=(30, 30, 34), anchor="ra")
+        al = int(255 * (fade if k == n_items - 1 else 1.0)); y = 270 + k * 84 - (int(14 * (1 - fade)) if k == n_items - 1 else 0)
+        d.text((50, y), it, font=f, fill=(30, 30, 34, al)); d.text((w - 50, y), pr + " €", font=f, fill=(30, 30, 34, al), anchor="ra")
         u = cl(letters - k)
         if u > 0:
             d.arc((36, y - 12, 92, y + 56), -90, -90 + 360 * ease(u), fill=RED, width=6)
@@ -563,33 +695,54 @@ def banknote(t, t0):
     return view(bg, 1.0 + 0.08 * ease((t - t0) / 3), W / 2, 880, t, shake=0.6, seed=2)
 
 
+def _cap(d, p0, p1, w, fill, ol=8):
+    """A rounded limb (finger, thumb) with our outline: ink first, then the fill."""
+    for col, ww in ((INK, w + 2 * ol), (fill, w)):
+        d.line([p0, p1], fill=col, width=int(ww))
+        for p in (p0, p1): d.ellipse((p[0] - ww / 2, p[1] - ww / 2, p[0] + ww / 2, p[1] + ww / 2), fill=col)
+
+
 def hands_shot(t, t0):
-    """A: your hand holds out the change; hers closes over it. Grey, too still. Then the cold spreads."""
-    bg = blurred("comptoir", 22, 0.35).resize((W, H), Image.BICUBIC).convert("RGBA"); d = ImageDraw.Draw(bg)
-    tc = wt("a1", "referme") - 0.1; tf = wt("a1", "froide") - 0.1
-    tr = 3 * math.sin(t * 2 * math.pi * 10) * cl((t - tf) / 0.2)
-    d.polygon([(560, 1920), (1080, 1500), (1080, 1920)], fill=PURPLE, outline=INK, width=10); d.line((760, 1920, 1080, 1660), fill=(240, 240, 248), width=16)
-    hx, hy = 560 + tr, 1240
-    d.ellipse((hx - 190, hy - 120, hx + 230, hy + 210), fill=(236, 196, 162), outline=INK, width=10)          # your open palm
-    d.line((hx + 230, hy + 210, 1080, 1500), fill=INK, width=10)
-    for k, (dx, dy) in enumerate(((-60, 10), (30, -20), (100, 40), (-10, 70))):                                # the coins
+    """A: your open hand holds out the change; hers comes down, grey, too slow, and its fingers fold over yours one
+    after the other. On 'Froide' frost spreads from the touch and your hand shakes."""
+    bg = blurred("comptoir", 22, 0.35).resize((W, H), Image.BICUBIC).convert("RGBA")
+    tc = wt("a1", "referme") - 0.15; tf = wt("a1", "froide") - 0.1
+    tr = 4 * math.sin(t * 2 * math.pi * 11) * cl((t - tf) / 0.15)
+    lay = Image.new("RGBA", (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(lay); skin, skin_d = (236, 196, 162), (208, 164, 132)
+    # your arm and open palm, from the bottom right
+    d.polygon([(620, 1920), (1080, 1440), (1080, 1920)], fill=PURPLE, outline=INK, width=10); d.line((820, 1920, 1080, 1660), fill=(240, 240, 248), width=16)
+    px, py = 600 + tr, 1250
+    _cap(d, (px + 200, py + 210), (900, 1560), 190, skin)                                              # the wrist
+    d.ellipse((px - 190, py - 130, px + 230, py + 220), fill=INK); d.ellipse((px - 182, py - 122, px + 222, py + 212), fill=skin)
+    for k, (dx, dy, ln) in enumerate(((-150, -40, 150), (-120, -110, 170), (-50, -150, 175), (40, -160, 160))):   # open fingers
+        _cap(d, (px + dx * 0.4, py + dy * 0.4), (px + dx * 0.4 + dx / math.hypot(dx, dy) * ln, py + dy * 0.4 + dy / math.hypot(dx, dy) * ln), 62, skin)
+    _cap(d, (px + 150, py - 20), (px + 250, py - 150), 70, skin)                                          # thumb
+    d.ellipse((px - 182, py - 122, px + 222, py + 212), fill=skin); d.chord((px - 182, py - 40, px + 222, py + 212), 0, 180, fill=skin_d)
+    for k, (dx, dy) in enumerate(((-60, 30), (30, 0), (100, 60), (-10, 100))):                            # the coins
         col = (214, 176, 84) if k % 2 == 0 else (196, 200, 210)
-        d.ellipse((hx + dx - 48, hy + dy - 48, hx + dx + 48, hy + dy + 48), fill=col, outline=INK, width=6); d.ellipse((hx + dx - 28, hy + dy - 28, hx + dx + 28, hy + dy + 28), outline=tuple(int(v * 0.8) for v in col), width=4)
-    u = settle(t - tc, 9, 0.6) if t > tc else 0.25 * ease((t - t0) / max(0.1, tc - t0))
-    my = -500 + 1640 * u                                               # her hand comes down from the top and closes
-    d.polygon([(380, my - 900), (760, my - 900), (720, my - 220), (420, my - 220)], fill=PINK, outline=INK, width=10)
-    sk = (176, 180, 186)
-    d.rounded_rectangle((400, my - 260, 740, my + 40), 80, fill=sk, outline=INK, width=10)
+        d.ellipse((px + dx - 50, py + dy - 50, px + dx + 50, py + dy + 50), fill=col, outline=INK, width=6); d.ellipse((px + dx - 30, py + dy - 30, px + dx + 30, py + dy + 30), outline=tuple(int(v * 0.8) for v in col), width=4)
+    # her hand: down from the top, slow, then the fingers fold one by one
+    u = 0.35 * ease((t - t0) / max(0.1, tc - t0)) + (0.65 * ease((t - tc) / 0.7) if t > tc else 0.0)
+    hx, hy = 560, -380 + 1460 * u; sk = (176, 180, 186); sk_d = (146, 150, 160)
+    d.polygon([(400, hy - 900), (760, hy - 900), (730, hy - 230), (430, hy - 230)], fill=PINK, outline=INK, width=10)
+    for k in range(4): d.line((440 + k * 90, hy - 880, 450 + k * 86, hy - 250), fill=(186, 92, 124), width=5)
+    d.rounded_rectangle((420, hy - 300, 740, hy + 60), 120, fill=sk, outline=INK, width=10)
     for k in range(4):
-        fx_ = 430 + k * 80; d.rounded_rectangle((fx_, my - 20, fx_ + 66, my + 170 + 20 * math.sin(k * 1.3)), 33, fill=sk, outline=INK, width=9)
-        d.line((fx_ + 14, my + 130, fx_ + 52, my + 130), fill=(120, 124, 134), width=4)
+        fold = ease((t - tc - 0.12 * k) / 0.35) if t > tc else 0.0                                     # each finger folds a little after the last
+        x0 = 460 + k * 76; ln = 190 - 18 * abs(k - 1.5)
+        ang = math.radians(90 + (k - 1.5) * 6 - 70 * fold); x1, y1 = x0 + math.cos(ang) * ln * (1 - 0.35 * fold), hy + 30 + math.sin(ang) * ln * (1 - 0.35 * fold)
+        _cap(d, (x0, hy + 10), (x1, y1), 60, sk if k % 2 else sk_d)
+        d.line((x1 - 14, y1 - 30, x1 + 14, y1 - 30), fill=(120, 124, 134), width=4)
+    lay = lay.rotate(0.6 * wob(t, 4, 0.5), resample=Image.BICUBIC, center=(540, 1200)); bg.alpha_composite(lay)
     if t > tf:                                                         # the frost
-        f_ = ease((t - tf) / 0.8); lay = Image.new("RGBA", (W, H), (0, 0, 0, 0)); ld = ImageDraw.Draw(lay); rg = np.random.default_rng(3)
-        for k in range(40):
-            a0 = rg.uniform(0, 2 * math.pi); r = rg.uniform(60, 420) * f_; x0, y0 = 580, 1220
-            ld.line((x0, y0, x0 + r * math.cos(a0), y0 + r * math.sin(a0) * 0.7), fill=(220, 240, 255, 180), width=3)
-        bg.alpha_composite(lay); bg = Image.blend(bg.convert("RGB"), Image.new("RGB", (W, H), (120, 170, 255)), 0.18 * f_).convert("RGBA")
-    return view(bg, 1.0 + 0.05 * ease((t - t0) / 4), W / 2, 1000, t, shake=0.7, seed=3)
+        f_ = ease((t - tf) / 0.8); fr = Image.new("RGBA", (W, H), (0, 0, 0, 0)); fd = ImageDraw.Draw(fr); rg = np.random.default_rng(3)
+        for k in range(46):
+            a0 = rg.uniform(0, 2 * math.pi); r = rg.uniform(60, 460) * f_; x0, y0 = 600, 1230
+            x1, y1 = x0 + r * math.cos(a0), y0 + r * math.sin(a0) * 0.7
+            fd.line((x0, y0, x1, y1), fill=(225, 242, 255, 190), width=3)
+            for q in (0.5, 0.8): fd.line((x0 + (x1 - x0) * q, y0 + (y1 - y0) * q, x0 + (x1 - x0) * q + 20 * math.cos(a0 + 0.8), y0 + (y1 - y0) * q + 20 * math.sin(a0 + 0.8)), fill=(225, 242, 255, 160), width=2)
+        bg.alpha_composite(fr.filter(ImageFilter.GaussianBlur(0.6))); bg = Image.blend(bg.convert("RGB"), Image.new("RGB", (W, H), (120, 170, 255)), 0.2 * f_).convert("RGBA")
+    return view(bg, 1.0 + 0.06 * ease((t - t0) / 4), W / 2, 1000, t, shake=0.7, seed=3)
 
 
 def terminal(t, t0):
@@ -599,10 +752,12 @@ def terminal(t, t0):
     d.rounded_rectangle((300, 490, 780, 980), 26, fill=(20, 56, 64), outline=INK, width=8)
     d.text((540, 550), "CAISSE 3 · 02:14", font=font("mono", 34), fill=(170, 230, 230), anchor="mm")
     d.text((540, 640), "SANS CONTACT", font=font("Black", 50), fill=(230, 250, 250), anchor="mm")
-    if t > t0 + 0.4: d.text((540, 730), "✓ PAYÉ  10,63 €", font=font("mono", 44), fill=(120, 240, 150), anchor="mm")
-    if t > wt("t2", "carte") - 0.1:
-        d.text((540, 820), "CARTE •••• 4271", font=font("mono", 40), fill=(230, 250, 250), anchor="mm")
-        d.text((540, 905), "TITULAIRE : TOI", font=font("mono", 46), fill=(255, 80, 80), anchor="mm")
+    def typed(txt, t1, xy, f, col, rate=28):
+        n = int(max(0, t - t1) * rate)
+        if n > 0: d.text(xy, txt[:n], font=f, fill=col, anchor="mm")
+    typed("✓ PAYÉ  10,63 €", t0 + 0.4, (540, 730), font("mono", 44), (120, 240, 150))
+    typed("CARTE •••• 4271", wt("t2", "carte") - 0.15, (540, 820), font("mono", 40), (230, 250, 250))
+    typed("TITULAIRE : TOI", wt("t2", "carte") + 0.25, (540, 905), font("mono", 46), (255, 80, 80), 18)
     for r in range(3):
         for c in range(3): d.rounded_rectangle((330 + c * 150, 1030 + r * 130, 450 + c * 150, 1130 + r * 130), 20, fill=(60, 62, 72), outline=INK, width=6)
     bg = glow(bg, 540, 735, 380, (90, 220, 220), 0.18)
@@ -771,7 +926,7 @@ def shots_A(t):
         im = close_up(blurred("front", 14, 0.6).resize((W, H)), sp, t, 1.0, 1.07, L_("n5"), L_("s1"), tint=(0.86, 0.9, 1.0))
     elif t < L_("n6"):
         rear = "mum" if t > wt("s1", "filme") - 0.2 else None
-        im = pov_phone(t, call_screen(t, "s1", "laugh", rear=rear))
+        im = pov_phone(t, call_screen(t, "s1", "laugh", flip_at=wt("s1", "filme") - 0.2, rear="mum"))
         lab = [lambda im, t: plate(im, t, L_("s1") + 0.2, "SAMIR", GREEN, xy=(70, 1560))]
         if rear: lab.append(lambda im, t: tag(im, t, wt("s1", "filme"), "CHEZ TOI · EN DIRECT", (540, 470), RED, -3, 40))
     elif t < L_("n7"):
@@ -789,7 +944,7 @@ def shots_A(t):
         im = cctv(t, look_cam=True, z=1.5 + 0.25 * ease((t - T_SHOCK) / 2.5), callout=t - (wt("n10", "ombre") - 0.2))
     elif t < L_("m1"):
         rear = "mum" if t > wt("s2", "video") - 0.2 else None
-        im = pov_phone(t, call_screen(t, "s2", "whisper", rear=rear), tilt=2)
+        im = pov_phone(t, call_screen(t, "s2", "whisper", flip_at=wt("s2", "video") - 0.2, rear="mum"), tilt=2)
         if rear: lab = [lambda im, t: tag(im, t, wt("s2", "video"), "ELLE DORT. CHEZ TOI.", (540, 470), RED, -3, 40)]
     elif t < L_("n11"):
         a = amp("m1", tw(t)); sp = bust("maman", 1000, look=(0.0, 0.0), mouth_="o" if a > 0.3 else "smile", lid=min(0.5, lid_at(t, 0.0, (L_("m1") + 1.2,))), brow=-0.3)
@@ -826,11 +981,11 @@ def shots_B(t):
     elif t < L_("n8"):
         hi = {1: wt("n4", "quitte") - 0.15, 2: wt("n4", "chacun") - 0.15, 3: wt("n4", "ticket") - 0.15}
         im = on_dark(rules_sheet(t, hi), t, "front", y=820, rot=-1.5, z0=0.9, z1=0.98, t0=L_("n3"), t1=L_("n8"), red=0.6)
-        lab = [lambda im, t: tag(im, t, L_("n3") + 0.2, "SOUS TA CAISSE", (540, 330), PURPLE, -3, 40)]
+        lab = [lambda im, t: tag(im, t, L_("n3") + 0.2, "SOUS TA CAISSE", (540, 460), PURPLE, -3, 40)]
     elif t < L_("p2"):
-        k = sum(1 for w_ in ("farine", "eau", "riz", "miel", "epinards") if t >= wt("n8", w_) - 0.1)
-        im = on_dark_t(ticket_img(max(1, k) if k < 5 else 5), t, "comptoir", y=900, rot=-2, z0=1.0, z1=1.06, t0=L_("n8"), t1=L_("p2"))
-        lab = [lambda im, t: tag(im, t, L_("n8") + 0.2, "LE TICKET SORT TOUT SEUL", (540, 330), RED, -3, 40)]
+        st_ = [wt("n8", w_) - 0.06 for w_ in ("farine", "eau", "riz", "miel", "epinards")]; k = sum(1 for x in st_ if t >= x)
+        im = on_dark_t(ticket_img(max(1, k), fade=(t - st_[max(0, k - 1)]) / 0.18 if k else 0.0), t, "comptoir", y=900, rot=-2, z0=1.0, z1=1.06, t0=L_("n8"), t1=L_("p2"))
+        lab = [lambda im, t: tag(im, t, L_("n8") + 0.2, "LE TICKET SORT TOUT SEUL", (540, 460), RED, -3, 40)]
     elif t < L_("n13"):
         ts = [wt("p2", "f"), wt("p2", "e", 0), wt("p2", "r"), wt("p2", "m"), wt("p2", "e", 1)]
         ts = [line_t["p2"] + 1.9 + 0.42 * k if (k > 0 and ts[k] <= ts[k - 1]) else ts[k] for k in range(5)]
@@ -843,25 +998,31 @@ def shots_B(t):
         im = hands_shot(t, L_("a1")); lab = [lambda im, t: banner(im, t, L_("a1") + 0.05, "SI TU CHOISIS A", y=420)]
         if t > we("a1") + 0.15: im = dim(im, max(0.25, 1 - (t - we("a1") - 0.15) / 0.6), (1, 1, 1))   # the light dies in the silence
     elif t < L_("a2"):
-        sp = bust("maman", 1000, look=(0.0, -0.1), fiend=True, wide=1.2)
-        im = close_up(blurred("comptoir", 14, 0.4).resize((W, H)), sp, t, 1.08, 1.14, T_SHOCK, L_("a2"), tint=(1.0, 0.9, 0.9), y=520, seed=7, shake=2.2)
+        dt_ = t - T_SHOCK; sp = bust("maman", 1000, look=(0.0, -0.1), fiend=True, wide=1.2)
+        tick_ = 6 if int(dt_ * 15) % 5 == 2 else 0                       # the head ticks, like a bad frame
+        sp = sp.rotate(tick_, resample=Image.BICUBIC, center=(500, 420))
+        im = close_up(blurred("comptoir", 14, 0.4).resize((W, H)), sp, t, 1.0 + 0.16 * settle(dt_, 9, 0.5), 1.0 + 0.16 * settle(dt_, 9, 0.5) + 0.04, T_SHOCK, L_("a2"), tint=(1.0, 0.9, 0.9), y=520, seed=7, shake=2.2)
+        if dt_ < 0.35:                                                  # the colour splits for a moment
+            r_, g_, b_ = im.split(); o = int(18 * (1 - dt_ / 0.35)); im = Image.merge("RGB", (r_.transform(im.size, Image.AFFINE, (1, 0, -o, 0, 1, 0)), g_, b_.transform(im.size, Image.AFFINE, (1, 0, o, 0, 1, 0))))
     elif t < L_("a3"):
         im = cctv(t - 20, z=1.5, replay=True, callout=t - (wt("a2", "ombre") - 0.25))
     elif t < L_("r10"):
         im = on_dark_t(ticket_img(5, letters=5, word=9), t, "comptoir", y=900, rot=-2, z0=1.1, z1=1.16, t0=L_("a3"), t1=L_("r10"))
     elif t < t_rew: im = rule_card(t, L_("r10")); hd = False
     elif t < L_("b1"):
-        src = view(comptoir_scene(L_("n13") + 0.5, hand_out=True), 1.15, comptoir_xy()[0] + 260, comptoir_xy()[1] - comptoir_xy()[2] * 0.5, L_("n13"), seed=6)
-        im = rewind(int(t * 30), src); hd = False; gr = False
+        u = ease((t - t_rew) / 0.9); tb = L_("r10") - 0.2 - u * (L_("r10") - 0.2 - (L_("n13") + 0.6))   # the tape runs back over what you just saw
+        tb = tb if not (T_SHOCK - 0.1 <= tb < T_SHOCK + 0.05) else T_SHOCK + 0.1
+        im = rewind(int(t * 30), shots_B(tb)[0]); hd = False; gr = False
     elif t < L_("m2"):
         off = t > wt("b1", "eteins") + 0.1
-        k = 1.0 if not off else max(0.16, 1 - (t - wt("b1", "eteins") - 0.1) / 0.12)
+        dt_ = t - wt("b1", "eteins") - 0.05
+        k = 1.0 if dt_ < 0 else (0.16 if dt_ > 0.42 else (0.3, 1.0, 0.2, 0.75, 0.18, 0.45, 0.16)[min(6, int(dt_ / 0.06))])   # the tubes stutter, then die
         fx, fy, hh = comptoir_xy(); im = view(comptoir_scene(t, mum_look=(0.7, -0.1), lights=k), 1.2, fx + 260, fy - hh * 0.5, t, seed=8)
         lab = [lambda im, t: banner(im, t, L_("b1") + 0.05, "SI TU CHOISIS B", y=420)]
         if wt("b1", "fermee") - 0.1 < t: lab.append(lambda im, t: tag(im, t, wt("b1", "fermee"), "CAISSE FERMÉE", (540, 640), RED, -3))
     elif t < L_("n14"):
         frozen = t > we("m2") - 0.05; tt = we("m2") - 0.05 if frozen else t
-        a = amp("m2", tw(tt)); sp = bust("maman", 1000, look=(0.0, 0.0), mouth_="o" if a > 0.3 else "line", lid=1.0 if frozen else lid_at(tt, 0.5), light=-0.6)
+        sp = bust("maman", 1000, look=(0.0, 0.0), mouth_=speak_mouth("m2", tt), lid=1.0 if frozen else lid_at(tt, 0.5), light=-0.6)
         im = close_up(blurred("comptoir", 14, 0.22).resize((W, H)), sp, tt, 1.0, 1.05, L_("m2"), L_("n14"), tint=(0.55, 0.6, 0.85), seed=9, shake=0.0 if frozen else 1.0)
         if frozen:
             a_ = np.asarray(im).copy(); rg = np.random.default_rng(int(t * 30))
@@ -874,9 +1035,9 @@ def shots_B(t):
         if t > tr + 0.7: lab = [lambda im, t: tag(im, t, wt("n14", "plus") - 0.1, "PARTIE.", (540, 640), RED, -3)]
     elif t < L_("n15"):
         rear = "empty" if t > wt("s3", "demande") - 0.3 else None
-        im = pov_phone(t, call_screen(t, "s3", "panic", rear=rear), tilt=-3)
-        lab = [lambda im, t: plate(im, t, L_("s3") + 0.2, "SAMIR", GREEN, xy=(70, 1560))]
-        if rear: lab.append(lambda im, t: tag(im, t, wt("s3", "demande"), "LE CANAPÉ EST VIDE", (540, 470), RED, -3, 40))
+        im = pov_phone(t, call_screen(t, "s3", "panic", flip_at=wt("s3", "demande") - 0.3, rear="empty"), tilt=-3)
+        lab = []
+        if rear: lab.append(lambda im, t: tag(im, t, wt("s3", "demande") + 0.1, "LE CANAPÉ EST VIDE", (540, 1130), RED, -3, 44))
     elif t < L_("t1"):
         fx, fy, hh = CAL["front"](0.0, 1.0); im = view(front_scene(t, "phone"), 1.55, fx - 150, fy - hh * 0.68, t, seed=1)
         im = notif(im, t, wt("n15", "vibre") - 0.1, "Maman", "J'arrive à ta caisse.")
@@ -914,12 +1075,26 @@ def negative(src):
 SHOTS = shots_A if VID == "A" else shots_B
 
 
+CUT_KEYS = {"A": ["n2", "n3", "n5", "s1", "n6", "n7", "n8", "n9", "s2", "m1", "n11", "n12", "n12b"],
+            "B": ["n3", "n8", "p2", "n13", "a1", "a3", "r10", "b1", "m2", "n14", "s3", "n15", "t1", "t2"]}[VID]
+CUTS = sorted([L_(k) for k in CUT_KEYS] + ([wt("p1v3", "tend") - 0.1, L_("a2")] if VID == "B" else [T_SHOCK]))
+
+
+def settle_in(im, t):
+    """Each new shot lands with a small push that settles in a third of a second: the cut has a beat."""
+    c = max([x for x in CUTS if x <= t], default=-9); u = t - c
+    if u >= 0.4: return im
+    z = 1 + 0.035 * (1 - ease(u / 0.4)); cw, ch = W / z, H / z
+    return im.resize((W, H), Image.BICUBIC, box=((W - cw) / 2, (H - ch) / 2, (W + cw) / 2, (H + ch) / 2))
+
+
 def render(i, t, captions_on=True):
     im, lab, hd, gr = SHOTS(t)
     if gr: im = grade(im, i)
+    if t < T_END: im = settle_in(im, t)
     for f_ in lab: im = f_(im, t)
     if hd: im = hud(im, t)
-    quiet = (L_("n13") <= t < T_HOLD + 1.3) or (VID == "B" and L_("r10") <= t < t_rew)
+    quiet = (L_("n13") <= t < T_HOLD + (1.3 if VID == "A" else 1.15)) or (VID == "B" and L_("r10") <= t < t_rew)
     if captions_on and t < T_END and not quiet: im = captions(im, t)
     return im
 

@@ -170,6 +170,11 @@ def mouth(cv, cx, L, kind, who, look):
                 cv.stroke([(x0, y0 + (3 if down else -3)), tip, (x1, y1 + (3 if down else -3))], 1.6, (60, 30, 30, 255))
         teeth(upper, True, 16, 26); teeth(lower[::-1], False, 13, 18)
         return
+    if kind == "open":                                                       # speech, mouth wide: upper teeth, tongue
+        m = cv.poly(bez((mx - 40, my - 8), (mx - 34, my + 46), (mx + 34, my + 46), (mx + 40, my - 8)) + bez((mx + 40, my - 8), (mx + 14, my - 16), (mx - 14, my - 16), (mx - 40, my - 8))[1:], (92, 26, 38, 255), 6)
+        cv.inside(m, pts=[(mx - 44, my - 20), (mx + 44, my - 20), (mx + 40, my - 2), (mx - 40, my - 2)], fill=(246, 240, 230, 255))
+        cv.inside(m, ell=(mx - 22, my + 16, mx + 22, my + 44), fill=(214, 96, 104, 255))
+        return
     if kind == "o":
         cv.ell((mx - 20, my - 22, mx + 20, my + 26), (92, 26, 38, 255), 6)
         cv.poly([(mx - 12, my - 14), (mx + 12, my - 14), (mx + 10, my - 6), (mx - 10, my - 6)], (246, 240, 230, 255), 0)
@@ -311,7 +316,7 @@ def bust5(who="toi", look=(0.0, 0.0), brow=0.0, mouth_="line", wide=1.0, blink=F
         cv.inside(b, pts=[(cx - 240, 300), (cx - 240, 40), (cx - 120, 40), (cx - 150, 300)], fill=tone(L["top"]))
         for k in range(-6, 7): cv.stroke([(cx + k * 32, 110 + abs(k) * 8), (cx + k * 33, 236)], 4, L["top_d"])
         cv.poly([(cx - 236, 230), (cx + 236, 230), (cx + 232, 292), (cx - 232, 292)], L["top_d"])
-        cv.ell((cx - 44, 6, cx + 44, 94), (240, 238, 228, 255))
+        cv.ell((cx - 44, 40, cx + 44, 128), (240, 238, 228, 255))                                 # the pompom sits on the beanie
     elif who == "maman":
         hl = [(cx + 196, 430), (cx + 186, 330), (cx + 130, 268), (cx + 50, 244), (cx, 256), (cx - 50, 244), (cx - 130, 268), (cx - 186, 330), (cx - 196, 430)]
         top = cv.poly([(cx - 212, 440)] + bez((cx - 224, 330), (cx - 254, 74), (cx + 254, 74), (cx + 224, 330))[1:] + [(cx + 212, 440)] + hl, L["hair"], 8)

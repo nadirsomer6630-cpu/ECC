@@ -69,3 +69,15 @@ Lessons kept: (1) one place for every tool saves time; our equivalent is this sk
 of our own pipeline is a cheap extra format for days without an episode. Not applied: Higgsfield is not connected to
 this session and costs money; if the creator subscribes, use it only for set or prop references and inserts, never
 for the characters (their look is locked in `toon5.py`), and check the licence of every output.
+
+## Caissier de nuit B, v2 (Nov 26): the creator's notes on the call, the sync and the motion
+
+- Captions ran 0.1-0.4 s early (up to 0.57 s): whisper small starts words early. Fix in `caisse.word_times`: keep
+  whisper's words, snap each start to the first sound after a pause in the waveform, shift words inside a phrase by
+  the measured lag. Check: "Eau" moved from 1.08 s to 1.40 s, its real onset is 1.41 s.
+- A phone call must look like a phone: status bar, name and call time, frosted control bar with icons, a self-view
+  with a shadow, a glass reflection, hands that hold the phone (fingertips round the back, thumbs on the glass),
+  the caller moving in his own frame, lip sync in three drawings (`toon5` mouth "open"), a camera flip with a blur.
+- Motion: every cut lands with a 3.5 % push that settles in 0.4 s; CCTV at 12 fps with a rolling bar; printed lines
+  fade in; fingers fold one after another; the reveal gets a jolt, a head tick and a colour split; tubes stutter
+  before dying; the rewind replays the real frames backwards.
