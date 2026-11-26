@@ -58,3 +58,14 @@ the cartoon-show master-style workflow, Promptmake and PromptHero style tokens, 
 Questas, MindStudio, Alici and storysnap shot structures, and video-shotcraft's transition and typography cards.
 Became `references/prompts.md` (style line, negative line, identity anchors, seven-field shot spec, script prompt)
 and `scene5.render_shot`.
+
+## thekhan_clipper, "Luca Maxim reveals what AI he uses" (30 s, 82 k views, 1.9 % likes, 1.3 % saves, Nov 26)
+
+What it says: the channel moved from several separate tools to Higgsfield, a paid aggregator where one account
+switches between many image and video models. The clip itself is a podcast cut on a boat at night: one burned-in
+caption at the top ("... reveals what AI he uses to make his art"), no edit, a question as the first words.
+Lessons kept: (1) one place for every tool saves time; our equivalent is this skill (one command per step) and
+`references/tools.md`; (2) the "which AI do you use" question gets saved (1.3 %), so a short behind-the-scenes video
+of our own pipeline is a cheap extra format for days without an episode. Not applied: Higgsfield is not connected to
+this session and costs money; if the creator subscribes, use it only for set or prop references and inserts, never
+for the characters (their look is locked in `toon5.py`), and check the licence of every output.

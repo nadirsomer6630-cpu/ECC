@@ -34,3 +34,10 @@ proxy injects them; code sends the placeholder "proxy-injected").
 - GitHub: push only to `nadirsomer6630-cpu/ecc`, branch `feat/tiktok-story-series-skill`, never the default branch.
   The scratchpads are volatile; the skill and the delivered `.mp4` files are what survives.
 - Never overwrite a delivered file: write `_vN`.
+
+## Higgsfield (not connected, paid)
+
+An aggregator of image and video generation models behind one account (seen in two references: the storytime
+tutorial with its MCP, and Luca Maxim's clip). Not available here. If the creator subscribes and connects it: set and
+prop references, phone-screen backgrounds, short ambient inserts; never the four characters; keep the style line
+and negative line of `prompts.md` in every prompt; check the licence of outputs before posting.
